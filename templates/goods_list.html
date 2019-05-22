@@ -1,0 +1,410 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}商品信息{% endblock %}
+
+{% block content %}
+
+    <section class="content">
+        <div class="row">
+            <p class="update_div text-blue">获取商品信息</p>
+            <div class="update_div">
+                <button class="btn btn-primary good_btn" data-value="all" data-country="MY">
+                    <i class="fa fa-battery-empty"></i> (马来西亚) 全部商品
+                </button>
+                <button class="btn btn-primary good_btn" data-country="MY">
+                    <i class="fa fa-battery-full"></i> (马来西亚) 第一页商品
+                </button>
+                <button class="btn btn-vk good_btn" data-value="all" data-country="PH">
+                    <i class="fa fa-hourglass-o"></i> (菲律宾) 全部商品
+                </button>
+                <button class="btn btn-vk good_btn" data-country="PH">
+                    <i class="fa fa-hourglass"></i> (菲律宾) 第一页商品
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">商品信息
+                        </h3>
+                        <div class="good_update">
+                            <label><input type="text" class="form-control input-sm" id="input_url" style="width: 500px;"
+                                          placeholder="淘宝、1688链接，最多三个，用';;'分割开"></label>
+                            <label><input type="text" class="form-control input-sm" id="input_weight" style="width: 90px;" placeholder="最大实重(g)"></label>
+                            <label><input type="text" class="form-control input-sm" id="input_price" style="width: 80px;" placeholder="进货价"></label>
+                            <label><button onclick="update_price()" class="btn-sm btn-primary">更新选中</button></label>
+                        </div>
+                        {% csrf_token %}
+                    </div>
+                    <div class="box-body">
+                        <table id="order_table" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>商品SPU</th>
+                                <th>最大实重</th>
+                                <th>链接</th>
+                                <th>子商品SKU</th>
+                                <th>商品规格</th>
+                                <th>商品图片</th>
+                                <th>进货价</th>
+                                <th>库存</th>
+                                <th>销量</th>
+                                <th>(MY)售价</th>
+                                <th>(PH)售价</th>
+                                <th>货架号</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for good in goods %}
+                                    <tr>
+                                        {% ifchanged %}
+                                            <td class="select_td" data-search="{{ good.goods.spu_id }}"
+                                                data-order="{{ good.goods.spu_id }}">{{ good.goods.spu_id }}</td>
+                                        {% else %}
+                                            <td class="select_td" data-search="{{ good.goods.spu_id }}"
+                                                data-order="{{ good.goods.spu_id }}"></td>
+                                        {% endifchanged %}
+
+                                        <td>{{ good.goods.max_weight }}</td>
+
+                                        <td>{{ good.goods.g_url }}</td>
+
+                                        <td>{{ good.sku_id }}</td>
+
+                                        <td>{{ good.desc }}</td>
+
+                                        <td class="good_img">
+                                            <img width="60" height="60" src="{{ MEDIA_URL }}{{ good.image }}">
+                                        </td>
+
+                                        <td data-type="buy_price" class="edit_td">{{ good.buy_price }}</td>
+
+                                        <td data-type="stock" class="edit_td">{{ good.stock }}</td>
+
+                                        <td>{{ good.sales }}</td>
+
+                                        <td>{{ good.my_sale_price }}</td>
+
+                                        <td>{{ good.ph_sale_price }}</td>
+
+                                        <td>{{ good.shelf }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>没有数据！</tr>
+                                {% endfor %}
+                            </tbody>
+
+                            <tfoot>
+                            <tr>
+                                <th>商品SPU</th>
+                                <th>最大实重</th>
+                                <th>链接</th>
+                                <th>子商品SKU</th>
+                                <th>商品规格</th>
+                                <th>商品图片</th>
+                                <th>进货价</th>
+                                <th>库存</th>
+                                <th>销量</th>
+                                <th>(MY)售价</th>
+                                <th>(PH)售价</th>
+                                <th>货架号</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div> <!-- /.box-body -->
+                </div> <!-- /.box -->
+            </div> <!-- /.col -->
+        </div> <!-- /.row -->
+    </section>
+
+{% endblock %}
+
+{% block script %}
+
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+    <script src="{% static 'JS/jquery.cookie.js' %}"></script>
+    <script src="{% static 'JS/base.js' %}"></script>
+
+    <script>
+        var columnDefs = [
+            {
+                "targets": [1,2,4,5,9,10],
+                "searchable": false
+            },
+            {
+                "targets": [1,2,4,5,11],
+                "orderable": false
+            },
+            {
+                "targets": [2],
+                // 列渲染 以';;'分割url 分别生成超链接
+                "render": function(data, type, row) {
+                    var data_html = '';
+                    data = data.split(';;');
+                    if(data == false){
+                        return ''
+                    } else{
+                        $.each(data, function (i,v) {
+                            if(v){
+                                data_html += '<a target="_blank" href="'+ v +'">链接'+(i+1)+'</a></br>'
+                            }
+                        });
+                        return data_html;
+                    }
+                },
+            }
+        ];
+
+        // 添加下拉式筛选框
+        function col_search() {
+            var api = this.api();
+            api.columns([11]).indexes().flatten().each(function(i){
+                var column = api.column(i);
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo($(column.footer()).empty())
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    });
+                column.data().unique().sort().each(function (d, j){
+                    select.append('<option value="'+d+'">'+d+'</option>')
+                });
+            });
+        }
+
+        $(function () {
+            var table = $('#order_table').DataTable({
+                "paging": true,       <!-- 允许分页 -->
+                "lengthChange": false, <!-- 允许改变每页显示的行数 -->
+                "searching": true,    <!-- 允许内容搜索 -->
+                "ordering": true,     <!-- 允许排序 -->
+                "order": [[0, 'asc']],     <!-- 初始排序列表 -->
+                "info": true,         <!-- 显示信息 -->
+                "pageLength": 50,    <!-- 每页显示 -->
+                "autoWidth": false,  <!-- 自动宽度 -->
+                "scrollX": false,  <!-- 水平滚动 -->
+                "language": language,  <!-- 语言 -->
+                <!--"columns": columns,   自定义每一列属性 -->
+                "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
+                "dom": '<"pull-left"f><"pull-right"i>rtp',
+                "deferRender": true, <!-- 延迟渲染 -->
+
+                <!-- 指定列 添加下拉搜索框 -->
+                initComplete: col_search,
+            });
+
+            // 鼠标悬停 高亮行
+            $('#order_table tbody').on('mouseover', 'tr', function () {
+                $(table.row(this).node()).addClass('highlight')
+            }).on('mouseleave', 'tr', function () {
+                $(table.row(this).node()).removeClass('highlight')
+            });
+
+            // 双击单元格 变输入框 进价、库存修改
+            $('#order_table tbody').on('dblclick', '.edit_td', function (){
+                var input_obj = $('<input class="form-control" style="width: 70px;" type="text">');
+                var old_obj = $(this);
+                var old_data = $(this).text();
+                var data_type = $(this).attr('data-type');
+                var sku_id = table.row(table.cell(old_obj).index().row).data()[3];
+                var data = {'sku_id': sku_id};
+
+                input_obj.val(old_data);
+                old_obj.html(input_obj);
+                // 获取焦点并选中 失去焦点 提交数据修改
+                input_obj.focus().select().blur(function () {
+                    var new_data = $(this).val();
+                    // 没有输入、和原来的值相等、数据为price 转成小数后并与原来的值相等 则不处理
+                    if( !new_data ||
+                        new_data === old_data ||
+                        (data_type === 'buy_price' && getFloat2(new_data) === old_data)){
+                        old_obj.text(old_data);
+                        return
+                    }
+                    // 验证值 是否为数字
+                    if(/^[0-9]+\.?[0-9]*$/.test(new_data)){
+                        data[data_type] = new_data;
+                        $.ajax({
+                                url: '{% url 'goods_list' %}',
+                                type: 'post',
+                                headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                                data: {
+                                    'update_data': JSON.stringify(data),
+                                    },
+                                success: function (e) {
+                                    if(!e.status){
+                                        showMessage(e.msg,'bg-success');
+                                        if (data_type === 'buy_price'){
+                                            old_obj.text(getFloat2(new_data))
+                                        } else {
+                                            old_obj.text(new_data)
+                                        }
+                                    }else {
+                                        showMessage(e.msg);
+                                        old_obj.text(old_data)
+                                    }
+                                }
+                            })
+                    } else {
+                        showMessage('请输入正确的数字')
+                    }
+                });
+            });
+        });
+
+        // 选中 相同spu的商品
+        $('#order_table tbody').on('click', '.select_td', function (){
+            var table = $('#order_table').DataTable();
+            var check_id = $(this).attr('data-order');
+
+            if($(this).hasClass('selected')){
+                // 遍历所有行中第一列的排序数据 找和选中单元格相同spu的行索引
+                // 定位到单元格 添加class 翻页单元格一样可以选中
+                table.rows().indexes().each(function (i) {
+                    if (table.row(i).data()[0]['@data-order'] === check_id){
+                        $(table.cell(i,0).node()).removeClass('selected')
+                    }
+                });
+                $('#input_url').val('');
+            } else {
+                $('#order_table tbody td.selected').removeClass('selected');
+                table.rows().indexes().each(function (i) {
+                    if (table.row(i).data()[0]['@data-order'] === check_id){
+                        $(table.cell(i, 0).node()).addClass('selected')
+                    }
+                });
+                $('#input_url').val(table.row(table.cell(this).index().row).data()[2]);
+            }
+        });
+
+        // 更新商品的进价，实重， URL
+        function update_price() {
+            var table = $('#order_table').DataTable();
+            // 获取输入框的值
+            var new_price = $('#input_price').val();
+            var new_weight = $('#input_weight').val();
+            var new_url = $('#input_url').val();
+
+            // 校验数字和重量的正则表达式
+            var reg_num=/^[0-9]+\.?[0-9]*$/;
+            var reg_weight=/^[0-9]+0$/;
+            var reg_url=/^((ht|f)tps?):\/\/[\w\-]+(\.[\w\-]+)+([\w\-.,@?^=%&:\/~+#]*[\w\-@?^=%&\/~+#])?$/;
+
+            // 价格和重量、URL必须输入一项
+            if (new_price || new_weight || new_url){
+                var data = {};
+                // 如果有价格输入，检验处理保存
+                if(new_price){
+                    if(reg_num.test(new_price)){
+                        data.buy_price = new_price
+                    } else{
+                        showMessage('输入正确的价格');
+                        return
+                    }
+                }
+                // 如果有重量输入，检验处理
+                if(new_weight){
+                    if(reg_weight.test(new_weight)){
+                        data.max_weight = new_weight
+                    } else{
+                        showMessage('重量为10g倍数');
+                        return
+                    }
+                }
+                if(new_url){
+                    var url_ok = true;
+                    $.each(new_url.split(';;'), function (i, v) {
+                        if(v && !reg_url.test(v)){
+                            url_ok = false;
+                            // 跳出所有循环
+                            return false
+                        }
+                    });
+                    if(url_ok){
+                        data.g_url = new_url;
+                    } else {
+                        showMessage('URL格式错误');
+                        return;
+                    }
+                }
+                // 判断有无选中行
+                if(!table.cell('.selected').index()) {
+                    showMessage('先选中');
+                } else {
+                    data.spu_id = $('td.selected').attr('data-order');
+                    // 发起请求 更新数据库
+                    $.ajax({
+                        url: '{% url 'goods_list' %}',
+                        type: 'post',
+                        headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                        data: {
+                            'update_data': JSON.stringify(data),
+                            },
+                        success: function (e) {
+                            if(!e.status){
+                                showMessage(e.msg,'bg-success');
+                                if(data.buy_price) {
+                                    // 更新成功 不刷新请求数据，先在页面更新表中数据
+                                    table.cells('.selected').indexes().each(function (i) {
+                                        table.cell(i.row, 6).data(getFloat2(new_price))
+                                    });
+                                }
+                                if(data.max_weight) {
+                                    table.cells('.selected').indexes().each(function (i) {
+                                        table.cell(i.row, 1).data(new_weight)
+                                    });
+                                }
+                                if(data.g_url) {
+                                    table.cells('.selected').indexes().each(function (i) {
+                                        table.cell(i.row, 2).data(new_url).draw()
+                                    });
+                                    $('#input_url').val('');
+                                }
+                            }else {
+                                showMessage(e.msg)
+                            }
+                        }
+                    })
+                }
+            }
+        }
+
+        // 爬取商品信息按钮，根据数据类型，国家来爬取
+        $('.good_btn').click(function () {
+            var this_obj = $(this);
+            var good_type = this_obj.attr('data-value');
+            var country_type = this_obj.attr('data-country');
+            var data = {
+                'data_type': good_type,
+                'country_type': country_type
+            };
+            this_obj.addClass('disabled');
+
+            $.get("{% url 'get_product' %}", params=data, function (e) {
+                if(!e.status){
+                    showMessage(e.msg, 'bg-success');
+                    window.setTimeout(function () {
+                            location.reload()
+                        }, 2100);
+                } else {
+                    showMessage(e.msg)
+                }
+            });
+            // 禁用 延迟5s再点击
+            window.setTimeout(function () {
+               this_obj.removeClass('disabled')
+            }, 5000);
+        });
+
+    </script>
+
+{% endblock %}

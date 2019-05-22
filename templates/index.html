@@ -1,0 +1,387 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}订单管理{% endblock %}
+
+{% block content %}
+    <!-- 模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel"></h4>
+                    {% csrf_token %}
+                </div>
+                <div class="modal-body">
+                ...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button id="confirm_btn" type="button" onclick="shipping_good(this)" class="btn btn-primary"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 模态框 结束 -->
+
+    <section class="content">
+        <div class="row">
+            <div class="update_div">
+                <a class="btn bg-blue-active">待出货订单
+                    <span class="badge bg-red">{{ unfinished_orders }}</span>
+                </a>
+                <a class="btn bg-blue" href="{% url 'order_list' %}?order_type=shipping">
+                    <i class="fa fa-truck"></i> 运送中订单
+                    <span class="badge bg-yellow">{{ shipping_orders }}</span>
+                </a>
+                <a class="btn bg-blue" href="{% url 'order_list' %}?order_type=finished">
+                    <i class="fa fa-check-square"></i> 已完成订单
+                    <span class="badge bg-olive">{{ finished_orders }}</span>
+                </a>
+            </div>
+            <p class="update_div text-blue">获取订单信息</p>
+            <div class="update_div">
+                <button class="btn btn-primary order_btn" data-value="toship" data-country="MY">
+                    <i class="fa fa-battery-empty"></i> (马来西亚) 待出货
+                </button>
+                <button class="btn btn-primary order_btn" data-value="shipping" data-country="MY">
+                    <i class="fa fa-battery-full"></i> (马来西亚) 运输中
+                </button>
+                <button class="btn btn-primary order_btn" data-value="completed" data-country="MY">
+                    <i class="fa fa-check"></i> 已完成
+                </button>
+                <button class="btn btn-vk order_btn" data-value="toship" data-country="PH">
+                    <i class="fa fa-hourglass-o"></i> (菲律宾) 待出货
+                </button>
+                <button class="btn btn-vk order_btn" data-value="shipping" data-country="PH">
+                    <i class="fa fa-hourglass"></i> (菲律宾) 运输中
+                </button>
+                <button class="btn btn-vk order_btn" data-value="completed" data-country="PH">
+                    <i class="fa fa-check"></i> 已完成
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">新订单
+                            <small>待出货</small>
+                        </h3>
+                        <div class="ship_btn">
+                            <button id="ship_good" class="btn btn-primary">发货</button>
+                            <button id="buy_good" class="btn btn-primary">采购</button>
+                        </div>
+                    </div>
+                    <div class="box-body">
+                        <table id="order_table" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>国家</th>
+                                <th>订单号</th>
+                                <th>客户名</th>
+                                <th>收件人</th>
+                                <th>客户信誉</th>
+                                <th>商品SKU</th>
+                                <th>商品规格</th>
+                                <th>商品图片</th>
+                                <th>商品数量</th>
+                                <th>商品售价</th>
+                                <th>商品库存</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+
+                            {% for order in orders %}
+                                {% for order_good in order.ordergoods_set.all %}
+                                    <tr>
+                                        {% if forloop.first %}
+                                            <td>{{ forloop.parentloop.counter }}</td>
+
+                                            {% if order.order_country == 'PHP' %}
+                                                <td data-search="{{ order.get_order_country_display }}"
+                                                    class="text-green text-bold">{{ order.get_order_country_display }}</td>
+                                            {% elif order.order_country == 'MYR' %}
+                                                <td data-search="{{ order.get_order_country_display }}"
+                                                    class="text-blue text-bold">{{ order.get_order_country_display }}</td>
+                                            {% else %}
+                                                <td data-search="{{ order.get_order_country_display }}"
+                                                    class="text-purple text-bold">{{ order.get_order_country_display }}</td>
+                                            {% endif %}
+
+                                            <td data-search="{{ order.order_id }}" data-order="{{ order.order_time}}">{{ order.order_id }}</td>
+
+                                            <td>{{ order.customer }}</td>
+
+                                            <td>{{ order.receiver }}</td>
+
+                                            {% if order.customer_grade < 60 %}
+                                                <td><label
+                                                        class="label label-danger">{{ order.customer_info }}</label>
+                                                </td>
+                                            {% elif order.customer_grade < 80 %}
+                                                <td><label
+                                                        class="label label-warning">{{ order.customer_info }}</label>
+                                                </td>
+                                            {% else %}
+                                                <td><label
+                                                        class="label label-default">{{ order.customer_info }}</label>
+                                                </td>
+                                            {% endif %}
+
+                                        {% else %}
+                                            <td></td>
+                                            <td data-search="{{ order.get_order_country_display }}"></td>
+                                            <td data-search="{{ order.order_id }}" data-order="{{ order.order_time}}"></td>
+                                            <td ></td>
+                                            <td></td>
+                                            <td></td>
+                                        {% endif %}
+
+                                        <td>{{ order_good.sku_good.sku_id }}</td>
+                                        <td>{{ order_good.sku_good.desc }}</td>
+
+                                        <td class="good_img">
+                                            <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
+                                        </td>
+
+                                        <td>{{ order_good.count }}</td>
+                                        <td>{{ order_good.price }}</td>
+                                        <td>{{ order_good.sku_good.stock }}</td>
+
+                                    </tr>
+                                {% endfor %}
+
+                            {% empty %}
+                                <tr>没有数据！</tr>
+                            {% endfor %}
+
+                            </tbody>
+
+                            <tfoot>
+                            <tr>
+                                <th>序号</th>
+                                <th>国家</th>
+                                <th>订单号</th>
+                                <th>客户名</th>
+                                <th>收件人</th>
+                                <th>客户信誉</th>
+                                <th>商品SKU</th>
+                                <th>商品规格</th>
+                                <th>商品图片</th>
+                                <th>商品数量</th>
+                                <th>商品售价</th>
+                                <th>商品库存</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div> <!-- /.box-body -->
+                </div> <!-- /.box -->
+            </div> <!-- /.col -->
+        </div> <!-- /.row -->
+    </section>
+
+{% endblock %}
+
+{% block script %}
+
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+    <script src="{% static 'JS/jquery.cookie.js' %}"></script>
+    <script src="{% static 'JS/base.js' %}"></script>
+
+    <script>
+        var columnDefs = [
+            {
+                "targets": [0,4,5,8,9,10],
+                "searchable": false
+            },
+            {
+                "targets": [0,1,3,4,5,6,7,8,9,10],
+                "orderable": false
+            },
+        ];
+
+        // 缺货商品sku  注意'符号会转义
+        var out_of_stock = {{ out_of_stock|safe }};
+
+        // 缺货商品添加背景色
+        function createdRow(row, data, index ) {
+            if ($.inArray(data[6], out_of_stock) !== -1) {
+                $(row).css("background-color", "#adc2ef");
+            }
+        }
+
+        // 添加下拉式筛选框
+        function col_search() {
+            var api = this.api();
+            api.columns([1,2,6]).indexes().flatten().each( function ( i ) {
+                var column = api.column( i );
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo( $(column.footer()).empty() )
+                    .on( 'change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    } );
+                column.data().unique().sort().each( function ( d, j ) {
+                    select.append( '<option value="'+d+'">'+d+'</option>' )
+                } );
+            } );
+        }
+
+        $(function () {
+            var table = $('#order_table').DataTable({
+                "paging": true,       <!-- 允许分页 -->
+                "lengthChange": false, <!-- 允许改变每页显示的行数 -->
+                "searching": true,    <!-- 允许内容搜索 -->
+                "ordering": true,     <!-- 允许排序 -->
+                "order": [[2, 'desc']],     <!-- 初始排序列表 -->
+                "info": true,         <!-- 显示信息 -->
+                "pageLength": 50,    <!-- 每页显示 -->
+                "autoWidth": false,  <!-- 自动宽度 -->
+                "scrollX": false,  <!-- 水平滚动 -->
+                "language": language,  <!-- 语言 -->
+                <!--"columns": columns,   自定义每一列属性 -->
+                "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
+                "dom": '<"pull-left"f><"pull-right"i>rtp',
+
+                "createdRow": createdRow,
+                <!-- 指定列 添加下拉搜索框 -->
+                initComplete: col_search,
+            });
+
+            // 多选行，选中添加class
+            $('#order_table tbody').on('click', 'tr', function (){
+                $(this).toggleClass('selected');
+            });
+
+            // 发货按钮 点击弹出模态框 传入选中数据（订单号）
+            $('#ship_good').click(function () {
+                if(!$('tr.selected').length) {
+                    showMessage('先选中');
+                    return
+                }
+                var modal_obj = $('#myModal');
+                modal_obj.find('#myModalLabel').text('发货订单清单');
+                modal_obj.find('#confirm_btn').text('确认发货').attr('data-value', 'ship');
+
+                var order_num = 0;
+                var ship_html = '<ul class="list-group text-center">';
+                table.rows('.selected').data().each( function (i) {
+                    if (i[2]['display']){
+                        ship_html = ship_html + '<li class="list-group-item">' + i[2]['display'] + '</li>';
+                        order_num += 1
+                    }
+                });
+                ship_html = ship_html + '</ul><p class="pull-right">一共 ' + order_num + ' 个订单将发货</p>';
+
+                $('div.modal-body').html(ship_html);
+
+                modal_obj.modal('show');
+            });
+
+            // 采购按钮 传入选中数据（skuID）
+            $('#buy_good').click(function () {
+                if(!$('tr.selected').length) {
+                    showMessage('先选中');
+                    return
+                }
+                var modal_obj = $('#myModal');
+                modal_obj.find('#myModalLabel').text('采购商品清单');
+                modal_obj.find('#confirm_btn').text('确认采购').attr('data-value', 'buy');
+
+                var order_num = 0;
+                var ship_html = '<ul class="list-group text-center">';
+                table.rows('.selected').data().each( function (i) {
+                    if (i[6]){
+                        ship_html = ship_html + '<li class="list-group-item">' + i[6] + '</li>';
+                        order_num += 1
+                    }
+                });
+                ship_html = ship_html + '</ul><p class="pull-right">一共 ' + order_num + ' 种商品要采购</p>';
+
+                $('div.modal-body').html(ship_html);
+                modal_obj.modal('show');
+            });
+
+        });
+
+        // 模态框 确认按钮 发货更新订单状态、库存，或生产采购单
+        function shipping_good(btn_obj){
+            var post_type = $(btn_obj).attr('data-value');
+            var data_list = [];
+            $('#myModal').find('li').each( function () {
+                data_list.push($(this).text());
+            });
+            // 判断发送请求的类型
+            if (post_type === 'ship'){
+                url = '/'
+            } else if (post_type === 'buy'){
+                url = '/buy/product/'
+            } else {
+                $('#myModal').modal('hide');
+                showMessage('参数错误');
+                return
+            }
+
+            $.ajax({
+                url: url,
+                type: 'post',
+                headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                data: {
+                    'data_list': JSON.stringify(data_list),
+                },
+                success: function (e) {
+                    if (e.status) {
+                        $('#myModal').modal('hide');
+                        showMessage(e.msg);
+                    } else {
+                        $('#myModal').modal('hide');
+                        if(post_type === 'ship'){
+                            showMessage(e.msg, 'bg-success');
+                            window.setTimeout(function () {
+                                location.reload()
+                            }, 2100);
+                        } else {
+                            window.location.href="{% url 'buy_product' %}?purchase_type=buy"
+                        }
+                    }
+                }
+            })
+        }
+
+        // 爬取订单信息按钮，根据数据类型，国家来爬取
+        $('.order_btn').click(function () {
+            var this_obj = $(this);
+            var order_type = this_obj.attr('data-value');
+            var country_type = this_obj.attr('data-country');
+            var data = {
+                'data_type': order_type,
+                'country_type': country_type
+            };
+            this_obj.addClass('disabled');
+            $.get("{% url 'get_order' %}", params=data, function (e) {
+                if(!e.status){
+                    showMessage(e.msg, 'bg-success');
+                    window.setTimeout(function () {
+                            location.reload()
+                        }, 2100);
+                } else {
+                    showMessage(e.msg)
+                }
+            });
+            // 禁用 延迟5s再点击
+            window.setTimeout(function () {
+               this_obj.removeClass('disabled')
+            }, 5000);
+        });
+
+    </script>
+
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}已完成订单{% endblock %}
+
+{% block content %}
+
+    <section class="content">
+        <div class="row">
+            <div class="update_div">
+                <a class="btn bg-blue" href="/"><i class="fa fa-clone"></i> 待出货订单
+                    <span class="badge bg-red">{{ unfinished_orders }}</span>
+                </a>
+
+                {% if request.GET.order_type == 'shipping' %}
+                    <a class="btn bg-blue-active"><i class="fa fa-truck"></i> 运送中订单
+                        <span class="badge bg-yellow">{{ orders | length }}</span>
+                    </a>
+                {% else %}
+                    <a class="btn bg-blue" href="{% url 'order_list' %}?order_type=shipping">
+                        <i class="fa fa-truck"></i> 运送中订单</a>
+                {% endif %}
+
+                {% if request.GET.order_type == 'finished' %}
+                    <a class="btn bg-blue-active"><i class="fa fa-check-square"></i> 已完成订单
+                        <span class="badge bg-olive">{{ orders | length }}</span>
+                    </a>
+                {% else %}
+                    <a class="btn bg-blue" href="{% url 'order_list' %}?order_type=finished">
+                        <i class="fa fa-truck"></i> 已完成订单</a>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">已发货订单
+                            <small>已统计</small>
+                        </h3>
+                    </div>
+                    <div class="box-body">
+                        <table id="order_table" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>序号</th>
+                                <th>国家</th>
+                                <th>订单号</th>
+                                <th>客户名</th>
+                                <th>商品总额</th>
+                                <th>商品总件数</th>
+                                <th>订单收入</th>
+                                <th>订单利润</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for order in orders %}
+                                    <tr>
+                                        {% ifchanged %}
+                                            <td data-search="{{ order.order_time }}" data-order="{{ order.order_time }}">{{ order.order_time }}</td>
+                                        {% else %}
+                                            <td data-search="{{ order.order_time }}" data-order="{{ order.order_time }}"></td>
+                                        {% endifchanged %}
+                                        <td>{{ forloop.counter }}</td>
+
+                                        {% if order.order_country == 'PHP' %}
+                                            <td class="text-green text-bold">{{ order.get_order_country_display }}</td>
+                                        {% elif order.order_country == 'MYR' %}
+                                            <td class="text-blue text-bold">{{ order.get_order_country_display }}</td>
+                                        {% else %}
+                                            <td class="text-purple text-bold">{{ order.get_order_country_display }}</td>
+                                        {% endif %}
+
+                                        <td>{{ order.order_id }}</td>
+
+                                        <td>{{ order.customer }}</td>
+
+                                        <td>{{ order.total_price }}</td>
+
+                                        <td>{{ order.goods_num }}</td>
+
+                                        <td>{{ order.order_income }}</td>
+
+                                        <td>{{ order.order_profit }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>没有数据！</tr>
+                                {% endfor %}
+                            </tbody>
+
+                            <tfoot>
+                            <tr>
+                                <th>时间</th>
+                                <th>序号</th>
+                                <th>国家</th>
+                                <th>订单号</th>
+                                <th>客户名</th>
+                                <th>商品总额</th>
+                                <th>商品总件数</th>
+                                <th>订单收入</th>
+                                <th>订单利润</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div> <!-- /.box-body -->
+                </div> <!-- /.box -->
+            </div> <!-- /.col -->
+        </div> <!-- /.row -->
+    </section>
+
+{% endblock %}
+
+{% block script %}
+
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+    <script src="{% static 'JS/jquery.cookie.js' %}"></script>
+    <script src="{% static 'JS/base.js' %}"></script>
+
+    <script>
+        var columnDefs = [
+            {
+                "targets": [1,5,6,7,8],
+                "searchable": false
+            },
+            {
+                "targets": [1,4,6],
+                "orderable": false
+            },
+        ];
+
+        // 订单利润低于2元 添加背景色
+        function createdRow(row, data, index ) {
+            if (data[8] <= 50) {
+                $(row).css("background-color", "#f6cbcb");
+            }
+        }
+
+        // 添加下拉式筛选框
+        function col_search() {
+            var api = this.api();
+            api.columns([0,2,3]).indexes().flatten().each(function(i){
+                var column = api.column(i);
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo($(column.footer()).empty())
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    });
+                column.data().unique().sort().each(function (d, j){
+                    select.append('<option value="'+d+'">'+d+'</option>')
+                });
+            });
+        }
+
+        // 统计利润（浮点数丢失精度，*100变成整数 运算完 /100）
+        function total_profit(row, data, start, end, display){
+            var api = this.api();
+            var intVal = function (i) {
+                return i*100
+            };
+            api.columns([5,7,8]).indexes().flatten().each(function(i){
+                // 所有页数据统计
+                total = api.column(i).data().reduce(function(a, b){
+                        return a + intVal(b);
+                    }, 0);
+
+                // 当前页数据统计
+                pageTotal = api.column(i, {page: 'current'})
+                    .data().reduce(function(a, b){
+                        return a + intVal(b);
+                    }, 0);
+
+                total = total / 100;
+                pageTotal = pageTotal / 100; 
+
+                // 更新表脚
+                $(api.column(i).footer()).html(
+                    '当前：'+ pageTotal +'<br/>全部：'+ total
+                )
+            })
+        }
+
+        $(function () {
+            var table = $('#order_table').DataTable({
+                "paging": true,       <!-- 允许分页 -->
+                "lengthChange": false, <!-- 允许改变每页显示的行数 -->
+                "searching": true,    <!-- 允许内容搜索 -->
+                "ordering": true,     <!-- 允许排序 -->
+                "order": [[0, 'desc']],     <!-- 初始排序列表 -->
+                "info": true,         <!-- 显示信息 -->
+                "pageLength": 50,    <!-- 每页显示 -->
+                "autoWidth": false,  <!-- 自动宽度 -->
+                "scrollX": false,  <!-- 水平滚动 -->
+                "language": language,  <!-- 语言 -->
+                <!--"columns": columns,   自定义每一列属性 -->
+                "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
+                "dom": '<"pull-left"f><"pull-right"i>rtp',
+
+                "createdRow": createdRow,
+                <!-- 指定列 添加下拉搜索框 -->
+                initComplete: col_search,
+                <!-- 统计订单利润 -->
+                "footerCallback": total_profit
+            });
+
+            // 表格头部 添加两个输入框
+            $('#order_table_filter').append('<label>范围筛选：<input type="text" class="form-control input-sm" ' +
+                'id="input_min" style="width: 100px;" placeholder="起始日期"></label>' +
+                '<label><input type="text" class="form-control input-sm" id="input_max" ' +
+                'style="width: 100px;" placeholder="结束日期"></label>');
+
+            // 范围筛选 绑定事件
+            $('#input_min, #input_max').keyup( function() {
+                table.draw();
+            } );
+
+        });
+
+        // 范围筛选 判断满足条件的返回true 则显示出来
+        $.fn.dataTable.ext.search.push(
+            function( settings, data, dataIndex ) {
+                var min = parseInt($('#input_min').val(), 10);
+                var max = parseInt($('#input_max').val(), 10);
+                var date = parseInt(data[0]) || 0;
+
+                return (isNaN(min) && isNaN(max)) ||
+                    (isNaN(min) && date <= max) ||
+                    (min <= date && isNaN(max)) ||
+                    (min <= date && date <= max);
+            }
+        );
+
+        // 单选，选中添加class
+        $('#order_table tbody').on('click', 'tr', function (){
+            if($(this).hasClass('selected')){
+                $(this).removeClass('selected')
+            } else {
+                $('#order_table tbody tr.selected').removeClass('selected');
+                $(this).addClass('selected')
+            }
+        });
+
+    </script>
+
+{% endblock %}

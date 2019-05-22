@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}采购清单{% endblock %}
+
+{% block content %}
+
+    <!-- 模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <!-- 模态框内容 -->
+            </div>
+        </div>
+    </div>
+    <!-- 模态框 结束 -->
+
+    <section class="content">
+        <div class="row">
+            <div class="update_div">
+                {% if request.GET.purchase_type == 'buy' %}
+                    <button class="btn bg-blue-active"><i class="fa fa-truck"></i> 采购中订单
+                        <span class="badge bg-yellow">{{ purchase_orders | length }}</span>
+                    </button>
+                {% else %}
+                    <button class="btn bg-blue">
+                        <a href="{% url 'buy_product' %}?purchase_type=buy"
+                        style="color: #fff;"><i class="fa fa-truck"></i> 采购中订单</a>
+                    </button>
+                {% endif %}
+
+                {% if request.GET.purchase_type == 'stock' %}
+                    <button class="btn bg-blue-active"><i class="fa fa-check-square"></i> 已入库订单
+                    <span class="badge bg-olive">{{ purchase_orders | length }}</span>
+                    </button>
+                {% else %}
+                    <button class="btn bg-blue">
+                        <a href="{% url 'buy_product' %}?purchase_type=stock"
+                        style="color: #fff;"><i class="fa fa-truck"></i> 已入库订单</a>
+                    </button>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">采购中清单
+                            <small>未入库</small>
+                        </h3>
+                    </div>
+                    <div class="box-body">
+                        <table id="order_table" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>采购单号</th>
+                                <th>采购总额</th>
+                                <th>备注</th>
+                                <th>商品SKU</th>
+                                <th>商品链接</th>
+                                <th>商品图片</th>
+                                <th>商品数量</th>
+                                <th>商品进价</th>
+                                <th>入库操作</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for purchase in purchase_orders %}
+                                    {% for pur_good in purchase.purchasegoods_set.all  %}
+                                        <tr>
+                                            {% if forloop.first %}
+                                                <td>{{ forloop.parentloop.counter }}</td>
+                                                <td data-search="{{ purchase.purchase_id }}"
+                                                    data-order="{{ purchase.purchase_id }}">
+                                                    <a class="pur-info" href="javascript:;" >{{ purchase.purchase_id }}</a></td>
+                                                <td>{{ purchase.total_price }}</td>
+                                                <td>{{ purchase.desc }}</td>
+                                            {% else %}
+                                                <td></td>
+                                                <td data-search="{{ purchase.purchase_id }}"
+                                                    data-order="{{ purchase.purchase_id }}"></td>
+                                                <td></td>
+                                                <td></td>
+                                            {% endif %}
+
+                                        <td>{{ pur_good.sku_good.sku_id }}</td>
+
+                                        <td>{{ pur_good.sku_good.goods.g_url }}</td>
+
+                                        <td class="good_img">
+                                            <img width="60" height="60" src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}">
+                                        </td>
+
+                                        <td>{{ pur_good.count }}</td>
+
+                                        <td>{{ pur_good.price }}</td>
+
+                                        <td></td>
+                                    </tr>
+                                    {% endfor %}
+
+                                {% empty %}
+                                    <tr>没有数据！</tr>
+                                {% endfor %}
+
+                            </tbody>
+
+                            <tfoot>
+                            <tr>
+                                <th>序号</th>
+                                <th>采购单号</th>
+                                <th>采购总额</th>
+                                <th>备注</th>
+                                <th>商品SKU</th>
+                                <th>商品链接</th>
+                                <th>商品图片</th>
+                                <th>商品数量</th>
+                                <th>商品进价</th>
+                                <th>入库操作</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div> <!-- /.box-body -->
+                </div> <!-- /.box -->
+            </div> <!-- /.col -->
+        </div> <!-- /.row -->
+    </section>
+
+{% endblock %}
+
+{% block script %}
+
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+    <script src="{% static 'JS/jquery.cookie.js' %}"></script>
+    <script src="{% static 'JS/base.js' %}"></script>
+
+    <script>
+        var purchase_type = '{{ purchase_type }}';
+
+        var columnDefs = [
+            {
+                "targets": [0,2,3,5,6,7,8],
+                "searchable": false
+            },
+            {
+                "targets": [0,3,4,5,6,7],
+                "orderable": false
+            },
+            {
+                "targets": [5],
+                // 列渲染 以';;'分割url 分别生成超链接
+                "render": function(data, type, row) {
+                    var data_html = '';
+                    data = data.split(';;');
+                    // 空数组作为条件是为true，换算时为false
+                    if(data == false){
+                        return ''
+                    } else{
+                        $.each(data, function (i,v) {
+                            if(v){
+                                data_html += '<a target="_blank" href="'+ v +'">链接'+(i+1)+'</a></br>'
+                            }
+                        });
+                        return data_html;
+                    }
+                },
+            },
+            {
+                "targets": [9],
+                "data": null,
+                "width": '60px',
+                "visible": (purchase_type === 'buy'),
+                "render": function (data, type, row) {
+                    //console.log(row[1]['@data-order']);
+                    if (row[1].display){
+                        return '<button onclick="update_stock(\''+row[1]['@data-order'] +
+                            '\')" class="btn btn-primary">入库</button>'
+                    } else {
+                        return ''
+                    }
+                }
+            }
+        ];
+
+        // 添加下拉式筛选框
+        function col_search() {
+            var api = this.api();
+            api.columns([4]).indexes().flatten().each(function(i){
+                var column = api.column(i);
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo($(column.footer()).empty())
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    });
+                column.data().unique().sort().each(function (d, j){
+                    select.append('<option value="'+d+'">'+d+'</option>')
+                });
+            });
+        }
+
+        // 统计（浮点数丢失精度，*100变成整数 运算完 /100）
+        function total_profit(row, data, start, end, display){
+            var api = this.api();
+            var intVal = function (i) {
+                return i*100
+            };
+            api.columns([2]).indexes().flatten().each(function(i){
+                // 所有页数据统计
+                total = api.column(i).data().reduce(function(a, b){
+                        return a + intVal(b);
+                    }, 0);
+
+                // 当前页数据统计
+                pageTotal = api.column(i, {page: 'current'})
+                    .data().reduce(function(a, b){
+                        return a + intVal(b);
+                    }, 0);
+
+                total = total / 100;
+                pageTotal = pageTotal / 100; 
+
+                // 更新表脚
+                $(api.column(i).footer()).html(
+                    '当前：'+ pageTotal +'<br/>全部：'+ total
+                )
+            })
+        }
+
+        $(function () {
+            var table = $('#order_table').DataTable({
+                "paging": true,       <!-- 允许分页 -->
+                "lengthChange": false, <!-- 允许改变每页显示的行数 -->
+                "searching": true,    <!-- 允许内容搜索 -->
+                "ordering": true,     <!-- 允许排序 -->
+                "order": [[1, 'desc']],     <!-- 初始排序列表 -->
+                "info": true,         <!-- 显示信息 -->
+                "pageLength": 50,    <!-- 每页显示 -->
+                "autoWidth": false,  <!-- 自动宽度 -->
+                "scrollX": false,  <!-- 水平滚动 -->
+                "language": language,  <!-- 语言 -->
+                <!--"columns": columns,   自定义每一列属性 -->
+                "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
+                "dom": '<"pull-left"f><"pull-right"i>rtp',
+
+                <!-- 指定列 添加下拉搜索框 -->
+                initComplete: col_search,
+                <!-- 下表头创建回调 统计订单利润 -->
+                "footerCallback": total_profit
+            });
+
+            // 鼠标悬停 高亮行
+            $('#order_table tbody').on('mouseover', 'tr', function () {
+                $(table.row(this).node()).addClass('highlight')
+            }).on('mouseleave', 'tr', function () {
+                $(table.row(this).node()).removeClass('highlight')
+            });
+
+        });
+
+        // 点击采购单号 将发起请求 渲染html填充到模态框 显示
+        $('.pur-info').click(function () {
+            var pur_id = $(this).text();
+
+            $.ajax({
+                url: "{% url 'modify_purchase' %}",
+                type: 'get',
+                data: {
+                    'pur_id': pur_id
+                },
+                success: function (data) {
+                    $('.modal-content').html(data);
+                    $('#myModal').modal('show');
+                }
+            });
+
+        });
+
+        // 修改采购单
+        function update_purchase() {
+            var pur_goods = [];
+            $('#pur_good li').each(function () {
+                var good_info = {};
+                good_info.sku_id = $(this).find('.input-col1').val();
+                good_info.count = $(this).find('#good_count').val();
+                pur_goods.push(good_info);
+            });
+            var data = {'purchase_id': $('#myModalLabel').text(),
+                'purchase_price': $('#pur_price').val(),
+                'purchase_desc': $('#pur_desc').val(),
+                'purchase_goods': pur_goods
+            };
+            console.log(data);
+            $.ajax({
+                url: "{% url 'modify_purchase' %}",
+                type: 'post',
+                headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                data: {
+                    'data_dict': JSON.stringify(data),
+                },
+                success: function (e) {
+                    if (e.status) {
+                        $('#myModal').modal('hide');
+                        showMessage(e.msg);
+                    } else {
+                        $('#myModal').modal('hide');
+                        showMessage(e.msg, 'bg-success');
+                        window.setTimeout(function () {
+                            location.reload()
+                        }, 2100);
+                    }
+                }
+            })
+        }
+
+        // 入库
+        function update_stock(pur_id) {
+            $.get("{% url 'finished_purchase' %}",params={'purchase_id': pur_id}, function (e) {
+                if(!e.status){
+                    showMessage(e.msg, 'bg-success');
+                    window.setTimeout(function () {
+                            location.reload()
+                        }, 2100);
+                } else {
+                    showMessage(e.msg)
+                }
+            })
+        }
+
+    </script>
+
+{% endblock %}

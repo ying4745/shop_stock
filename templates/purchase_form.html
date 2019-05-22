@@ -1,0 +1,139 @@
+{% load static %}
+
+<div class="modal-header" style="text-align: center">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title" id="myModalLabel">{{ pur_obj.purchase_id }}</h4>
+    {% csrf_token %}
+</div>
+<div class="modal-body">
+    <div class="box-content" style="padding: 0 60px;">
+
+        <button id="add-good" class="btn btn-default btn-block" style="margin-bottom: 8px">新增商品</button>
+
+        <ul id="pur_good" class="list-group">
+            {% for pur_good in pur_obj.purchasegoods_set.all %}
+
+                <li class="list-group-item">
+                    <div class="input-group">
+                        <span class="input-group-addon good_img" style="padding: 0;">
+                            <img src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}" width="31" height="31">
+                        </span>
+
+                        <input type="text" class="form-control input-col1"
+                               onchange="update_img(this)" value="{{ pur_good.sku_good.sku_id }}">
+
+                        <div class="input-group input-col2">
+                            <input id="good_count" type="text" class="form-control" value="{{ pur_good.count }}">
+                            <div class="input-group-btn-vertical">
+                                <button class="btn btn-default input-plus" type="button"><i class="fa fa-caret-up"></i>
+                                </button>
+                                <button class="btn btn-default input-minus" type="button"><i
+                                        class="fa fa-caret-down"></i>
+                                </button>
+                            </div>
+                            <span class="input-group-addon input-group-del">
+                                <i class="fa fa-trash"></i>
+                            </span>
+                        </div>
+                    </div>
+                </li>
+
+            {% endfor %}
+        </ul>
+
+        <div class="form-group">
+            <input type="text" id="pur_price" class="form-control" placeholder="采购总额" value="{{ pur_obj.total_price }}">
+        </div>
+        <div class="form-group">
+            <textarea id="pur_desc" class="form-control" rows="1" placeholder="备注信息" value="{{ pur_obj.desc }}"></textarea>
+        </div>
+
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" class="btn btn-primary" onclick="update_purchase()">确认修改</button>
+</div>
+
+
+<script>
+
+    // 输入sku_id 更新默认图片地址（不是默认方式找不到）
+    function update_img(input_obj) {
+        var sku_id = $(input_obj).val(), spu_id;
+        // 根据sku 按默认存储方式 匹配出文件名
+        if (sku_id.indexOf('#') !== -1 && sku_id.match(/.+_#[^.]{2}/)) {
+            sku_id = sku_id.match(/.+_#[^.]{2}/)[0].replace('#', '');
+        } else if (sku_id.indexOf('_') !== -1) {
+            sku_id = sku_id.match(/(.*)_/)[1];
+        }
+        // 有'_' 则去除符号之后字符 即为spu
+        if (sku_id.indexOf('_') !== -1) {
+            spu_id = sku_id.match(/(.+?)_/)[1];
+        } else {
+            spu_id = sku_id
+        }
+        // 更新图片src
+        var img_path = '/media/' + spu_id + '/' + sku_id + '.jpg';
+        //console.log(img_path);
+        $(input_obj).prev().find('img').attr('src', img_path);
+    }
+
+    // 新增商品
+    $('#add-good').click(function () {
+        var good_html = '<li class="list-group-item">' +
+            '               <div class="input-group">' +
+            '                    <span class="input-group-addon good_img" style="padding: 0;">' +
+            '                        <img src="" width="31" height="31">' +
+            '                    </span>' +
+            '                    <input type="text" class="form-control input-col1" onchange="update_img(this)">' +
+            '                    <div class="input-group input-col2">' +
+            '                        <input id="good_count1" type="text" class="form-control" value="1">' +
+            '                        <div class="input-group-btn-vertical">' +
+            '                            <button class="btn btn-default input-plus" type="button"><i class="fa fa-caret-up"></i>' +
+            '                            </button>' +
+            '                            <button class="btn btn-default input-minus" type="button"><i class="fa fa-caret-down"></i>' +
+            '                            </button>' +
+            '                        </div>' +
+            '                        <span class="input-group-addon input-group-del">' +
+            '                            <i class="fa fa-trash"></i>' +
+            '                        </span>' +
+            '                    </div>' +
+            '                </div>' +
+            '            </li>';
+        $(this).next().append(good_html);
+    });
+
+    // 点击删除 商品
+    $('.modal-content').on('click', '.input-group-del', function () {
+        $(this).parents('.list-group-item').remove();
+    });
+
+    // 商品数量加
+    $('#pur_good').on('click', '.input-plus', function () {
+        var input_obj = $(this).parent().prev();
+        input_obj.val(parseInt(input_obj.val(), 10) + 1);
+    });
+    // 商品数量减 直到为0
+    $('#pur_good').on('click', '.input-minus', function () {
+        var input_obj = $(this).parent().prev();
+        var num = parseInt(input_obj.val(), 10);
+        if (num <= 0) {
+            input_obj.val(0);
+        } else {
+            input_obj.val(num - 1);
+        }
+    });
+
+    // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
+    $("#pur_good").on('mouseover mouseout', '.good_img', function (e) {
+        if(e.type === 'mouseover'){
+            $(this).append('<p id="bigimage"><img src="' +
+                $(this).find('img').attr('src') + '"></p>');
+        } else {
+           $("#bigimage").remove();
+        }
+    });
+
+</script>

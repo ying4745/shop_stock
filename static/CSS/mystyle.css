@@ -1,0 +1,114 @@
+/*悬浮小图显示图片*/
+.good_img {
+    position: relative;
+}
+
+#bigimage {
+    position: absolute;
+    right: 80px;
+    top: 30px;
+}
+
+/*选中添加的样式*/
+.selected {
+    background-color: #5eb4e4 !important;
+}
+
+/*高亮样式*/
+.highlight {
+    background-color: #cccccc !important;
+}
+
+/*弹出消息框*/
+.showMessage {
+    padding: 6px 0;
+    border-radius: 2px;
+    position: fixed;
+    top: 200px;
+    left: 30%;
+    color: #444444;
+    font-size: 20px;
+    width: 500px;
+    text-align: center;
+    z-index: 999;
+}
+
+/*发货按钮*/
+.ship_btn {
+    position: fixed;
+    top: 52px;
+    right: 6%;
+    z-index: 988;
+}
+
+/*商品更新输入框*/
+.good_update {
+    position: fixed;
+    top: 51px;
+    left: 8%;
+    z-index: 988;
+}
+
+.good_update label {
+    margin-right: 6px;
+}
+
+#order_table_filter label {
+    margin-right: 20px;
+}
+
+/*表格上面 抓取数据按钮*/
+.update_div {
+    margin-left: 30px;
+}
+
+.update_div a, .update_div button {
+    margin: 0 20px 10px 0;
+}
+
+.update_div .bg-purple {
+    margin-right: 50px;
+}
+
+/*数字加减框*/
+.input-group-btn-vertical {
+    position: relative;
+    white-space: nowrap;
+    vertical-align: middle;
+    display: table-cell;
+}
+
+.input-group-btn-vertical > .btn {
+    display: block;
+    float: none;
+    width: 100%;
+    max-width: 100%;
+    padding: 8px;
+    margin-left: -1px;
+    position: relative;
+}
+
+.input-group-btn-vertical > .btn:last-child {
+    margin-top: -2px;
+}
+
+.input-group-btn-vertical i {
+    position: absolute;
+    top: 0;
+    left: 4px;
+}
+
+/*采购单 商品列表布局*/
+.input-group input.input-col1 {
+    width: 270px;
+}
+
+.input-col2 {
+    width: 116px;
+}
+
+/*表格内容居中*/
+#order_table td, #order_table th {
+    text-align: center;
+    vertical-align: middle;
+}
