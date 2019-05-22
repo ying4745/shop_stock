@@ -157,7 +157,7 @@ class PhGoodsSpider():
                     # 如果是创建spu记录 sku异常时 删除spu记录 报错
                     if is_c:
                         g_spu.delete()
-                        save_log(self.error_path, e.args[0])
+                        save_log(self.error_path, e.args)
                     raise e
 
     def get_goods(self, page=1, is_all=False):
@@ -249,7 +249,7 @@ class PhGoodsSpider():
                 try:
                     good_obj = GoodsSKU.objects.get(sku_id=good_sku)
                 except Exception as e:
-                    save_log(self.error_path, e.args[0])
+                    save_log(self.error_path, e.args)
                     raise e
 
                 # 商品的成本  每件商品进价上加一元 国内运杂费
@@ -265,7 +265,7 @@ class PhGoodsSpider():
                 except Exception as e:
                     if is_c:
                         order_obj.delete()
-                        save_log(self.error_path, e.args[0])
+                        save_log(self.error_path, e.args)
                     raise e
 
             # 有订单收入的状态下，计算订单利润(人民币)

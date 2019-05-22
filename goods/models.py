@@ -37,7 +37,7 @@ class GoodsSKU(BaseModel):
     """商品SKU 子变体"""
     goods = models.ForeignKey('Goods', on_delete=models.CASCADE, verbose_name='主商品SPU')
     sku_id = models.CharField(max_length=64, unique=True, verbose_name='子商品SKU')
-    desc = models.CharField(max_length=32, verbose_name='商品规格')
+    desc = models.CharField(max_length=64, verbose_name='商品规格')
     buy_price = models.DecimalField(max_digits=10, decimal_places=2,
                                     default=0, verbose_name='进货价')
     my_sale_price = models.DecimalField(max_digits=10, decimal_places=2,
@@ -46,7 +46,7 @@ class GoodsSKU(BaseModel):
                                         default=0, verbose_name='菲律宾售价')
     stock = models.IntegerField(default=0, verbose_name='库存')
     sales = models.IntegerField(default=0, verbose_name='销量')
-    shelf = models.CharField(max_length=48, default='001', verbose_name='货架号')
+    shelf = models.CharField(max_length=64, default='001', verbose_name='货架号')
     image = models.ImageField(upload_to=good_spu_path, null=True,
                               blank=True, verbose_name='商品图片')
 
