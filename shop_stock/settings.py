@@ -87,7 +87,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'aikemall',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': 'ying4745',
         'HOST': 'localhost',
         'PORT': 3306,
     }
