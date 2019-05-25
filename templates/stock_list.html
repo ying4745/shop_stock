@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}入库单{% endblock %}
+
+{% block content %}
+
+    <section class="content">
+        <div class="row">
+            <div class="update_div">
+
+                <button class="btn bg-blue">
+                    <a href="{% url 'buy_product' %}"
+                       style="color: #fff;"><i class="fa fa-truck"></i> 采购中订单</a>
+                </button>
+
+                <button class="btn bg-blue-active"><i class="fa fa-check-square"></i> 已入库订单
+                </button>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">入库单
+                            <small>已入库</small>
+                        </h3>
+                    </div>
+                    <div class="box-body">
+                        <table id="order_table" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>采购单号</th>
+                                <th>采购总额</th>
+                                <th>备注</th>
+                                <th>序号</th>
+                                <th>商品SKU</th>
+                                <th>商品链接</th>
+                                <th>商品图片</th>
+                                <th>商品数量</th>
+                                <th>商品进价</th>
+                            </tr>
+                            </thead>
+
+                            <tfoot>
+                            <tr>
+                                <th>采购单号</th>
+                                <th>采购总额</th>
+                                <th>备注</th>
+                                <th>序号</th>
+                                <th>商品SKU</th>
+                                <th>商品链接</th>
+                                <th>商品图片</th>
+                                <th>商品数量</th>
+                                <th>商品进价</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div> <!-- /.box-body -->
+                </div> <!-- /.box -->
+            </div> <!-- /.col -->
+        </div> <!-- /.row -->
+    </section>
+
+{% endblock %}
+
+{% block script %}
+
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+    <script src="{% static 'JS/jquery.cookie.js' %}"></script>
+    <script src="{% static 'JS/base.js' %}"></script>
+
+    <script>
+        var columnDefs = [
+            {
+                "targets": [0, 1, 2, 3, 5, 6, 7, 8],
+                "searchable": false
+            },
+            {
+                "targets": [1, 2, 3, 4, 5, 6, 7, 8],
+                "orderable": false
+            },
+        ];
+
+        // 统计（浮点数丢失精度，*100变成整数 运算完 /100）
+        function total_profit(row, data, start, end, display) {
+            var api = this.api();
+            var intVal = function (i) {
+                return i * 100
+            };
+            api.columns([7]).indexes().flatten().each(function (i) {
+                // 所有页数据统计
+                total = api.column(i).data().reduce(function (a, b) {
+                    return a + intVal(b);
+                }, 0);
+
+                // 当前页数据统计
+                pageTotal = api.column(i, {page: 'current'})
+                    .data().reduce(function (a, b) {
+                        return a + intVal(b);
+                    }, 0);
+
+                total = total / 100;
+                pageTotal = pageTotal / 100;
+
+                // 更新表脚
+                $(api.column(i).footer()).html(
+                    '当前：' + pageTotal + '<br/>全部：' + total
+                )
+            })
+        }
+
+        // 行创建回调
+        function rowCallBack(row, data, index) {
+            //row代表表格的每一行，每行数据都会进入这个方法走一遍
+            console.log(data.row_id, data.order_good_count);
+            if (data.row_id === 1) {
+                $(row).find("td").each(function () {
+                    $(this).addClass('division-line')
+                });
+                $(row).find("td").eq(0).attr('rowspan', data.order_good_count);
+                $(row).find("td").eq(1).attr('rowspan', data.order_good_count);
+                $(row).find("td").eq(2).attr('rowspan', data.order_good_count);
+            } else {
+                $(row).find("td").eq(0).remove();
+                $(row).find("td").eq(0).remove();
+                $(row).find("td").eq(0).remove();
+            }
+        }
+
+        $(function () {
+            var table = $('#order_table').DataTable({
+                "searching": true,    <!-- 允许内容搜索 -->
+                "ordering": true,     <!-- 允许排序 -->
+                "order": [[0, 'desc']],     <!-- 初始排序列表 -->
+                "info": true,         <!-- 显示信息 -->
+                "pageLength": 50,    <!-- 每页显示 -->
+                "autoWidth": false,  <!-- 自动宽度 -->
+                "scrollX": false,  <!-- 水平滚动 -->
+                "language": language,  <!-- 语言 -->
+                "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
+                "dom": '<"table_top"fi>prtp',
+                <!-- 下表头创建回调 统计订单利润 -->
+                "footerCallback": total_profit,
+                "rowCallback": function (row, data, index) {
+                    if (rowCallBack)
+                        rowCallBack(row, data, index);
+                },
+
+                "serverSide": true,
+                "processing": true,
+                // 发送post请求
+                "ajax": {
+                    "type": 'POST',
+                    "url": "{% url 'purchase_list' %}",
+                    "data": function (d) {
+                        return $.extend(d, {
+                            "csrfmiddlewaretoken": $.cookie('csrftoken')
+                        });
+                    }
+                },
+                <!-- 自定义每一列属性 -->
+                "columns": [
+                    {"data": "purchase"},
+                    {"data": "total_price"},
+                    {"data": "desc"},
+                    {
+                        "data": null,
+                        "render": function (data, type, row, meta) {
+                            return meta.row + 1
+                        }
+                    },
+                    {"data": "sku_good"},
+                    {
+                        "data": "sku_url",
+                        // 列渲染 以';;'分割url 分别生成超链接
+                        "render": function (data, type, row, meta) {
+                            var data_html = '';
+                            data = data.split(';;');
+                            if (data == false) {
+                                return ''
+                            } else {
+                                $.each(data, function (i, v) {
+                                    if (v) {
+                                        data_html += '<a target="_blank" href="' + v + '">链接' + (i + 1) + '</a></br>'
+                                    }
+                                });
+                                return data_html;
+                            }
+                        },
+                    },
+                    {
+                        "data": "sku_img",
+                        "render": function (data, type, row, meta) {
+                            // meta row和col 索引信息
+                            $(table.cell(meta.row, meta.col).node()).addClass('good_img');
+                            return '<img width="60" height="60" src="{{ MEDIA_URL }}' + data + '">'
+                        }
+                    },
+                    {"data": "count"},
+                    {"data": "price"},
+                    {
+                        "data": "row_id",
+                        "visible": false
+                    },
+                    {
+                        "data": "order_good_count",
+                        "visible": false
+                    },
+                ]
+            });
+
+            // 鼠标悬停 高亮行
+            $('#order_table tbody').on('mouseover', 'tr', function () {
+                $(table.row(this).node()).addClass('highlight')
+            }).on('mouseleave', 'tr', function () {
+                $(table.row(this).node()).removeClass('highlight')
+            });
+
+            // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
+            $("#order_table").on('mouseover mouseout', '.good_img', function (e) {
+                if (e.type === 'mouseover') {
+                    $(this).append('<p id="bigimage"><img src="' +
+                        $(this).find('img').attr('src') + '"></p>');
+                } else {
+                    $("#bigimage").remove();
+                }
+            });
+
+        });
+
+    </script>
+
+{% endblock %}

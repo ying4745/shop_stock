@@ -19,11 +19,11 @@
           apply the skin class to the body tag so the changes take effect. -->
     <link rel="stylesheet" href="{% static 'adminlet-2.4.10/dist/css/skins/skin-blue.min.css' %}">
 
+    <link rel="stylesheet"
+          href="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'CSS/mystyle.css' %}">
     <!-- 顶部css -->
     {% block css %}
-        <link rel="stylesheet"
-          href="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
-        <link rel="stylesheet" href="{% static 'CSS/mystyle.css' %}">
     {% endblock %}
 
 </head>
@@ -66,13 +66,13 @@ desired effect
                             </a>
                         </li>
                         <li>
-                            <a href="{% url 'goods_list' %}">
-                                <i class="fa fa-barcode"></i> <span>商品管理</span>
+                            <a href="{% url 'buy_product' %}">
+                                <i class="fa fa-cart-plus"></i> <span>采购管理</span>
                             </a>
                         </li>
                         <li>
-                            <a href="{% url 'buy_product' %}?purchase_type=buy">
-                                <i class="fa fa-cart-plus"></i> <span>采购管理</span>
+                            <a href="{% url 'goods_list' %}">
+                                <i class="fa fa-barcode"></i> <span>商品管理</span>
                             </a>
                         </li>
                         <li><a href="/xadmin/" class="fa fa-database" target="_blank"> 后台管理</a></li>
@@ -174,15 +174,6 @@ desired effect
 <script src="{% static 'adminlet-2.4.10/dist/js/adminlte.min.js' %}"></script>
 
 {% block script %}{% endblock %}
-
-<script>
-    $('ul.sidebar-menu li').each(function(i){
-        if($(this).children().first().attr('href')==='{{ request.path }}'){
-            $(this).addClass('active');
-        }else{
-        }
-    });
-</script>
 
 </body>
 </html>

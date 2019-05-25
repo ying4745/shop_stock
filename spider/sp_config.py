@@ -25,6 +25,8 @@ PH_ERROR_LOG = 'spider/log/ph_error_log.log'
 
 # 每个订单附加杂费(包装、送货）（人民币）
 ORDER_ADD_FEE = 2.0
+# 每件商品附加 国内运杂费
+PRODUCT_ADD_FEE = 1.0
 
 
 # 马来西亚配置

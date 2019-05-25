@@ -2,33 +2,31 @@
 {% load static %}
 {% block title %}已完成订单{% endblock %}
 
+{% block css %}
+    <link rel="stylesheet" href="{% static 'adminlet-2.4.10/bower_components/bootstrap-daterangepicker/daterangepicker.css' %}">
+{% endblock %}
+
 {% block content %}
 
     <section class="content">
         <div class="row">
             <div class="update_div">
-                <a class="btn bg-blue" href="/"><i class="fa fa-clone"></i> 待出货订单
-                    <span class="badge bg-red">{{ unfinished_orders }}</span>
-                </a>
+                <a class="btn bg-blue" href="/"><i class="fa fa-clone"></i> 待出货订单</a>
 
                 {% if request.GET.order_type == 'shipping' %}
-                    <a class="btn bg-blue-active"><i class="fa fa-truck"></i> 运送中订单
-                        <span class="badge bg-yellow">{{ orders | length }}</span>
-                    </a>
+                    <a class="btn bg-blue-active"><i class="fa fa-truck"></i> 运送中订单</a>
                 {% else %}
                     <a class="btn bg-blue" href="{% url 'order_list' %}?order_type=shipping">
                         <i class="fa fa-truck"></i> 运送中订单</a>
                 {% endif %}
 
                 {% if request.GET.order_type == 'finished' %}
-                    <a class="btn bg-blue-active"><i class="fa fa-check-square"></i> 已完成订单
-                        <span class="badge bg-olive">{{ orders | length }}</span>
-                    </a>
+                    <a class="btn bg-blue-active"><i class="fa fa-check-square"></i> 已完成订单</a>
                 {% else %}
                     <a class="btn bg-blue" href="{% url 'order_list' %}?order_type=finished">
-                        <i class="fa fa-truck"></i> 已完成订单</a>
+                        <i class="fa fa-check-square"></i> 已完成订单</a>
                 {% endif %}
-
+                <p id="hide_order_type" style="display: none;">{{ request.GET.order_type }}</p>
             </div>
         </div>
 
@@ -39,13 +37,15 @@
                         <h3 class="box-title">已发货订单
                             <small>已统计</small>
                         </h3>
+                        {% csrf_token %}
+                        <i id="date_range" data-min="" data-max=""></i>
                     </div>
                     <div class="box-body">
                         <table id="order_table" class="table table-bordered table-striped">
                             <thead>
                             <tr>
-                                <th>时间</th>
                                 <th>序号</th>
+                                <th>时间</th>
                                 <th>国家</th>
                                 <th>订单号</th>
                                 <th>客户名</th>
@@ -56,46 +56,10 @@
                             </tr>
                             </thead>
 
-                            <tbody>
-
-                                {% for order in orders %}
-                                    <tr>
-                                        {% ifchanged %}
-                                            <td data-search="{{ order.order_time }}" data-order="{{ order.order_time }}">{{ order.order_time }}</td>
-                                        {% else %}
-                                            <td data-search="{{ order.order_time }}" data-order="{{ order.order_time }}"></td>
-                                        {% endifchanged %}
-                                        <td>{{ forloop.counter }}</td>
-
-                                        {% if order.order_country == 'PHP' %}
-                                            <td class="text-green text-bold">{{ order.get_order_country_display }}</td>
-                                        {% elif order.order_country == 'MYR' %}
-                                            <td class="text-blue text-bold">{{ order.get_order_country_display }}</td>
-                                        {% else %}
-                                            <td class="text-purple text-bold">{{ order.get_order_country_display }}</td>
-                                        {% endif %}
-
-                                        <td>{{ order.order_id }}</td>
-
-                                        <td>{{ order.customer }}</td>
-
-                                        <td>{{ order.total_price }}</td>
-
-                                        <td>{{ order.goods_num }}</td>
-
-                                        <td>{{ order.order_income }}</td>
-
-                                        <td>{{ order.order_profit }}</td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>没有数据！</tr>
-                                {% endfor %}
-                            </tbody>
-
                             <tfoot>
                             <tr>
-                                <th>时间</th>
                                 <th>序号</th>
+                                <th>时间</th>
                                 <th>国家</th>
                                 <th>订单号</th>
                                 <th>客户名</th>
@@ -118,46 +82,59 @@
 
     <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+    <!-- 日期选择范围 -->
+    <script src="{% static 'adminlet-2.4.10/bower_components/moment/min/moment.min.js' %}"></script>
+    <script src="{% static 'adminlet-2.4.10/bower_components/bootstrap-daterangepicker/daterangepicker.js' %}"></script>
+
     <script src="{% static 'JS/jquery.cookie.js' %}"></script>
     <script src="{% static 'JS/base.js' %}"></script>
 
     <script>
+
+        //定义locale汉化插件
+        var locale = {
+            "format": 'YY-MM-DD',
+            "separator": " ~ ",
+            "applyLabel": "确定",
+            "cancelLabel": "取消",
+            "fromLabel": "起始时间",
+            "toLabel": "结束时间'",
+            "customRangeLabel": "自定义",
+            "weekLabel": "W",
+            "daysOfWeek": ["日", "一", "二", "三", "四", "五", "六"],
+            "monthNames": ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"],
+            "firstDay": 1
+        };
+
         var columnDefs = [
             {
-                "targets": [1,5,6,7,8],
+                "targets": [0,2,5,6,7,8],
                 "searchable": false
             },
             {
-                "targets": [1,4,6],
+                "targets": [0,4,6],
                 "orderable": false
             },
         ];
 
         // 订单利润低于2元 添加背景色
-        function createdRow(row, data, index ) {
-            if (data[8] <= 50) {
+        function createdRow(row, data, index) {
+            if (data.order_profit <= 2) {
                 $(row).css("background-color", "#f6cbcb");
             }
         }
 
         // 添加下拉式筛选框
         function col_search() {
-            var api = this.api();
-            api.columns([0,2,3]).indexes().flatten().each(function(i){
-                var column = api.column(i);
-                var select = $('<select><option value=""></option></select>')
-                    .appendTo($(column.footer()).empty())
-                    .on('change', function () {
-                        var val = $.fn.dataTable.util.escapeRegex(
-                            $(this).val()
-                        );
-                        column
-                            .search( val ? '^'+val+'$' : '', true, false )
-                            .draw();
-                    });
-                column.data().unique().sort().each(function (d, j){
-                    select.append('<option value="'+d+'">'+d+'</option>')
+            var column = this.api().column(2);
+            var select = $('<select><option value=""></option></select>')
+                .appendTo($(column.footer()).empty())
+                .on('change', function () {
+                    var val = $(this).val();
+                    column.search( val ).draw();
                 });
+            column.data().unique().sort().each(function (d, j){
+                select.append('<option value="'+d+'">'+d+'</option>')
             });
         }
 
@@ -191,62 +168,117 @@
 
         $(function () {
             var table = $('#order_table').DataTable({
-                "paging": true,       <!-- 允许分页 -->
-                "lengthChange": false, <!-- 允许改变每页显示的行数 -->
                 "searching": true,    <!-- 允许内容搜索 -->
                 "ordering": true,     <!-- 允许排序 -->
-                "order": [[0, 'desc']],     <!-- 初始排序列表 -->
+                "order": [[1, 'desc']],     <!-- 初始排序列表 -->
                 "info": true,         <!-- 显示信息 -->
                 "pageLength": 50,    <!-- 每页显示 -->
                 "autoWidth": false,  <!-- 自动宽度 -->
                 "scrollX": false,  <!-- 水平滚动 -->
                 "language": language,  <!-- 语言 -->
-                <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
-                "dom": '<"pull-left"f><"pull-right"i>rtp',
-
                 "createdRow": createdRow,
                 <!-- 指定列 添加下拉搜索框 -->
                 initComplete: col_search,
+                "dom": '<"pull-left"f><"pull-right"i>rtp',
                 <!-- 统计订单利润 -->
-                "footerCallback": total_profit
+                "footerCallback": total_profit,
+
+                // 开启服务器模式
+                "serverSide": true,
+                // 开启处理功能
+                "processing": true,
+                // 发送post请求
+                "ajax": {
+                    "type": 'POST',
+                    "url": "{% url 'order_list' %}",
+                    // 添加额外参数
+                    "data": function (d) {
+                        return $.extend(d, {
+                            "min_date": $('#date_range').attr('data-min'),
+                            "max_date": $('#date_range').attr('data-max'),
+                            "order_type": $('#hide_order_type').text(),
+                            "csrfmiddlewaretoken": $.cookie('csrftoken')
+                        });
+                    }
+                },
+                <!-- 自定义每一列属性 -->
+                "columns": [
+                    {
+                        "data": null,
+                        "render": function (data, type, row, meta) {
+                            return meta.row + 1
+                        }
+                    },
+                    {"data": 'order_time'},
+                    {
+                        "data": 'order_country',
+                        "render": function (data, type, row, meta) {
+                            // meta row和col 索引信息
+                            var td_obj = $(table.cell(meta.row, meta.col).node());
+                            if(data === '马来西亚'){
+                                td_obj.addClass('text-blue')
+                            } else if (data === '菲律宾') {
+                                td_obj.addClass('text-green')
+                            } else if (data === '泰国') {
+                                td_obj.addClass('text-purple')
+                            }
+                            return data
+                        }
+                    },
+                    {"data": 'order_id'},
+                    {"data": 'customer'},
+                    {"data": 'total_price'},
+                    {"data": 'order_g_num'},
+                    {"data": 'order_income'},
+                    {"data": 'order_profit'},
+                ]
             });
 
-            // 表格头部 添加两个输入框
-            $('#order_table_filter').append('<label>范围筛选：<input type="text" class="form-control input-sm" ' +
-                'id="input_min" style="width: 100px;" placeholder="起始日期"></label>' +
-                '<label><input type="text" class="form-control input-sm" id="input_max" ' +
-                'style="width: 100px;" placeholder="结束日期"></label>');
+            // 表格头部 添加日期选择框
+            $('#order_table_filter').append('<label>日期范围：<div class="input-group">' +
+                '<div class="input-group-addon"><i class="fa fa-calendar"></i></div>' +
+                '<input type="text" class="form-control pull-right" id="reservation"></div></label>' +
+                '<label><button id="clear-date-range" class="btn bg-gray">清除日期</button></label>'
+            );
+
+            //Date range picker
+            $('#reservation').daterangepicker({
+                'locale': locale,
+                opens: 'center', // 日期选择框 显示位置
+                linkedCalendars: false, // 禁止日期框前后为连续一个月，可任意选择月份
+                alwaysShowCalendars: true,  // 始终显示日期选择框
+                autoApply: true,  // 取消确认按钮
+                ranges: {
+                    '今日': [moment(), moment()],
+                    '昨日': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    '最近7日': [moment().subtract(6, 'days'), moment()],
+                    '最近30日': [moment().subtract(29, 'days'), moment()],
+                    '本月': [moment().startOf('month'), moment().endOf('month')],
+                    '上月': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                startDate: moment().subtract(6, 'days'),
+                endDate: moment()
+
+            }, function (start, end, label) {
+                $('#date_range').attr('data-min', start.format('YYMMDD'))
+                    .attr('data-max', end.format('YYMMDD'));
+                table.ajax.reload()
+            });
+
+            // 鼠标悬停 高亮行
+            $('#order_table tbody').on('mouseover', 'tr', function () {
+                $(table.row(this).node()).addClass('highlight')
+            }).on('mouseleave', 'tr', function () {
+                $(table.row(this).node()).removeClass('highlight')
+            });
 
             // 范围筛选 绑定事件
-            $('#input_min, #input_max').keyup( function() {
-                table.draw();
-            } );
+            $('#clear-date-range').click(function () {
+                $('#date_range').attr('data-min', '').attr('data-max', '');
+                table.ajax.reload()
+            })
 
-        });
-
-        // 范围筛选 判断满足条件的返回true 则显示出来
-        $.fn.dataTable.ext.search.push(
-            function( settings, data, dataIndex ) {
-                var min = parseInt($('#input_min').val(), 10);
-                var max = parseInt($('#input_max').val(), 10);
-                var date = parseInt(data[0]) || 0;
-
-                return (isNaN(min) && isNaN(max)) ||
-                    (isNaN(min) && date <= max) ||
-                    (min <= date && isNaN(max)) ||
-                    (min <= date && date <= max);
-            }
-        );
-
-        // 单选，选中添加class
-        $('#order_table tbody').on('click', 'tr', function (){
-            if($(this).hasClass('selected')){
-                $(this).removeClass('selected')
-            } else {
-                $('#order_table tbody tr.selected').removeClass('selected');
-                $(this).addClass('selected')
-            }
         });
 
     </script>

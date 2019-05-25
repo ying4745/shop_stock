@@ -112,3 +112,14 @@
     text-align: center;
     vertical-align: middle;
 }
+/*表格头 搜索、信息框*/
+.table_top {
+    float: left;
+}
+.table_top div {
+    display: inline-block;
+}
+/*入库单 分割线*/
+.division-line {
+    border-top: #267bab solid 3px !important;
+}

@@ -127,7 +127,7 @@ class PhGoodsSpider():
                     raise Exception(err_msg)
 
                 # 根据sku_id中的'#','_'，设置默认图片路径
-                file_path = ''
+                file_path = good['sku'] + '.jpg'
                 if '#' in good['sku']:
                     # 提取编号 '主spu号_#03' 去除'#' 保存默认图片路径为'主spu号_03.jpg
                     if re.match(r'(.*#[^.]{2})', good['sku']):
@@ -253,7 +253,7 @@ class PhGoodsSpider():
                     raise e
 
                 # 商品的成本  每件商品进价上加一元 国内运杂费
-                order_cost += (good_obj.buy_price + 1) * good_info['amount']
+                order_cost += (good_obj.buy_price + sp_config.PRODUCT_ADD_FEE) * good_info['amount']
 
                 g_data = {
                     'count': good_info['amount'],

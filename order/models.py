@@ -35,6 +35,19 @@ class OrderInfo(BaseModel):
     def customer_grade(self):
         return int(self.customer_info.split('%')[0])
 
+    def order_dict(self):
+        order_data = {
+            'order_time': self.order_time,
+            'order_country': self.get_order_country_display(),
+            'order_id': self.order_id,
+            'customer': self.customer,
+            'total_price': self.total_price,
+            'order_g_num': self.ordergoods_set.count(),
+            'order_income': self.order_income,
+            'order_profit': self.order_profit,
+        }
+        return order_data
+
     class Meta:
         db_table = 'order_info'
         verbose_name = '订单详情'
@@ -82,6 +95,7 @@ class PurchaseOrder(BaseModel):
                                           default=1, verbose_name='采购状态')
 
     class Meta:
+        ordering = ['purchase_id']
         db_table = 'purchase_order'
         verbose_name = '采购单'
         verbose_name_plural = verbose_name
@@ -99,6 +113,20 @@ class PurchaseGoods(BaseModel):
     count = models.IntegerField(default=1, verbose_name='商品数量')
     price = models.DecimalField(max_digits=10, decimal_places=2,
                                 default=0, verbose_name='采购价格')
+
+    def stock_dict(self):
+        stock_data = {
+            'order_good_count': self.purchase.purchasegoods_set.count(),
+            'purchase': self.purchase.purchase_id,
+            'total_price': self.purchase.total_price,
+            'desc': self.purchase.desc,
+            'sku_good': self.sku_good.sku_id,
+            'sku_url': self.sku_good.goods.g_url,
+            'sku_img': str(self.sku_good.image),
+            'count': self.count,
+            'price': self.price,
+        }
+        return stock_data
 
     class Meta:
         db_table = 'purchase_goods'

@@ -4,11 +4,37 @@
 
 {% block content %}
 
-    <!-- 模态框 -->
-    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <!-- 模态框内容 -->
+    <!-- 采购单修改 模态框 -->
+    <div>
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content purchase-modal">
+                    <!-- 模态框内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 模态框 结束 -->
+
+    <!-- 入库确认 模态框 -->
+    <div>
+        <div class="modal stock-modal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">×</span></button>
+                        <h4 class="modal-title">入库确认</h4>
+                    </div>
+                    <div class="modal-body" style="text-align: center;">
+                        <p>请确认采购单：<span id="stock-order-id" class="text-bold"></span> 的商品已清点到货</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        <button type="button" onclick="update_stock()" class="btn btn-primary">确认入库</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -17,27 +43,15 @@
     <section class="content">
         <div class="row">
             <div class="update_div">
-                {% if request.GET.purchase_type == 'buy' %}
-                    <button class="btn bg-blue-active"><i class="fa fa-truck"></i> 采购中订单
-                        <span class="badge bg-yellow">{{ purchase_orders | length }}</span>
-                    </button>
-                {% else %}
-                    <button class="btn bg-blue">
-                        <a href="{% url 'buy_product' %}?purchase_type=buy"
-                        style="color: #fff;"><i class="fa fa-truck"></i> 采购中订单</a>
-                    </button>
-                {% endif %}
 
-                {% if request.GET.purchase_type == 'stock' %}
-                    <button class="btn bg-blue-active"><i class="fa fa-check-square"></i> 已入库订单
-                    <span class="badge bg-olive">{{ purchase_orders | length }}</span>
-                    </button>
-                {% else %}
-                    <button class="btn bg-blue">
-                        <a href="{% url 'buy_product' %}?purchase_type=stock"
-                        style="color: #fff;"><i class="fa fa-truck"></i> 已入库订单</a>
-                    </button>
-                {% endif %}
+                <button class="btn bg-blue-active"><i class="fa fa-truck"></i> 采购中订单
+                    <span class="badge bg-yellow">{{ purchase_orders | length }}</span>
+                </button>
+
+                <button class="btn bg-blue"><a href="{% url 'purchase_list' %}" style="color: #fff;">
+                    <i class="fa fa-check-square"></i> 已入库订单
+                    <span class="badge bg-olive">{{ stock_orders_num }}</span></a>
+                </button>
 
             </div>
         </div>
@@ -69,30 +83,33 @@
 
                             <tbody>
 
-                                {% for purchase in purchase_orders %}
-                                    {% for pur_good in purchase.purchasegoods_set.all  %}
-                                        <tr>
-                                            {% if forloop.first %}
-                                                <td>{{ forloop.parentloop.counter }}</td>
-                                                <td data-search="{{ purchase.purchase_id }}"
-                                                    data-order="{{ purchase.purchase_id }}">
-                                                    <a class="pur-info" href="javascript:;" >{{ purchase.purchase_id }}</a></td>
-                                                <td>{{ purchase.total_price }}</td>
-                                                <td>{{ purchase.desc }}</td>
-                                            {% else %}
-                                                <td></td>
-                                                <td data-search="{{ purchase.purchase_id }}"
-                                                    data-order="{{ purchase.purchase_id }}"></td>
-                                                <td></td>
-                                                <td></td>
-                                            {% endif %}
+                            {% for purchase in purchase_orders %}
+                                {% for pur_good in purchase.purchasegoods_set.all %}
+                                    <tr>
+                                        {% if forloop.first %}
+                                            <td>{{ forloop.parentloop.counter }}</td>
+                                            <td data-search="{{ purchase.purchase_id }}"
+                                                data-order="{{ purchase.purchase_id }}">
+                                                <a class="pur-info" href="javascript:;">
+                                                    {{ purchase.purchase_id }}</a>
+                                            </td>
+                                            <td>{{ purchase.total_price }}</td>
+                                            <td>{{ purchase.desc }}</td>
+                                        {% else %}
+                                            <td></td>
+                                            <td data-search="{{ purchase.purchase_id }}"
+                                                data-order="{{ purchase.purchase_id }}"></td>
+                                            <td></td>
+                                            <td></td>
+                                        {% endif %}
 
                                         <td>{{ pur_good.sku_good.sku_id }}</td>
 
                                         <td>{{ pur_good.sku_good.goods.g_url }}</td>
 
                                         <td class="good_img">
-                                            <img width="60" height="60" src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}">
+                                            <img width="60" height="60"
+                                                 src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}">
                                         </td>
 
                                         <td>{{ pur_good.count }}</td>
@@ -101,11 +118,11 @@
 
                                         <td></td>
                                     </tr>
-                                    {% endfor %}
-
-                                {% empty %}
-                                    <tr>没有数据！</tr>
                                 {% endfor %}
+
+                            {% empty %}
+                                <tr>没有数据！</tr>
+                            {% endfor %}
 
                             </tbody>
 
@@ -140,46 +157,44 @@
     <script src="{% static 'JS/base.js' %}"></script>
 
     <script>
-        var purchase_type = '{{ purchase_type }}';
-
         var columnDefs = [
             {
-                "targets": [0,2,3,5,6,7,8],
+                "targets": [0, 2, 3, 5, 6, 7, 8],
                 "searchable": false
             },
             {
-                "targets": [0,3,4,5,6,7],
+                "targets": [0, 3, 4, 5, 6, 7],
                 "orderable": false
             },
             {
                 "targets": [5],
                 // 列渲染 以';;'分割url 分别生成超链接
-                "render": function(data, type, row) {
+                "render": function (data, type, row) {
                     var data_html = '';
                     data = data.split(';;');
                     // 空数组作为条件是为true，换算时为false
-                    if(data == false){
+                    if (data == false) {
                         return ''
-                    } else{
-                        $.each(data, function (i,v) {
-                            if(v){
-                                data_html += '<a target="_blank" href="'+ v +'">链接'+(i+1)+'</a></br>'
+                    } else {
+                        $.each(data, function (i, v) {
+                            if (v) {
+                                data_html += '<a target="_blank" href="' + v + '">链接' + (i + 1) + '</a></br>'
                             }
                         });
                         return data_html;
                     }
                 },
             },
+            // 入库按钮
             {
                 "targets": [9],
                 "data": null,
                 "width": '60px',
-                "visible": (purchase_type === 'buy'),
                 "render": function (data, type, row) {
                     //console.log(row[1]['@data-order']);
-                    if (row[1].display){
-                        return '<button onclick="update_stock(\''+row[1]['@data-order'] +
-                            '\')" class="btn btn-primary">入库</button>'
+                    if (row[1].display) {
+                        return '<button onclick="stock_modal(this)" data-order="' + row[1]['@data-order'] +
+                            '" class="btn btn-primary">入库</button>'
                     } else {
                         return ''
                     }
@@ -187,10 +202,10 @@
             }
         ];
 
-        // 添加下拉式筛选框
+        // 添加下拉式筛选框 (非服务器模式使用）
         function col_search() {
             var api = this.api();
-            api.columns([4]).indexes().flatten().each(function(i){
+            api.columns([4]).indexes().flatten().each(function (i) {
                 var column = api.column(i);
                 var select = $('<select><option value=""></option></select>')
                     .appendTo($(column.footer()).empty())
@@ -199,42 +214,42 @@
                             $(this).val()
                         );
                         column
-                            .search( val ? '^'+val+'$' : '', true, false )
+                            .search(val ? '^' + val + '$' : '', true, false)
                             .draw();
                     });
-                column.data().unique().sort().each(function (d, j){
-                    select.append('<option value="'+d+'">'+d+'</option>')
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
                 });
             });
         }
 
         // 统计（浮点数丢失精度，*100变成整数 运算完 /100）
-        function total_profit(row, data, start, end, display){
-            var api = this.api();
+        function total_profit(row, data, start, end, display) {
+            var api = this.api();
             var intVal = function (i) {
-                return i*100
-            };
-            api.columns([2]).indexes().flatten().each(function(i){
-                // 所有页数据统计
-                total = api.column(i).data().reduce(function(a, b){
-                        return a + intVal(b);
-                    }, 0);
+                return i * 100
+            };
+            api.columns([2, 7]).indexes().flatten().each(function (i) {
+                // 所有页数据统计
+                total = api.column(i).data().reduce(function (a, b) {
+                    return a + intVal(b);
+                }, 0);
 
-                // 当前页数据统计
-                pageTotal = api.column(i, {page: 'current'})
-                    .data().reduce(function(a, b){
-                        return a + intVal(b);
-                    }, 0);
+                // 当前页数据统计
+                pageTotal = api.column(i, {page: 'current'})
+                    .data().reduce(function (a, b) {
+                        return a + intVal(b);
+                    }, 0);
 
                 total = total / 100;
-                pageTotal = pageTotal / 100; 
+                pageTotal = pageTotal / 100;
 
-                // 更新表脚
-                $(api.column(i).footer()).html(
-                    '当前：'+ pageTotal +'<br/>全部：'+ total
+                // 更新表脚
+                $(api.column(i).footer()).html(
+                    '<span class="text-green">当前：' + pageTotal + '</span><br/>全部：' + total
                 )
             })
-        }
+        }
 
         $(function () {
             var table = $('#order_table').DataTable({
@@ -269,7 +284,8 @@
 
         // 点击采购单号 将发起请求 渲染html填充到模态框 显示
         $('.pur-info').click(function () {
-            var pur_id = $(this).text();
+            // 去除空白符
+            var pur_id = $.trim($(this).text());
 
             $.ajax({
                 url: "{% url 'modify_purchase' %}",
@@ -278,7 +294,7 @@
                     'pur_id': pur_id
                 },
                 success: function (data) {
-                    $('.modal-content').html(data);
+                    $('.purchase-modal').html(data);
                     $('#myModal').modal('show');
                 }
             });
@@ -294,12 +310,13 @@
                 good_info.count = $(this).find('#good_count').val();
                 pur_goods.push(good_info);
             });
-            var data = {'purchase_id': $('#myModalLabel').text(),
+            var data = {
+                'purchase_id': $('#myModalLabel').text(),
                 'purchase_price': $('#pur_price').val(),
                 'purchase_desc': $('#pur_desc').val(),
                 'purchase_goods': pur_goods
             };
-            console.log(data);
+            //console.log(data);
             $.ajax({
                 url: "{% url 'modify_purchase' %}",
                 type: 'post',
@@ -322,18 +339,27 @@
             })
         }
 
-        // 入库
-        function update_stock(pur_id) {
-            $.get("{% url 'finished_purchase' %}",params={'purchase_id': pur_id}, function (e) {
-                if(!e.status){
+        // 入库确认模态框
+        function stock_modal(obj) {
+            var order_id = $(obj).attr('data-order');
+            $('#stock-order-id').text(order_id);
+            $('.stock-modal').modal('show')
+        }
+
+        // 入库更新
+        function update_stock() {
+            var pur_id = $.trim($('#stock-order-id').text());
+            $.get("{% url 'finished_purchase' %}", params = {'purchase_id': pur_id}, function (e) {
+                if (!e.status) {
                     showMessage(e.msg, 'bg-success');
                     window.setTimeout(function () {
-                            location.reload()
-                        }, 2100);
+                        location.reload()
+                    }, 2100);
                 } else {
                     showMessage(e.msg)
                 }
-            })
+            });
+            $('.stock-modal').modal('hide')
         }
 
     </script>

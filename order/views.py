@@ -3,7 +3,7 @@ import string
 import random
 import datetime
 
-from django.db.models import F
+from django.db.models import F, Q
 from django.db import transaction
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -15,7 +15,7 @@ from order.models import OrderInfo, PurchaseOrder, PurchaseGoods
 
 
 class IndexView(View):
-    """主页 订单管理 发货 采购"""
+    """主页 订单管理 发货"""
 
     def get(self, request):
         """获取待出货订单 待出货订单和已完成订单总数"""
@@ -72,38 +72,96 @@ class IndexView(View):
 
 class OrderListView(View):
     """订单列表页"""
+    COUNTRY = {
+        '马来西亚': 'MYR',
+        '菲律宾': 'PHP',
+        '泰国': 'THB'
+    }
 
     def get(self, request):
-        """获取已发货、已完成清单"""
-        order_type = request.GET.get('order_type', '')
+        """提供订单静态页面"""
+        return render(request, 'order_list.html')
 
-        if order_type == 'shipping':
-            orders = OrderInfo.objects.filter(order_status=2).order_by('-order_time')
-        else:
-            orders = OrderInfo.objects.filter(order_status=3).order_by('-order_time')
+    def post(self, request):
+        """ajax 请求订单数据"""
+        # 订单状态类型
+        order_data_type = request.POST.get('order_type', '')
+        order_status = 2 if order_data_type == 'shipping' else 3
 
-        for order in orders:
-            amount = 0
-            for good in order.ordergoods_set.all():
-                amount += good.count
-            order.goods_num = amount
+        # 第一条数据的起始位置
+        start = int(request.POST.get('start', 0))
+        # 每页显示的长度，默认为10
+        length = int(request.POST.get('length', 10))
+        # 计数器，确保ajax从服务器返回是对应的
+        draw = int(request.POST.get('draw', 1))
 
-        return render(request, 'order_list.html', {'orders': orders})
+        # 全局搜索条件
+        new_search = request.POST.get('search[value]', '')
+        # 特定列搜索条件 第三列
+        col_search = request.POST.get('columns[2][search][value]', '')
+
+        # 排序列的序号
+        order_id_f = request.POST.get('order[0][column]', '')
+        # 排序列名
+        order_name_f = request.POST.get('columns[{0}][data]'.format(order_id_f), '')
+        # 排序类型
+        order_type_f = '-' if request.POST.get('order[0][dir]', '') == 'desc' else ''
+
+        # 日期范围参数
+        min_date = request.POST.get('min_date', '')
+        max_date = request.POST.get('max_date', '')
+
+        all_orders = OrderInfo.objects.filter(order_status=order_status)
+        # 总订单数
+        recordsTotal = all_orders.count()
+
+        # 模糊查询，包含内容就查询
+        if new_search:
+            all_orders = all_orders.filter(Q(order_id__contains=new_search) |
+                                           Q(order_time__contains=new_search) |
+                                           Q(customer__contains=new_search))
+
+        # 单独列参数 查询
+        if col_search:
+            all_orders = all_orders.filter(order_country__contains=self.COUNTRY[col_search])
+
+        # 日期范围 查询
+        if min_date and max_date:
+            all_orders = all_orders.filter(order_time__gte=min_date,
+                                           order_time__lte=max_date)
+
+        # 过滤后 商品数
+        recordsFiltered = all_orders.count()
+
+        # 单列排序
+        if order_name_f:
+            all_orders = all_orders.order_by(order_type_f + order_name_f)
+
+        # 第一页数据
+        page_obj = all_orders[start:(start + length)]
+        # 转成字典
+        page_data = [order.order_dict() for order in page_obj]
+
+        result = {
+            'draw': draw,
+            'recordsTotal': recordsTotal,
+            'recordsFiltered': recordsFiltered,
+            'data': page_data
+        }
+
+        return JsonResponse(result)
 
 
 class BuyGoodsView(View):
-    """采购单生成、获取"""
+    """采购单列表，创建采购单"""
 
     def get(self, request):
-        purchase_type = request.GET.get('purchase_type', '')
 
-        if purchase_type == 'buy':
-            purchase_orders = PurchaseOrder.objects.filter(pur_status=1).order_by('-create_time')
-        else:
-            purchase_orders = PurchaseOrder.objects.filter(pur_status=2).order_by('-create_time')
+        purchase_orders = PurchaseOrder.objects.filter(pur_status=1)
+        stock_orders_num = PurchaseOrder.objects.filter(pur_status=2).count()
 
         return render(request, 'purchase_list.html', {'purchase_orders': purchase_orders,
-                                                      'purchase_type': purchase_type})
+                                                      'stock_orders_num': stock_orders_num})
 
     @transaction.atomic
     def post(self, request):
@@ -139,7 +197,7 @@ class ModifyPurchaseView(View):
     """采购单修改"""
 
     def get(self, request):
-        """渲染 修改页面"""
+        """渲染模态框中 修改页面"""
         purchase_id = request.GET.get('pur_id', '')
 
         pur_obj = PurchaseOrder.objects.filter(purchase_id=purchase_id)
@@ -177,9 +235,9 @@ class ModifyPurchaseView(View):
                                                            sku_good=sku_good,
                                                            defaults={'count': good['count']})
                 except Exception as e:
-                    # print(e)
+                    print(e)
                     transaction.savepoint_rollback(p_save)
-                    return JsonResponse({'status': 3, 'msg': '订单商品更新失败'})
+                    return JsonResponse({'status': 3, 'msg': '失败：' + str(e)})
 
         transaction.savepoint_commit(p_save)
 
@@ -220,6 +278,86 @@ class StockView(View):
         pur_order.update(pur_status=2)
 
         return JsonResponse({'status': 0, 'msg': '更新成功'})
+
+
+class StockListView(View):
+    """入库单列表"""
+    def get(self, request):
+        """入库单列表静态页面"""
+        return render(request, 'stock_list.html')
+
+    def post(self, request):
+        """ajax 请求入库单数据"""
+
+        # 第一条数据的起始位置
+        start = int(request.POST.get('start', 0))
+        # 每页显示的长度，默认为10
+        length = int(request.POST.get('length', 10))
+        # 计数器，确保ajax从服务器返回是对应的
+        draw = int(request.POST.get('draw', 1))
+
+        # 全局搜索条件
+        new_search = request.POST.get('search[value]', '')
+
+        # 排序列的序号
+        order_id_f = request.POST.get('order[0][column]', '')
+        # 排序列名
+        order_name_f = request.POST.get('columns[{0}][data]'.format(order_id_f), '')
+        # 排序类型
+        order_type_f = '-' if request.POST.get('order[0][dir]', '') == 'desc' else ''
+
+        pur_orders = PurchaseOrder.objects.filter(pur_status=2)
+        all_stock = PurchaseGoods.objects.filter(purchase__in=pur_orders)
+        # 总订单数
+        recordsTotal = all_stock.count()
+
+        # 模糊查询，包含内容就查询
+        if new_search:
+            all_stock = all_stock.filter(sku_good__sku_id__contains=new_search)
+
+        # 过滤后 商品数
+        recordsFiltered = all_stock.count()
+
+        # 单列排序
+        if order_name_f:
+            all_stock = all_stock.order_by(order_type_f + order_name_f)
+
+        # 第一页数据
+        page_obj = all_stock[start:(start + length)]
+
+        page_data = []
+        # 查询后的数据 特殊处理
+        if new_search:
+            for pur_good in page_obj:
+                pur_good_dict = pur_good.stock_dict()
+                pur_good_dict['order_good_count'] = 1
+                pur_good_dict['row_id'] = 1
+                page_data.append(pur_good_dict)
+
+        # 转成字典列表
+        # page_data = [pur_good.stock_dict() for pur_good in page_obj]
+
+        # 合并行 处理数据 增加一个订单共多少商品即商品序号
+        else:
+            pur_good_index = {}
+            for pur_good in page_obj:
+                pur_good_dict = pur_good.stock_dict()
+                if pur_good_dict['purchase'] not in pur_good_index:
+                    pur_good_index[pur_good_dict['purchase']] = 1
+                    pur_good_dict['row_id'] = 1
+                else:
+                    pur_good_index[pur_good_dict['purchase']] += 1
+                    pur_good_dict['row_id'] = pur_good_index[pur_good_dict['purchase']]
+                page_data.append(pur_good_dict)
+
+        result = {
+            'draw': draw,
+            'recordsTotal': recordsTotal,
+            'recordsFiltered': recordsFiltered,
+            'data': page_data
+        }
+
+        return JsonResponse(result)
 
 
 class OrderSpiderView(View):

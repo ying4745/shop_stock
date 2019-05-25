@@ -32,9 +32,13 @@
                         <div class="good_update">
                             <label><input type="text" class="form-control input-sm" id="input_url" style="width: 500px;"
                                           placeholder="淘宝、1688链接，最多三个，用';;'分割开"></label>
-                            <label><input type="text" class="form-control input-sm" id="input_weight" style="width: 90px;" placeholder="最大实重(g)"></label>
-                            <label><input type="text" class="form-control input-sm" id="input_price" style="width: 80px;" placeholder="进货价"></label>
-                            <label><button onclick="update_price()" class="btn-sm btn-primary">更新选中</button></label>
+                            <label><input type="text" class="form-control input-sm" id="input_weight"
+                                          style="width: 90px;" placeholder="最大实重(g)"></label>
+                            <label><input type="text" class="form-control input-sm" id="input_price"
+                                          style="width: 80px;" placeholder="进货价"></label>
+                            <label>
+                                <button onclick="update_price()" class="btn-sm btn-primary">更新选中</button>
+                            </label>
                         </div>
                         {% csrf_token %}
                     </div>
@@ -42,6 +46,7 @@
                         <table id="order_table" class="table table-bordered table-striped">
                             <thead>
                             <tr>
+                                <th>序号</th>
                                 <th>商品SPU</th>
                                 <th>最大实重</th>
                                 <th>链接</th>
@@ -57,49 +62,10 @@
                             </tr>
                             </thead>
 
-                            <tbody>
-
-                                {% for good in goods %}
-                                    <tr>
-                                        {% ifchanged %}
-                                            <td class="select_td" data-search="{{ good.goods.spu_id }}"
-                                                data-order="{{ good.goods.spu_id }}">{{ good.goods.spu_id }}</td>
-                                        {% else %}
-                                            <td class="select_td" data-search="{{ good.goods.spu_id }}"
-                                                data-order="{{ good.goods.spu_id }}"></td>
-                                        {% endifchanged %}
-
-                                        <td>{{ good.goods.max_weight }}</td>
-
-                                        <td>{{ good.goods.g_url }}</td>
-
-                                        <td>{{ good.sku_id }}</td>
-
-                                        <td>{{ good.desc }}</td>
-
-                                        <td class="good_img">
-                                            <img width="60" height="60" src="{{ MEDIA_URL }}{{ good.image }}">
-                                        </td>
-
-                                        <td data-type="buy_price" class="edit_td">{{ good.buy_price }}</td>
-
-                                        <td data-type="stock" class="edit_td">{{ good.stock }}</td>
-
-                                        <td>{{ good.sales }}</td>
-
-                                        <td>{{ good.my_sale_price }}</td>
-
-                                        <td>{{ good.ph_sale_price }}</td>
-
-                                        <td>{{ good.shelf }}</td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>没有数据！</tr>
-                                {% endfor %}
-                            </tbody>
 
                             <tfoot>
                             <tr>
+                                <th>序号</th>
                                 <th>商品SPU</th>
                                 <th>最大实重</th>
                                 <th>链接</th>
@@ -133,73 +99,108 @@
     <script>
         var columnDefs = [
             {
-                "targets": [1,2,4,5,9,10],
+                "targets": [0, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12],
                 "searchable": false
             },
             {
-                "targets": [1,2,4,5,11],
+                "targets": [0, 2, 3, 5, 6, 12],
                 "orderable": false
             },
-            {
-                "targets": [2],
-                // 列渲染 以';;'分割url 分别生成超链接
-                "render": function(data, type, row) {
-                    var data_html = '';
-                    data = data.split(';;');
-                    if(data == false){
-                        return ''
-                    } else{
-                        $.each(data, function (i,v) {
-                            if(v){
-                                data_html += '<a target="_blank" href="'+ v +'">链接'+(i+1)+'</a></br>'
-                            }
-                        });
-                        return data_html;
-                    }
-                },
-            }
         ];
-
-        // 添加下拉式筛选框
-        function col_search() {
-            var api = this.api();
-            api.columns([11]).indexes().flatten().each(function(i){
-                var column = api.column(i);
-                var select = $('<select><option value=""></option></select>')
-                    .appendTo($(column.footer()).empty())
-                    .on('change', function () {
-                        var val = $.fn.dataTable.util.escapeRegex(
-                            $(this).val()
-                        );
-                        column
-                            .search( val ? '^'+val+'$' : '', true, false )
-                            .draw();
-                    });
-                column.data().unique().sort().each(function (d, j){
-                    select.append('<option value="'+d+'">'+d+'</option>')
-                });
-            });
-        }
 
         $(function () {
             var table = $('#order_table').DataTable({
-                "paging": true,       <!-- 允许分页 -->
-                "lengthChange": false, <!-- 允许改变每页显示的行数 -->
                 "searching": true,    <!-- 允许内容搜索 -->
                 "ordering": true,     <!-- 允许排序 -->
-                "order": [[0, 'asc']],     <!-- 初始排序列表 -->
+                "order": [[1, 'desc'], [4, 'asc']], <!-- 初始排序列表 -->
                 "info": true,         <!-- 显示信息 -->
                 "pageLength": 50,    <!-- 每页显示 -->
                 "autoWidth": false,  <!-- 自动宽度 -->
                 "scrollX": false,  <!-- 水平滚动 -->
                 "language": language,  <!-- 语言 -->
-                <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
-                "dom": '<"pull-left"f><"pull-right"i>rtp',
                 "deferRender": true, <!-- 延迟渲染 -->
+                "dom": '<"table_top"fi>prtp',
 
-                <!-- 指定列 添加下拉搜索框 -->
-                initComplete: col_search,
+                // 开启服务器模式
+                "serverSide": true,
+                // 开启处理功能
+                "processing": true,
+                // 发送post请求
+                "ajax": {
+                    "type": 'POST',
+                    "url": "{% url 'goods_list' %}",
+                    "data": function (d) {
+                        return $.extend(d, {
+                            "csrfmiddlewaretoken": $.cookie('csrftoken')
+                        });
+                    }
+                },
+                // 每一列
+                "columns": [
+                    {   "data": null,
+                        "render": function (data, type, row, meta) {
+                            return meta.row + 1
+                        }
+                    },
+                    {
+                        "data": "goods",
+                        "render": function (data, type, row, meta) {
+                            $(table.cell(meta.row, meta.col).node()).addClass('select_td');
+                            return data
+                        }
+                    },
+                    {"data": "max_weight"},
+                    {
+                        "data": "g_url",
+                        // 列渲染 以';;'分割url 分别生成超链接
+                        "render": function (data, type, row, meta) {
+                            var data_html = '';
+                            data = data.split(';;');
+                            if (data == false) {
+                                return ''
+                            } else {
+                                $.each(data, function (i, v) {
+                                    if (v) {
+                                        data_html += '<a target="_blank" href="' + v + '">链接' + (i + 1) + '</a></br>'
+                                    }
+                                });
+                                return data_html;
+                            }
+                        },
+                    },
+                    {"data": "sku_id"},
+                    {"data": "desc"},
+                    {
+                        "data": "image",
+                        "render": function (data, type, row, meta) {
+                            // meta row和col 索引信息
+                            $(table.cell(meta.row, meta.col).node()).addClass('good_img');
+                            return '<img width="60" height="60" src="{{ MEDIA_URL }}' + data + '">'
+                        }
+                    },
+                    {
+                        "data": "buy_price",
+                        "render": function (data, type, row, meta) {
+                            $(table.cell(meta.row, meta.col).node())
+                                .addClass('edit_td').attr('data-type', 'buy_price');
+                            return data
+                        }
+                    },
+                    {
+                        "data": "stock",
+                        "render": function (data, type, row, meta) {
+                            $(table.cell(meta.row, meta.col).node())
+                                .addClass('edit_td').attr('data-type', 'stock');
+                            return data
+                        }
+                    },
+                    {"data": "sales"},
+                    {"data": "my_sale_price"},
+                    {"data": "ph_sale_price"},
+                    {"data": "shelf"},
+                ]
+
             });
 
             // 鼠标悬停 高亮行
@@ -209,13 +210,23 @@
                 $(table.row(this).node()).removeClass('highlight')
             });
 
+            // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
+            $("#order_table").on('mouseover mouseout', '.good_img', function (e) {
+                if (e.type === 'mouseover') {
+                    $(this).append('<p id="bigimage"><img src="' +
+                        $(this).find('img').attr('src') + '"></p>');
+                } else {
+                    $("#bigimage").remove();
+                }
+            });
+
             // 双击单元格 变输入框 进价、库存修改
-            $('#order_table tbody').on('dblclick', '.edit_td', function (){
+            $('#order_table').on('dblclick', '.edit_td', function () {
                 var input_obj = $('<input class="form-control" style="width: 70px;" type="text">');
                 var old_obj = $(this);
                 var old_data = $(this).text();
                 var data_type = $(this).attr('data-type');
-                var sku_id = table.row(table.cell(old_obj).index().row).data()[3];
+                var sku_id = table.row(table.cell(old_obj).index().row).data().sku_id;
                 var data = {'sku_id': sku_id};
 
                 input_obj.val(old_data);
@@ -224,112 +235,130 @@
                 input_obj.focus().select().blur(function () {
                     var new_data = $(this).val();
                     // 没有输入、和原来的值相等、数据为price 转成小数后并与原来的值相等 则不处理
-                    if( !new_data ||
+                    if (!new_data ||
                         new_data === old_data ||
-                        (data_type === 'buy_price' && getFloat2(new_data) === old_data)){
+                        (data_type === 'buy_price' && getFloat2(new_data) === old_data)) {
                         old_obj.text(old_data);
                         return
                     }
                     // 验证值 是否为数字
-                    if(/^[0-9]+\.?[0-9]*$/.test(new_data)){
+                    if (/^[0-9]+\.?[0-9]*$/.test(new_data)) {
                         data[data_type] = new_data;
                         $.ajax({
-                                url: '{% url 'goods_list' %}',
-                                type: 'post',
-                                headers: {"X-CSRFToken": $.cookie('csrftoken')},
-                                data: {
-                                    'update_data': JSON.stringify(data),
-                                    },
-                                success: function (e) {
-                                    if(!e.status){
-                                        showMessage(e.msg,'bg-success');
-                                        if (data_type === 'buy_price'){
-                                            old_obj.text(getFloat2(new_data))
-                                        } else {
-                                            old_obj.text(new_data)
-                                        }
-                                    }else {
-                                        showMessage(e.msg);
-                                        old_obj.text(old_data)
+                            url: '{% url 'modify_good' %}',
+                            type: 'post',
+                            headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                            data: {
+                                'update_data': JSON.stringify(data),
+                            },
+                            success: function (e) {
+                                if (!e.status) {
+                                    showMessage(e.msg, 'bg-success');
+                                    if (data_type === 'buy_price') {
+                                        old_obj.text(getFloat2(new_data))
+                                    } else {
+                                        old_obj.text(new_data)
                                     }
+                                } else {
+                                    showMessage(e.msg);
+                                    old_obj.text(old_data)
                                 }
-                            })
+                            }
+                        })
                     } else {
                         showMessage('请输入正确的数字')
                     }
                 });
             });
-        });
 
-        // 选中 相同spu的商品
-        $('#order_table tbody').on('click', '.select_td', function (){
-            var table = $('#order_table').DataTable();
-            var check_id = $(this).attr('data-order');
 
-            if($(this).hasClass('selected')){
-                // 遍历所有行中第一列的排序数据 找和选中单元格相同spu的行索引
-                // 定位到单元格 添加class 翻页单元格一样可以选中
-                table.rows().indexes().each(function (i) {
-                    if (table.row(i).data()[0]['@data-order'] === check_id){
-                        $(table.cell(i,0).node()).removeClass('selected')
+            // 选中商品
+            $('#order_table').on('click', '.select_td', function () {
+                if ($(this).hasClass('selected')) {
+                    $(this).removeClass('selected');
+                    $('#input_url').val('');
+                } else {
+                    $('#order_table tbody td.selected').removeClass('selected');
+                    $(this).addClass('selected');
+                    //console.log(table.row(table.cell(this).index().row).data());
+                    $('#input_url').val(table.row(table.cell(this).index().row).data().g_url);
+                }
+            });
+
+            // 爬取商品信息按钮，根据数据类型，国家来爬取
+            $('.good_btn').click(function () {
+                var this_obj = $(this);
+                var good_type = this_obj.attr('data-value');
+                var country_type = this_obj.attr('data-country');
+                var data = {
+                    'data_type': good_type,
+                    'country_type': country_type
+                };
+                this_obj.addClass('disabled');
+
+                $.get("{% url 'get_product' %}", params = data, function (e) {
+                    if (!e.status) {
+                        showMessage(e.msg, 'bg-success');
+                        window.setTimeout(function () {
+                            location.reload()
+                        }, 2100);
+                    } else {
+                        showMessage(e.msg)
                     }
                 });
-                $('#input_url').val('');
-            } else {
-                $('#order_table tbody td.selected').removeClass('selected');
-                table.rows().indexes().each(function (i) {
-                    if (table.row(i).data()[0]['@data-order'] === check_id){
-                        $(table.cell(i, 0).node()).addClass('selected')
-                    }
-                });
-                $('#input_url').val(table.row(table.cell(this).index().row).data()[2]);
-            }
+                // 禁用 延迟10s再点击
+                window.setTimeout(function () {
+                    this_obj.removeClass('disabled')
+                }, 10000);
+            });
+
         });
 
         // 更新商品的进价，实重， URL
         function update_price() {
             var table = $('#order_table').DataTable();
+
             // 获取输入框的值
             var new_price = $('#input_price').val();
             var new_weight = $('#input_weight').val();
             var new_url = $('#input_url').val();
 
             // 校验数字和重量的正则表达式
-            var reg_num=/^[0-9]+\.?[0-9]*$/;
-            var reg_weight=/^[0-9]+0$/;
-            var reg_url=/^((ht|f)tps?):\/\/[\w\-]+(\.[\w\-]+)+([\w\-.,@?^=%&:\/~+#]*[\w\-@?^=%&\/~+#])?$/;
+            var reg_num = /^[0-9]+\.?[0-9]*$/;
+            var reg_weight = /^[0-9]+0$/;
+            var reg_url = /^((ht|f)tps?):\/\/[\w\-]+(\.[\w\-]+)+([\w\-.,@?^=%&:\/~+#]*[\w\-@?^=%&\/~+#])?$/;
 
             // 价格和重量、URL必须输入一项
-            if (new_price || new_weight || new_url){
+            if (new_price || new_weight || new_url) {
                 var data = {};
                 // 如果有价格输入，检验处理保存
-                if(new_price){
-                    if(reg_num.test(new_price)){
+                if (new_price) {
+                    if (reg_num.test(new_price)) {
                         data.buy_price = new_price
-                    } else{
+                    } else {
                         showMessage('输入正确的价格');
                         return
                     }
                 }
                 // 如果有重量输入，检验处理
-                if(new_weight){
-                    if(reg_weight.test(new_weight)){
+                if (new_weight) {
+                    if (reg_weight.test(new_weight)) {
                         data.max_weight = new_weight
-                    } else{
+                    } else {
                         showMessage('重量为10g倍数');
                         return
                     }
                 }
-                if(new_url){
+                if (new_url) {
                     var url_ok = true;
                     $.each(new_url.split(';;'), function (i, v) {
-                        if(v && !reg_url.test(v)){
+                        if (v && !reg_url.test(v)) {
                             url_ok = false;
                             // 跳出所有循环
                             return false
                         }
                     });
-                    if(url_ok){
+                    if (url_ok) {
                         data.g_url = new_url;
                     } else {
                         showMessage('URL格式错误');
@@ -337,39 +366,26 @@
                     }
                 }
                 // 判断有无选中行
-                if(!table.cell('.selected').index()) {
+                if (!table.cell('.selected').index()) {
                     showMessage('先选中');
                 } else {
-                    data.spu_id = $('td.selected').attr('data-order');
+                    data.spu_id = $('td.selected').text();
                     // 发起请求 更新数据库
                     $.ajax({
-                        url: '{% url 'goods_list' %}',
+                        url: '{% url 'modify_good' %}',
                         type: 'post',
                         headers: {"X-CSRFToken": $.cookie('csrftoken')},
                         data: {
                             'update_data': JSON.stringify(data),
-                            },
+                        },
                         success: function (e) {
-                            if(!e.status){
-                                showMessage(e.msg,'bg-success');
-                                if(data.buy_price) {
-                                    // 更新成功 不刷新请求数据，先在页面更新表中数据
-                                    table.cells('.selected').indexes().each(function (i) {
-                                        table.cell(i.row, 6).data(getFloat2(new_price))
-                                    });
-                                }
-                                if(data.max_weight) {
-                                    table.cells('.selected').indexes().each(function (i) {
-                                        table.cell(i.row, 1).data(new_weight)
-                                    });
-                                }
-                                if(data.g_url) {
-                                    table.cells('.selected').indexes().each(function (i) {
-                                        table.cell(i.row, 2).data(new_url).draw()
-                                    });
-                                    $('#input_url').val('');
-                                }
-                            }else {
+                            if (!e.status) {
+                                showMessage(e.msg, 'bg-success');
+                                // 表格刷新，保留分页
+                                table.ajax.reload(null, false);
+                                $('#input_url').val('');
+                                $('#input_price').val('');
+                            } else {
                                 showMessage(e.msg)
                             }
                         }
@@ -377,33 +393,6 @@
                 }
             }
         }
-
-        // 爬取商品信息按钮，根据数据类型，国家来爬取
-        $('.good_btn').click(function () {
-            var this_obj = $(this);
-            var good_type = this_obj.attr('data-value');
-            var country_type = this_obj.attr('data-country');
-            var data = {
-                'data_type': good_type,
-                'country_type': country_type
-            };
-            this_obj.addClass('disabled');
-
-            $.get("{% url 'get_product' %}", params=data, function (e) {
-                if(!e.status){
-                    showMessage(e.msg, 'bg-success');
-                    window.setTimeout(function () {
-                            location.reload()
-                        }, 2100);
-                } else {
-                    showMessage(e.msg)
-                }
-            });
-            // 禁用 延迟5s再点击
-            window.setTimeout(function () {
-               this_obj.removeClass('disabled')
-            }, 5000);
-        });
 
     </script>
 

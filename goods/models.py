@@ -13,6 +13,7 @@ class Goods(BaseModel):
     max_weight = models.IntegerField(default=0, verbose_name='最大实重')
 
     class Meta:
+        ordering = ['spu_id']
         db_table = 'goods_spu'
         verbose_name = '主商品SPU'
         verbose_name_plural = verbose_name
@@ -63,3 +64,20 @@ class GoodsSKU(BaseModel):
         # mark_safe后就不会转义
         return mark_safe("<img src='/media/%s' width=60 height=60>" % self.image)
     get_image.short_description = "图片"
+
+    def good_dict(self):
+        good_data = {
+            'goods': self.goods.spu_id,
+            'max_weight': self.goods.max_weight,
+            'g_url': self.goods.g_url,
+            'sku_id': self.sku_id,
+            'desc': self.desc,
+            'image': str(self.image),
+            'buy_price': self.buy_price,
+            'stock': self.stock,
+            'sales': self.sales,
+            'my_sale_price': self.my_sale_price,
+            'ph_sale_price': self.ph_sale_price,
+            'shelf': self.shelf
+        }
+        return good_data
