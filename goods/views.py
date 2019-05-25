@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.generic.base import View
 
-from spider.goods_spider import PhGoodsSpider
+from spider.goods_spider import PhGoodsSpider, MYGoodsSpiper
 from goods.models import GoodsSKU, Goods
 
 
