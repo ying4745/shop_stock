@@ -58,6 +58,7 @@
                                 <th>销量</th>
                                 <th>(MY)售价</th>
                                 <th>(PH)售价</th>
+                                <th>(TH)售价</th>
                                 <th>货架号</th>
                             </tr>
                             </thead>
@@ -77,6 +78,7 @@
                                 <th>销量</th>
                                 <th>(MY)售价</th>
                                 <th>(PH)售价</th>
+                                <th>(TH)售价</th>
                                 <th>货架号</th>
                             </tr>
                             </tfoot>
@@ -99,11 +101,11 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12],
+                "targets": [0, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13],
                 "searchable": false
             },
             {
-                "targets": [0, 2, 3, 5, 6, 12],
+                "targets": [0, 2, 3, 5, 6, 13],
                 "orderable": false
             },
         ];
@@ -198,6 +200,7 @@
                     {"data": "sales"},
                     {"data": "my_sale_price"},
                     {"data": "ph_sale_price"},
+                    {"data": "th_sale_price"},
                     {"data": "shelf"},
                 ]
 

@@ -149,6 +149,8 @@ class PhGoodsSpider():
                     defaults['ph_sale_price'] = good['price']
                 elif self.country == 'my':
                     defaults['my_sale_price'] = good['price']
+                elif self.country == 'th':
+                    defaults['th_sale_price'] = good['price']
 
                 # 子sku创建时 异常处理
                 try:
@@ -319,6 +321,33 @@ class MYGoodsSpiper(PhGoodsSpider):
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
         self.country = 'my'
+
+        self.request_err_num = 0
+        self.num = 0
+
+
+class ThGoodsSpiper(PhGoodsSpider):
+
+    def __init__(self):
+        self.name = sp_config.TH_USERNAME
+        self.password = sp_config.TH_PASSWORD
+
+        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.cookies = get_cookies_from_file(sp_config.TH_COOKIES_SAVE)
+
+        self.login_url = sp_config.TH_LOGIN_URL
+        self.product_url = sp_config.TH_PRODUCT_URL
+        self.order_url = sp_config.TH_ORDER_URL
+
+        self.cookies_path = sp_config.TH_COOKIES_SAVE
+        self.error_path = sp_config.TH_ERROR_LOG
+        self.update_path = sp_config.TH_UPDATE_LOG
+
+        # 兑换汇率
+        self.exchange_rate = sp_config.THB_CONVERT_RMB
+        # 每个订单附加费用
+        self.order_add_fee = sp_config.ORDER_ADD_FEE
+        self.country = 'th'
 
         self.request_err_num = 0
         self.num = 0

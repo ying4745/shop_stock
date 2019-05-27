@@ -45,6 +45,8 @@ class GoodsSKU(BaseModel):
                                         default=0, verbose_name='马来西亚售价')
     ph_sale_price = models.DecimalField(max_digits=10, decimal_places=2,
                                         default=0, verbose_name='菲律宾售价')
+    th_sale_price = models.DecimalField(max_digits=10, decimal_places=2,
+                                        default=0, verbose_name='泰国售价')
     stock = models.IntegerField(default=0, verbose_name='库存')
     sales = models.IntegerField(default=0, verbose_name='销量')
     shelf = models.CharField(max_length=64, default='001', verbose_name='货架号')
@@ -78,6 +80,7 @@ class GoodsSKU(BaseModel):
             'sales': self.sales,
             'my_sale_price': self.my_sale_price,
             'ph_sale_price': self.ph_sale_price,
+            'th_sale_price': self.th_sale_price,
             'shelf': self.shelf
         }
         return good_data
