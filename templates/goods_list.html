@@ -15,10 +15,12 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="good_btn" data-country="MY">第一页商品</a>
+                            <a href="javascript:;" class="good_btn" data-country="MY">
+                                <i class="fa fa-circle-o"></i> 第一页商品</a>
                         </li>
                         <li>
-                            <a href="javascript:;" class="good_btn" data-value="all" data-country="MY">全部商品</a>
+                            <a href="javascript:;" class="good_btn" data-value="all" data-country="MY">
+                                <i class="fa fa-circle"></i> 全部商品</a>
                         </li>
                     </ul>
                 </div>
@@ -30,10 +32,12 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="good_btn" data-country="PH">第一页商品</a>
+                            <a href="javascript:;" class="good_btn" data-country="PH">
+                                <i class="fa fa-circle-o"></i> 第一页商品</a>
                         </li>
                         <li>
-                            <a href="javascript:;" class="good_btn" data-value="all" data-country="PH">全部商品</a>
+                            <a href="javascript:;" class="good_btn" data-value="all" data-country="PH">
+                                <i class="fa fa-circle"></i> 全部商品</a>
                         </li>
                     </ul>
                 </div>
@@ -45,14 +49,33 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="good_btn" data-country="TH">第一页商品</a>
+                            <a href="javascript:;" class="good_btn" data-country="TH">
+                                <i class="fa fa-circle-o"></i> 第一页商品</a>
                         </li>
                         <li>
-                            <a href="javascript:;" class="good_btn" data-value="all" data-country="TH">全部商品</a>
+                            <a href="javascript:;" class="good_btn" data-value="all" data-country="TH">
+                                <i class="fa fa-circle"></i> 全部商品</a>
                         </li>
                     </ul>
                 </div>
-
+                <div class="col-xs-3">
+                    <div class="input-group">
+                        <input type="text" id="single_goodsku" class="form-control" placeholder="商品SPU号">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-twitter dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">单个商品同步 <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li><a href="javascript:;" class="single-good-btn" data-country="MY">
+                                    <i class="fa fa-university"></i> 马来西亚</a></li>
+                                <li><a href="javascript:;" class="single-good-btn" data-country="PH">
+                                    <i class="fa fa-university"></i> 菲律宾</a></li>
+                                <li><a href="javascript:;" class="single-good-btn" data-country="TH">
+                                    <i class="fa fa-university"></i> 泰国</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -173,7 +196,8 @@
                 },
                 // 每一列
                 "columns": [
-                    {   "data": null,
+                    {
+                        "data": null,
                         "render": function (data, type, row, meta) {
                             return meta.row + 1
                         }
@@ -327,6 +351,7 @@
                 var good_type = this_obj.attr('data-value');
                 var country_type = this_obj.attr('data-country');
                 var data = {
+                    'good_type': 'many',
                     'data_type': good_type,
                     'country_type': country_type
                 };
@@ -344,6 +369,27 @@
                 //window.setTimeout(function () {
                 //    this_obj.removeClass('disabled')
                 //}, 10000);
+            });
+
+            $('.single-good-btn').click(function () {
+                var goodsku = $('#single_goodsku').val();
+                var country_type = $(this).attr('data-country');
+                var data = {
+                    'good_type': 'single',
+                    'goodsku': goodsku,
+                    'country_type': country_type
+                };
+                if(goodsku){
+                    $.get("{% url 'get_product' %}", params = data, function (e) {
+                        if (!e.status) {
+                            showMessage(e.msg, 'bg-success');
+                        } else {
+                            showMessage(e.msg)
+                        }
+                    });
+                } else {
+                    showMessage('输入SKU号')
+                }
             });
 
         });

@@ -94,6 +94,7 @@ class PhGoodsSpider():
             save_log(self.error_path, '请求出错')
             raise e
 
+    # 商品抓取
     def parse_goods_url(self, page):
         """发送请求，获取商品数据字典"""
         data = {
@@ -164,7 +165,6 @@ class PhGoodsSpider():
                         save_log(self.error_path, e.args)
                     raise e
 
-
     def get_goods(self, page=1, is_all=False):
         """获取商品信息 保存到数据库"""
         self.is_cookies()
@@ -181,6 +181,82 @@ class PhGoodsSpider():
             for i in range(page + 1, pages + 1):
                 self.get_goods(i, is_all=False)
 
+    # 单个商品抓取
+    def parse_single_good_url(self, goodsku):
+        """发送请求，获取单个商品信息"""
+        data = {
+            'SPC_CDS': self.cookies['SPC_CDS'],
+            'SPC_CDS_VER': 2,
+            'page_number': 1,
+            'page_size': 24,
+            'search': goodsku
+        }
+        return self.parse_url(self.product_url, data)
+
+    def save_single_good(self, good_data):
+        if good_data['data']['page_info']['total'] == 1:
+            product_data = good_data['data']['list'][0]
+            parent_sku = product_data['parent_sku']
+            print('spu信息：', parent_sku)
+            g_spu, is_c = Goods.objects.get_or_create(spu_id=parent_sku)
+
+            # 创建 则为新增记录
+            if is_c:
+                save_log(self.update_path, parent_sku, err_type='新增单个商品：')
+
+            for good in product_data['model_list']:
+                # 判断sku与spu是否一样 相同则抛出异常
+                if parent_sku == good['sku']:
+                    err_msg = 'SPU与SKU号相同，异常SPU为：' + parent_sku
+                    save_log(self.error_path, err_msg)
+                    raise Exception(err_msg)
+
+                # 根据sku_id中的'#','_'，设置默认图片路径
+                file_path = good['sku'] + '.jpg'
+                if '#' in good['sku']:
+                    # 提取编号 '主spu号_#03' 去除'#' 保存默认图片路径为'主spu号_03.jpg
+                    if re.match(r'(.*#[^.]{2})', good['sku']):
+                        file_path = re.match(r'(.*#[^.]{2})', good['sku']).group(0).replace('#', '')
+                        file_path = parent_sku + '/' + file_path + '.jpg'
+                elif '_' in good['sku']:
+                    # 除去最后一个'_'和它之后的字符
+                    file_path = re.match(r'(.*)_', good['sku']).group(1)
+                    file_path = parent_sku + '/' + file_path + '.jpg'
+
+                defaults = {
+                    'goods': g_spu,
+                    'image': file_path,
+                    'desc': good['name'],
+                }
+                # 判断国家  添加到不同价格
+                if self.country == 'ph':
+                    defaults['ph_sale_price'] = good['price']
+                elif self.country == 'my':
+                    defaults['my_sale_price'] = good['price']
+                elif self.country == 'th':
+                    defaults['th_sale_price'] = good['price']
+
+                # 子sku创建时 异常处理
+                try:
+                    GoodsSKU.objects.update_or_create(sku_id=good['sku'], defaults=defaults)
+                except Exception as e:
+                    # 如果是创建spu记录 sku异常时 删除spu 报错 更新记录会记录两次
+                    if is_c:
+                        g_spu.delete()
+                        save_log(self.error_path, e.args)
+                    raise e
+
+            return '商品同步成功'
+        else:
+            return '没找到商品'
+
+    def get_single_good(self, goodsku):
+        self.is_cookies()
+
+        good_data = self.parse_single_good_url(goodsku)
+        return self.save_single_good(good_data)
+
+    # 订单抓取
     def parse_order_url(self, type, page):
         """发送请求，获取订单数据字典"""
         data = {

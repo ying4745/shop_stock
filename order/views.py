@@ -57,7 +57,8 @@ class IndexView(View):
         for good_sku in orders_goods.keys():
             try:
                 GoodsSKU.objects.filter(sku_id=good_sku).update(
-                    stock=F('stock') - orders_goods[good_sku], sales=F('sales') + 1)
+                    stock=F('stock') - orders_goods[good_sku],
+                    sales=F('sales') + orders_goods[good_sku])
             except:
                 # 更新有错误 则事务回滚到保存点
                 transaction.savepoint_rollback(save_id)

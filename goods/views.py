@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.generic.base import View
 
-from spider.goods_spider import PhGoodsSpider, MYGoodsSpiper
+from spider.goods_spider import PhGoodsSpider, MYGoodsSpiper, ThGoodsSpiper
 from goods.models import GoodsSKU, Goods
 
 
@@ -139,19 +139,30 @@ class GoodsSpiderView(View):
     def get(self, request):
         # data_type: True 为取全部数据，False 为取第一页数据
         data_type = request.GET.get('data_type', '')
+        good_type = request.GET.get('good_type', '')
         country_type = request.GET.get('country_type', '')
+        goodsku = request.GET.get('goodsku', '')
 
         if not country_type:
-            return JsonResponse({'status': 1, 'msg': '参数错误'})
+            return JsonResponse({'status': 1, 'msg': '无国家参数'})
 
         # 判断国家
         if country_type == 'MY':
             shopee = MYGoodsSpiper()
         elif country_type == 'PH':
             shopee = PhGoodsSpider()
+        elif country_type == 'TH':
+            shopee = ThGoodsSpiper
         else:
-            return JsonResponse({'status': 1, 'msg': '参数错误'})
+            return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
-        shopee.get_goods(is_all=bool(data_type))
+        # 判断单个还是多个商品
+        if good_type == 'many':
+            shopee.get_goods(is_all=bool(data_type))
+            return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条商品更新'})
+        elif good_type == 'single' and goodsku:
+            msg = shopee.get_single_good(goodsku)
+            return JsonResponse({'status': 0, 'msg': msg})
+        else:
+            return JsonResponse({'status': 3, 'msg': '商品或SKU参数错误'})
 
-        return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条商品更新'})
