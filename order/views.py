@@ -25,13 +25,13 @@ class IndexView(View):
         shipping_orders = OrderInfo.objects.filter(order_status=2).count()
         finished_orders = OrderInfo.objects.filter(order_status=3).count()
 
+        my_orders = orders.filter(order_country='MYR').count()
+        ph_orders = orders.filter(order_country='PHP').count()
+        th_orders = orders.filter(order_country='THB').count()
+
         out_of_stock, orders_goods = out_of_stock_good_list(orders)
 
-        return render(request, 'index.html', {'orders': orders,
-                                              'out_of_stock': out_of_stock,
-                                              'unfinished_orders': unfinished_orders,
-                                              'shipping_orders': shipping_orders,
-                                              'finished_orders': finished_orders})
+        return render(request, 'index.html', locals())
 
     # 开启事务提交
     @transaction.atomic
@@ -53,11 +53,11 @@ class IndexView(View):
         # 事务保存点
         save_id = transaction.savepoint()
 
-        # 无缺货商品 更新库存
+        # 无缺货商品 更新库存 销量
         for good_sku in orders_goods.keys():
             try:
                 GoodsSKU.objects.filter(sku_id=good_sku).update(
-                    stock=F('stock') - orders_goods[good_sku])
+                    stock=F('stock') - orders_goods[good_sku], sales=F('sales') + 1)
             except:
                 # 更新有错误 则事务回滚到保存点
                 transaction.savepoint_rollback(save_id)
@@ -157,7 +157,7 @@ class BuyGoodsView(View):
 
     def get(self, request):
 
-        purchase_orders = PurchaseOrder.objects.filter(pur_status=1)
+        purchase_orders = PurchaseOrder.objects.filter(pur_status=1).order_by('-create_time')
         stock_orders_num = PurchaseOrder.objects.filter(pur_status=2).count()
 
         return render(request, 'purchase_list.html', {'purchase_orders': purchase_orders,

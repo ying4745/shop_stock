@@ -37,6 +37,8 @@ class PhGoodsSpider():
         self.exchange_rate = sp_config.PHP_CONVERT_RMB
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
+        # 每件商品附加费用
+        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
         # 国家标示
         self.country = 'ph'
 
@@ -122,7 +124,8 @@ class PhGoodsSpider():
             for good in goods['model_list']:
                 # 判断sku与spu是否一样 相同则抛出异常
                 if parent_sku == good['sku']:
-                    err_msg = 'SPU与SKU号相同，异常SPU为：' + parent_sku
+                    err_msg = 'SPU与SKU号相同，异常SPU为：' + parent_sku + ' 在第' + \
+                              str(goods_data['data']['page_info']['page_number']) + '页'
                     save_log(self.error_path, err_msg)
                     raise Exception(err_msg)
 
@@ -142,7 +145,6 @@ class PhGoodsSpider():
                     'goods': g_spu,
                     'image': file_path,
                     'desc': good['name'],
-                    'sales': good['sold']
                 }
                 # 判断国家  添加到不同价格
                 if self.country == 'ph':
@@ -156,11 +158,12 @@ class PhGoodsSpider():
                 try:
                     GoodsSKU.objects.update_or_create(sku_id=good['sku'], defaults=defaults)
                 except Exception as e:
-                    # 如果是创建spu记录 sku异常时 删除spu记录 报错
+                    # 如果是创建spu记录 sku异常时 删除spu 报错 更新记录会记录两次
                     if is_c:
                         g_spu.delete()
                         save_log(self.error_path, e.args)
                     raise e
+
 
     def get_goods(self, page=1, is_all=False):
         """获取商品信息 保存到数据库"""
@@ -251,11 +254,13 @@ class PhGoodsSpider():
                 try:
                     good_obj = GoodsSKU.objects.get(sku_id=good_sku)
                 except Exception as e:
-                    save_log(self.error_path, e.args)
+                    if is_c:
+                        order_obj.delete()
+                    save_log(self.error_path, str(e.args))
                     raise e
 
                 # 商品的成本  每件商品进价上加一元 国内运杂费
-                order_cost += (good_obj.buy_price + sp_config.PRODUCT_ADD_FEE) * good_info['amount']
+                order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) * good_info['amount']
 
                 g_data = {
                     'count': good_info['amount'],
@@ -320,6 +325,7 @@ class MYGoodsSpiper(PhGoodsSpider):
         self.exchange_rate = sp_config.MYR_CONVERT_RMB
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
+        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
         self.country = 'my'
 
         self.request_err_num = 0
@@ -347,6 +353,7 @@ class ThGoodsSpiper(PhGoodsSpider):
         self.exchange_rate = sp_config.THB_CONVERT_RMB
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
+        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
         self.country = 'th'
 
         self.request_err_num = 0

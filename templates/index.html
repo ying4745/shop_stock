@@ -41,24 +41,69 @@
             </div>
             <p class="update_div text-blue">获取订单信息</p>
             <div class="update_div">
-                <button class="btn btn-primary order_btn" data-value="toship" data-country="MY">
-                    <i class="fa fa-battery-empty"></i> (马来西亚) 待出货
-                </button>
-                <button class="btn btn-primary order_btn" data-value="shipping" data-country="MY">
-                    <i class="fa fa-battery-full"></i> (马来西亚) 运输中
-                </button>
-                <button class="btn btn-primary order_btn" data-value="completed" data-country="MY">
-                    <i class="fa fa-check"></i> 已完成
-                </button>
-                <button class="btn btn-vk order_btn" data-value="toship" data-country="PH">
-                    <i class="fa fa-hourglass-o"></i> (菲律宾) 待出货
-                </button>
-                <button class="btn btn-vk order_btn" data-value="shipping" data-country="PH">
-                    <i class="fa fa-hourglass"></i> (菲律宾) 运输中
-                </button>
-                <button class="btn btn-vk order_btn" data-value="completed" data-country="PH">
-                    <i class="fa fa-check"></i> 已完成
-                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        马来西亚 <span class="badge bg-aqua">{{ my_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="MY">
+                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="MY">
+                                <i class="fa fa-battery-full"></i> 运输中</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="MY">
+                                <i class="fa fa-check"></i> 已完成</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        菲律宾 <span class="badge bg-aqua">{{ ph_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="PH">
+                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="PH">
+                                <i class="fa fa-battery-full"></i> 运输中</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="PH">
+                                <i class="fa fa-check"></i> 已完成</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        泰国 <span class="badge bg-aqua">{{ th_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="TH">
+                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="TH">
+                                <i class="fa fa-battery-full"></i> 运输中</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="TH">
+                                <i class="fa fa-check"></i> 已完成</a>
+                        </li>
+                    </ul>
+                </div>
+
             </div>
         </div>
         <div class="row">
@@ -365,7 +410,6 @@
                 'data_type': order_type,
                 'country_type': country_type
             };
-            this_obj.addClass('disabled');
             $.get("{% url 'get_order' %}", params=data, function (e) {
                 if(!e.status){
                     showMessage(e.msg, 'bg-success');
@@ -376,10 +420,6 @@
                     showMessage(e.msg)
                 }
             });
-            // 禁用 延迟5s再点击
-            window.setTimeout(function () {
-               this_obj.removeClass('disabled')
-            }, 5000);
         });
 
     </script>

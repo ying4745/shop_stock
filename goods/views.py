@@ -14,8 +14,13 @@ class GoodsListView(View):
     """商品列表页"""
 
     def get(self, request):
-        """渲染商品列表页 提供静态页面"""
-        return render(request, 'goods_list.html')
+        """ 渲染商品列表页 提供静态页面
+            各国商品数量
+        """
+        my_goods = Goods.objects.filter(goodssku__my_sale_price__gt=0).distinct().count()
+        ph_goods = Goods.objects.filter(goodssku__ph_sale_price__gt=0).distinct().count()
+        th_goods = Goods.objects.filter(goodssku__th_sale_price__gt=0).distinct().count()
+        return render(request, 'goods_list.html', locals())
 
     def post(self, request):
         """ajax 请求数据"""
