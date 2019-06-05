@@ -458,6 +458,27 @@ def get_cookies_from_file(filename):
     return cookies_dict
 
 
+def compute_profit():
+    all_order = OrderInfo.objects.filter(order_country='MYR').all()
+    for order_info in all_order:
+
+        order_cost = 0  # 订单成本(人民币）
+        for order_good in order_info.ordergoods_set.all():
+
+            order_good.price = order_good.sku_good.buy_price
+            # 商品的成本  每件商品进价上加一元 国内运杂费
+            order_cost += (order_good.price + Decimal(1)) * order_good.count
+            order_good.save()
+
+        # 有订单收入的状态下，计算订单利润(人民币)
+        if order_info.order_income != '0.00':
+            order_profit = order_income * Decimal(1.65) - Decimal(order_cost) - Decimal(2)
+            order_info.order_profit = order_profit
+            # 更新订单状态(已完成)
+            order_info.order_status = 3
+            order_info.save()
+
+
 if __name__ == '__main__':
     ss = PhGoodsSpider()
     # ss.get_goods()
