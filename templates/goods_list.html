@@ -263,6 +263,25 @@
 
             });
 
+            // 页码跳转 input框
+            $('.table_top').append(
+                '<div class="input-group" style="vertical-align:top; margin-top:2px; width:140px; margin-left:20px;">\n' +
+                '    <input type="text" class="form-control" id="page_num" placeholder="页码">\n' +
+                '    <span class="input-group-btn">\n' +
+                '        <button class="btn btn-default" id="jump_btn" type="button">页码跳转</button>\n' +
+                '    </span>\n' +
+                '</div>'
+            );
+            // 跳转按钮
+            $('#jump_btn').click(function () {
+                var page_num = $('#page_num').val();
+                if(parseInt(page_num)){
+                    table.page(parseInt(page_num)-1).draw( false );
+                } else {
+                    showMessage('输入正确页码')
+                }
+            });
+
             // 鼠标悬停 高亮行
             $('#order_table tbody').on('mouseover', 'tr', function () {
                 $(table.row(this).node()).addClass('highlight')

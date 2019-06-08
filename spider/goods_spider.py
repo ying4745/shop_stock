@@ -28,6 +28,7 @@ class PhGoodsSpider():
         self.login_url = sp_config.PH_LOGIN_URL
         self.product_url = sp_config.PH_PRODUCT_URL
         self.order_url = sp_config.PH_ORDER_URL
+        self.search_order_url = sp_config.PH_ORDER_SEARCH_URL
 
         self.cookies_path = sp_config.PH_COOKIES_SAVE
         self.error_path = sp_config.PH_ERROR_LOG
@@ -379,6 +380,109 @@ class PhGoodsSpider():
             for i in range(1, total_page + 1):
                 self.get_order(type, page=i * 40, is_all=False)
 
+    def parse_single_order_url(self, order_id):
+        data = {
+            'SPC_CDS': self.cookies['SPC_CDS'],
+            'SPC_CDS_VER': 2,
+            'keyword': order_id,
+            'query': order_id,
+        }
+        return self.parse_url(self.search_order_url, data)
+
+    def save_single_order(self, order_data):
+        if order_data['orders']:
+            order = order_data['orders'][0]
+            order_id = order['ordersn']  # 19042610247KN45
+
+            # 订单用户信息
+            user_info = order_data['users'][0]
+
+            # 订单用户收货率
+            delivery_order = user_info['delivery_order_count']
+            # 考虑订单用户第一次购物
+            if delivery_order == 0:
+                customer_info = '100%&0'
+            else:
+                customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(
+                    delivery_order)
+            # 商品总价
+            total_price = order['buyer_paid_amount']
+
+            # 判断是否是卖家的优惠卷
+            voucher_price = order['voucher_price'] if order['voucher_absorbed_by_seller'] else '0.00'
+            # 实际运费
+            actual_shipping_fee = order['actual_shipping_fee']
+            # 买家支付运费
+            shipping_fee = order['shipping_fee']
+            # 手续费
+            card_txn_fee = order['card_txn_fee_info']['card_txn_fee']
+            # 平台运费回扣
+            shipping_rebate = order['shipping_rebate']
+
+            # 没出货，无实际运费时 不计算订单收入
+            order_income = '0.00'
+            if actual_shipping_fee != '0.00':
+                # 订单收入
+                order_income = Decimal(total_price) + Decimal(shipping_rebate) + Decimal(shipping_fee) \
+                               - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price)
+
+            o_data = {
+                'order_time': order_id[:6],
+                'customer': user_info['username'],
+                'receiver': order['buyer_address_name'],
+                'customer_info': customer_info,
+                'total_price': total_price,
+                'order_income': order_income,
+                'order_country': order['currency']
+            }
+            order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_id, defaults=o_data)
+
+            order_cost = 0  # 订单成本(人民币）
+            # 订单下的商品，商品对象为唯一的
+            for order_item in order['order_items']:
+                good_info = self.list_filter_data(order_item, order_data['order-items'])
+
+                good_sku = self.list_filter_data(good_info['modelid'], order_data['item-models'])['sku']
+                try:
+                    good_obj = GoodsSKU.objects.get(sku_id=good_sku)
+                except Exception as e:
+                    save_log(self.error_path, str(e.args))
+                    msg = order_id + ' >> ' + good_sku
+                    save_log(self.update_path, msg, err_type='@订单商品错误：')
+                    # 跳过该商品， 记录下 手动修复
+                    continue
+
+                # 商品的成本  每件商品进价上加一元 国内运杂费
+                order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) * good_info['amount']
+
+                g_data = {
+                    'count': good_info['amount'],
+                    'price': good_info['order_price'],
+                }
+                try:
+                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
+                except Exception as e:
+                    save_log(self.error_path, str(e.args))
+                    return str(e.args)
+
+            # 有订单收入的状态下，计算订单利润(人民币)
+            if order_income != '0.00':
+                order_profit = order_income * Decimal(self.exchange_rate) \
+                               - Decimal(order_cost) - Decimal(self.order_add_fee)
+                order_obj.order_profit = order_profit
+                # 更新订单状态(已完成)
+                order_obj.order_status = 3
+                order_obj.save()
+            return '订单同步完成'
+
+        return '没找到订单'
+
+    def get_single_order(self, order_id):
+        self.is_cookies()
+
+        order_data = self.parse_single_order_url(order_id)
+        return self.save_single_order(order_data)
 
 class MYGoodsSpiper(PhGoodsSpider):
 
@@ -392,6 +496,7 @@ class MYGoodsSpiper(PhGoodsSpider):
         self.login_url = sp_config.MY_LOGIN_URL
         self.product_url = sp_config.MY_PRODUCT_URL
         self.order_url = sp_config.MY_ORDER_URL
+        self.search_order_url = sp_config.MY_ORDER_SEARCH_URL
 
         self.cookies_path = sp_config.MY_COOKIES_SAVE
         self.error_path = sp_config.MY_ERROR_LOG
@@ -420,6 +525,7 @@ class ThGoodsSpiper(PhGoodsSpider):
         self.login_url = sp_config.TH_LOGIN_URL
         self.product_url = sp_config.TH_PRODUCT_URL
         self.order_url = sp_config.TH_ORDER_URL
+        self.search_order_url = sp_config.TH_ORDER_SEARCH_URL
 
         self.cookies_path = sp_config.TH_COOKIES_SAVE
         self.error_path = sp_config.TH_ERROR_LOG

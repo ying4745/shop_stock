@@ -3,14 +3,14 @@ import string
 import random
 import datetime
 
-from django.db.models import F, Q
 from django.db import transaction
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.db.models import F, Q, Count
 from django.views.generic.base import View
 
 from goods.models import GoodsSKU
-from spider.goods_spider import PhGoodsSpider, MYGoodsSpiper
+from spider.goods_spider import PhGoodsSpider, MYGoodsSpiper, ThGoodsSpiper
 from order.models import OrderInfo, PurchaseOrder, PurchaseGoods
 
 
@@ -153,6 +153,46 @@ class OrderListView(View):
         return JsonResponse(result)
 
 
+class OrderChartsView(View):
+    """订单图表数据"""
+
+    def get(self, request):
+        # 默认过去30天的订单
+        default_start_date = (datetime.date.today() - datetime.timedelta(days=30)).strftime('%y%m%d')
+        default_end_date = datetime.date.today().strftime('%y%m%d')
+
+        start_date_str = request.GET.get('start_date', default_start_date)
+        end_date_str = request.GET.get('end_date', default_end_date)
+
+        date_list = order_date_list(start_date_str, end_date_str)
+
+        all_orders = OrderInfo.objects.filter(order_time__gte=start_date_str, order_time__lte=end_date_str)
+
+        my_value_list = []
+        ph_value_list = []
+        th_value_list = []
+        if all_orders:
+            my_orders = all_orders.filter(order_status=3, order_country='MYR').order_by('order_time')
+            ph_orders = all_orders.filter(order_status=3, order_country='PHP').order_by('order_time')
+            th_orders = all_orders.filter(order_status=3, order_country='THB').order_by('order_time')
+
+            my_value_list = order_value_list(date_list, my_orders)
+            ph_value_list = order_value_list(date_list, ph_orders)
+            th_value_list = order_value_list(date_list, th_orders)
+
+        # 日期 去掉年份
+        date_list = list(map(lambda x: x[2:], date_list))
+
+        charts_data = {
+            'my_value_list': my_value_list,
+            'ph_value_list': ph_value_list,
+            'th_value_list': th_value_list,
+            'date_list': date_list
+        }
+
+        return JsonResponse(charts_data)
+
+
 class BuyGoodsView(View):
     """采购单列表，创建采购单"""
 
@@ -283,6 +323,7 @@ class StockView(View):
 
 class StockListView(View):
     """入库单列表"""
+
     def get(self, request):
         """入库单列表静态页面"""
         return render(request, 'stock_list.html')
@@ -367,19 +408,32 @@ class OrderSpiderView(View):
     def get(self, request):
         data_type = request.GET.get('data_type', '')
         country_type = request.GET.get('country_type', '')
-        if not data_type or not country_type:
-            return JsonResponse({'status': 1, 'msg': '参数错误'})
+        order_type = request.GET.get('order_type', '')
+        order_id = request.GET.get('order_id', '')
+        if not country_type:
+            return JsonResponse({'status': 1, 'msg': '无参数'})
 
         # 判断国家
         if country_type == 'MY':
             shopee = MYGoodsSpiper()
         elif country_type == 'PH':
             shopee = PhGoodsSpider()
+        elif country_type == 'TH':
+            shopee = ThGoodsSpider()
         else:
-            return JsonResponse({'status': 1, 'msg': '参数错误'})
-        shopee.get_order(data_type)
+            return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
-        return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新'})
+        if order_type == 'many':
+            if data_type in ['toship', 'shipping', 'completed']:
+                shopee.get_order(data_type)
+                return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新'})
+            else:
+                return JsonResponse({'status': 4, 'msg': '订单状态参数错误'})
+        elif order_type == 'single' and order_id:
+            msg = shopee.get_single_order(order_id)
+            return JsonResponse({'status': 0, 'msg': msg})
+        else:
+            return JsonResponse({'status': 3, 'msg': '订单号参数错误'})
 
 
 def out_of_stock_good_list(orders_obj):
@@ -403,3 +457,41 @@ def out_of_stock_good_list(orders_obj):
             out_of_stock.append(orders_good)
 
     return out_of_stock, orders_goods
+
+
+def order_date_list(start_date_str, end_date_str):
+    """订单日期列表
+    :return 每一天日期列表"""
+    start_date = datetime.datetime.strptime(start_date_str, '%y%m%d')
+    end_date = datetime.datetime.strptime(end_date_str, '%y%m%d')
+    date_list = []
+    while start_date <= end_date:
+        date_str = start_date.strftime('%y%m%d')
+        date_list.append(date_str)
+        start_date += datetime.timedelta(days=1)
+    return date_list
+
+
+def order_value_list(date_list, orders_obj):
+    """
+    每日订单数量
+    :param date_list: 每天日期列表
+    :param order_count: 订单统计列表
+    :return: 每日订单数量，无则为0
+    """
+    order_count = orders_obj.values('order_time').annotate(count=Count('order_id'))
+
+    value_list = []
+    k = 0
+    for i in date_list:
+        if k < len(order_count):
+            if order_count[k]['order_time'] == i:
+                value_list.append(order_count[k]['count'])
+                k += 1
+            else:
+                value_list.append(0)
+
+        else:
+            value_list.append(0)
+
+    return value_list

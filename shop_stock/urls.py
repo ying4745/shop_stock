@@ -21,28 +21,29 @@ from django.conf.urls.static import static
 
 from goods.views import GoodsListView, GoodsSpiderView, ModifyGoodsView
 from order.views import OrderListView, IndexView, OrderSpiderView, \
-    BuyGoodsView, ModifyPurchaseView, StockView, StockListView
+    BuyGoodsView, ModifyPurchaseView, StockView, StockListView, OrderChartsView
 
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('xadmin/', xadmin.site.urls),
 
-    path('goods/list/', GoodsListView.as_view(), name='goods_list'),  # 商品列表 get页面 post数据
-    path('modify/good/', ModifyGoodsView.as_view(), name='modify_good'),  # 修改商品数据
+    path('goods/list/', GoodsListView.as_view(), name='goods_list'),                # 商品列表 get页面 post数据
+    path('modify/good/', ModifyGoodsView.as_view(), name='modify_good'),            # 修改商品数据
 
-    path('order/list/', OrderListView.as_view(), name='order_list'),  # 已完成订单列表 get页面 post数据
+    path('order/list/', OrderListView.as_view(), name='order_list'),                # 已完成订单列表 get页面 post数据
+    path('order/charts/data', OrderChartsView.as_view(), name='charts_data'),       # 订单统计 图表数据
 
-    path('buy/product/', BuyGoodsView.as_view(), name='buy_product'),  # 采购单列表 创建
-    path('modify/purchase/', ModifyPurchaseView.as_view(), name='modify_purchase'),  # 采购单修改
+    path('buy/product/', BuyGoodsView.as_view(), name='buy_product'),               # 采购单列表 创建
+    path('modify/purchase/', ModifyPurchaseView.as_view(), name='modify_purchase'), # 采购单修改
 
-    path('finished/purchase/', StockView.as_view(), name='finished_purchase'),  # 入库操作
-    path('purchase/list/', StockListView.as_view(), name='purchase_list'),  # 入库单列表 get页面 post数据
+    path('finished/purchase/', StockView.as_view(), name='finished_purchase'),      # 入库操作
+    path('purchase/list/', StockListView.as_view(), name='purchase_list'),          # 入库单列表 get页面 post数据
 
-    path('get/product/', GoodsSpiderView.as_view(), name='get_product'),  # 抓取商品信息
-    path('get/order/', OrderSpiderView.as_view(), name='get_order'),  # 抓取订单信息
+    path('get/product/', GoodsSpiderView.as_view(), name='get_product'),            # 抓取商品信息
+    path('get/order/', OrderSpiderView.as_view(), name='get_order'),                # 抓取订单信息
 
-    path('', IndexView.as_view())  # 主页 发货管理
+    path('', IndexView.as_view())                                                   # 主页 发货管理
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

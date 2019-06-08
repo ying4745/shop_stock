@@ -104,6 +104,25 @@
                     </ul>
                 </div>
 
+                <div class="col-xs-3">
+                    <div class="input-group">
+                        <input type="text" id="single_order_id" class="form-control" placeholder="订单编号">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-twitter dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">单个订单同步 <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li><a href="javascript:;" class="single-order-btn" data-country="MY">
+                                    <i class="fa fa-university"></i> 马来西亚</a></li>
+                                <li><a href="javascript:;" class="single-order-btn" data-country="PH">
+                                    <i class="fa fa-university"></i> 菲律宾</a></li>
+                                <li><a href="javascript:;" class="single-order-btn" data-country="TH">
+                                    <i class="fa fa-university"></i> 泰国</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
         <div class="row">
@@ -404,10 +423,11 @@
         // 爬取订单信息按钮，根据数据类型，国家来爬取
         $('.order_btn').click(function () {
             var this_obj = $(this);
-            var order_type = this_obj.attr('data-value');
+            var order_status_type = this_obj.attr('data-value');
             var country_type = this_obj.attr('data-country');
             var data = {
-                'data_type': order_type,
+                'order_type': 'many',
+                'data_type': order_status_type,
                 'country_type': country_type
             };
             $.get("{% url 'get_order' %}", params=data, function (e) {
@@ -420,6 +440,30 @@
                     showMessage(e.msg)
                 }
             });
+        });
+
+        $('.single-order-btn').click(function () {
+            var order_id = $('#single_order_id').val();
+            var country_type = $(this).attr('data-country');
+            var data = {
+                'order_type': 'single',
+                'order_id': order_id,
+                'country_type': country_type
+            };
+            if(order_id){
+                $.get("{% url 'get_order' %}", params = data, function (e) {
+                    if (!e.status) {
+                        showMessage(e.msg, 'bg-success');
+                        window.setTimeout(function () {
+                            location.reload()
+                        }, 2100);
+                    } else {
+                        showMessage(e.msg)
+                    }
+                });
+            } else {
+                showMessage('输入订单编号')
+            }
         });
 
     </script>
