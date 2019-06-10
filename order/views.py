@@ -153,6 +153,18 @@ class OrderListView(View):
         return JsonResponse(result)
 
 
+class OrderInfoView(View):
+    def get(self, request):
+        order_id = request.GET.get('order_id', '')
+
+        order_obj = OrderInfo.objects.filter(order_id=order_id)
+
+        if order_obj:
+            order_obj = order_obj[0]
+
+        return render(request, 'order_info.html', {'order_obj': order_obj})
+
+
 class OrderChartsView(View):
     """订单图表数据"""
 

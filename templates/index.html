@@ -150,7 +150,7 @@
                         </div>
                     </div>
                     <div class="box-body">
-                        <table id="order_table" class="table table-bordered table-striped">
+                        <table id="order_table" class="table table-bordered table-striped good-img-parent">
                             <thead>
                             <tr>
                                 <th>序号</th>
@@ -162,8 +162,8 @@
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
-                                <th>商品数量</th>
                                 <th>商品售价</th>
+                                <th>商品数量</th>
                                 <th>商品库存</th>
                             </tr>
                             </thead>
@@ -223,8 +223,8 @@
                                             <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                         </td>
 
-                                        <td>{{ order_good.count }}</td>
                                         <td>{{ order_good.price }}</td>
+                                        <td>{{ order_good.count }}</td>
                                         <td>{{ order_good.sku_good.stock }}</td>
 
                                     </tr>
@@ -247,8 +247,8 @@
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
-                                <th>商品数量</th>
                                 <th>商品售价</th>
+                                <th>商品数量</th>
                                 <th>商品库存</th>
                             </tr>
                             </tfoot>
@@ -281,7 +281,7 @@
         ];
 
         // 缺货商品sku  注意'符号会转义
-        var out_of_stock = {{ out_of_stock|safe }};
+        var out_of_stock = {{ out_of_stock | safe }};
 
         // 缺货商品添加背景色
         function createdRow(row, data, index ) {
@@ -454,6 +454,7 @@
             });
         });
 
+        // 单个订单 同步更新
         $('.single-order-btn').click(function () {
             var order_id = $('#single_order_id').val();
             var country_type = $(this).attr('data-country');

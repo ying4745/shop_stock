@@ -5,35 +5,31 @@
 {% block content %}
 
     <!-- 采购单修改 模态框 -->
-    <div>
-        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content purchase-modal">
-                    <!-- 模态框内容 -->
-                </div>
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content purchase-modal good-img-parent">
+                <!-- 模态框内容 -->
             </div>
         </div>
     </div>
     <!-- 模态框 结束 -->
 
     <!-- 入库确认 模态框 -->
-    <div>
-        <div class="modal stock-modal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">×</span></button>
-                        <h4 class="modal-title">入库确认</h4>
-                    </div>
-                    <div class="modal-body" style="text-align: center;">
-                        <p>请确认采购单：<span id="stock-order-id" class="text-bold"></span> 的商品已清点到货</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                        <button type="button" onclick="update_stock()" class="btn btn-primary">确认入库</button>
-                    </div>
+    <div class="modal stock-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span></button>
+                    <h4 class="modal-title">入库确认</h4>
+                </div>
+                <div class="modal-body" style="text-align: center;">
+                    <p>请确认采购单：<span id="stock-order-id" class="text-bold"></span> 的商品已清点到货</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" onclick="update_stock()" class="btn btn-primary">确认入库</button>
                 </div>
             </div>
         </div>
@@ -65,7 +61,7 @@
                         </h3>
                     </div>
                     <div class="box-body">
-                        <table id="order_table" class="table table-bordered table-striped">
+                        <table id="order_table" class="table table-bordered table-striped good-img-parent">
                             <thead>
                             <tr>
                                 <th>序号</th>
@@ -271,13 +267,6 @@
                 initComplete: col_search,
                 <!-- 下表头创建回调 统计订单利润 -->
                 "footerCallback": total_profit
-            });
-
-            // 鼠标悬停 高亮行
-            $('#order_table tbody').on('mouseover', 'tr', function () {
-                $(table.row(this).node()).addClass('highlight')
-            }).on('mouseleave', 'tr', function () {
-                $(table.row(this).node()).removeClass('highlight')
             });
 
         });

@@ -9,14 +9,14 @@
     top: 30px;
 }
 
-/*选中添加的样式*/
-.selected {
-    background-color: #5eb4e4 !important;
-}
-
 /*高亮样式*/
 .highlight {
     background-color: #cccccc !important;
+}
+
+/*选中添加的样式*/
+.selected {
+    background-color: #5eb4e4 !important;
 }
 
 /*弹出消息框*/
@@ -108,7 +108,7 @@
 }
 
 /*表格内容居中*/
-#order_table td, #order_table th {
+#order_table td, #order_table th, #order-info-table th, #order-info-table td {
     text-align: center;
     vertical-align: middle;
 }
@@ -122,4 +122,12 @@
 /*入库单 分割线*/
 .division-line {
     border-top: #267bab solid 3px !important;
+}
+
+/*订单详情 模态框里标题*/
+.order-info-title {
+    padding-bottom: 10px;
+}
+.order-info-title span{
+    margin-right: 65px;
 }

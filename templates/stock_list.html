@@ -28,7 +28,7 @@
                         </h3>
                     </div>
                     <div class="box-body">
-                        <table id="order_table" class="table table-bordered table-striped">
+                        <table id="order_table" class="table table-bordered table-striped good-img-parent">
                             <thead>
                             <tr>
                                 <th>采购单号</th>
@@ -210,23 +210,6 @@
                         "visible": false
                     },
                 ]
-            });
-
-            // 鼠标悬停 高亮行
-            $('#order_table tbody').on('mouseover', 'tr', function () {
-                $(table.row(this).node()).addClass('highlight')
-            }).on('mouseleave', 'tr', function () {
-                $(table.row(this).node()).removeClass('highlight')
-            });
-
-            // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
-            $("#order_table").on('mouseover mouseout', '.good_img', function (e) {
-                if (e.type === 'mouseover') {
-                    $(this).append('<p id="bigimage"><img width="450" height="450" src="' +
-                        $(this).find('img').attr('src') + '"></p>');
-                } else {
-                    $("#bigimage").remove();
-                }
             });
 
         });

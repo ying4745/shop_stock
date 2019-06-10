@@ -3,7 +3,8 @@
 <div class="modal-header" style="text-align: center">
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
     </button>
-    <h4 class="modal-title" id="myModalLabel">{{ pur_obj.purchase_id }}</h4>
+    <h4 class="modal-title" id="myModalLabel">
+        {% if pur_obj %}{{ pur_obj.purchase_id }}{% else %}无此单号信息{% endif %}</h4>
     {% csrf_token %}
 </div>
 <div class="modal-body">
@@ -12,34 +13,38 @@
         <button id="add-good" class="btn btn-default btn-block" style="margin-bottom: 8px">新增商品</button>
 
         <ul id="pur_good" class="list-group">
-            {% for pur_good in pur_obj.purchasegoods_set.all %}
+            {% if pur_obj %}
+                {% for pur_good in pur_obj.purchasegoods_set.all %}
 
-                <li class="list-group-item">
-                    <div class="input-group">
-                        <span class="input-group-addon good_img" style="padding: 0;">
-                            <img src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}" width="31" height="31">
-                        </span>
-
-                        <input type="text" class="form-control input-col1"
-                               onchange="update_img(this)" value="{{ pur_good.sku_good.sku_id }}">
-
-                        <div class="input-group input-col2">
-                            <input id="good_count" type="text" class="form-control" value="{{ pur_good.count }}">
-                            <div class="input-group-btn-vertical">
-                                <button class="btn btn-default input-plus" type="button"><i class="fa fa-caret-up"></i>
-                                </button>
-                                <button class="btn btn-default input-minus" type="button"><i
-                                        class="fa fa-caret-down"></i>
-                                </button>
-                            </div>
-                            <span class="input-group-addon input-group-del">
-                                <i class="fa fa-trash"></i>
+                    <li class="list-group-item">
+                        <div class="input-group">
+                            <span class="input-group-addon good_img" style="padding: 0;">
+                                <img src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}" width="31" height="31">
                             </span>
-                        </div>
-                    </div>
-                </li>
 
-            {% endfor %}
+                            <input type="text" class="form-control input-col1"
+                                   onchange="update_img(this)" value="{{ pur_good.sku_good.sku_id }}">
+
+                            <div class="input-group input-col2">
+                                <input id="good_count" type="text" class="form-control" value="{{ pur_good.count }}">
+                                <div class="input-group-btn-vertical">
+                                    <button class="btn btn-default input-plus" type="button"><i class="fa fa-caret-up"></i>
+                                    </button>
+                                    <button class="btn btn-default input-minus" type="button"><i
+                                            class="fa fa-caret-down"></i>
+                                    </button>
+                                </div>
+                                <span class="input-group-addon input-group-del">
+                                    <i class="fa fa-trash"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </li>
+
+                {% endfor %}
+            {% else %}
+                <p>无此订单信息</p>
+            {% endif %}
         </ul>
 
         <div class="form-group">
@@ -123,16 +128,6 @@
             input_obj.val(0);
         } else {
             input_obj.val(num - 1);
-        }
-    });
-
-    // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
-    $("#pur_good").on('mouseover mouseout', '.good_img', function (e) {
-        if(e.type === 'mouseover'){
-            $(this).append('<p id="bigimage"><img src="' +
-                $(this).find('img').attr('src') + '"></p>');
-        } else {
-           $("#bigimage").remove();
         }
     });
 

@@ -8,7 +8,7 @@ from django.views.generic.base import View
 
 from spider.goods_spider import PhGoodsSpider, MYGoodsSpider, ThGoodsSpider
 from goods.models import GoodsSKU, Goods
-from spider.import_excel import ImportExcel
+# from spider.import_excel import ImportExcel
 
 class GoodsListView(View):
     """商品列表页"""
