@@ -44,7 +44,7 @@ function getFloat2(x){
 
 // 鼠标悬浮显示大图
 $(".good_img").hover(function (){
-    $(this).append('<p id="bigimage"><img src="' + $(this).find('img').attr('src') + '" alt="" /></p>');
+    $(this).append('<p id="bigimage"><img width="450" height="450" src="' + $(this).find('img').attr('src') + '" alt="" /></p>');
     }, function () {
     $("#bigimage").remove();
 });

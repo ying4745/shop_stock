@@ -18,8 +18,8 @@ class OrderInfo(BaseModel):
 
     order_id = models.CharField(max_length=16, unique=True, verbose_name='订单编号')
     order_time = models.CharField(max_length=16, verbose_name='订单时间')
-    customer = models.CharField(max_length=32, verbose_name='客户名字')
-    receiver = models.CharField(max_length=32, default='默认', verbose_name='收件人')
+    customer = models.CharField(max_length=64, verbose_name='客户名字')
+    receiver = models.CharField(max_length=64, default='默认', verbose_name='收件人')
     customer_info = models.CharField(max_length=32, default='100%/0', verbose_name='客户收货率')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='商品总额')
     order_income = models.DecimalField(max_digits=10, decimal_places=2,
@@ -35,6 +35,12 @@ class OrderInfo(BaseModel):
     def customer_grade(self):
         return int(self.customer_info.split('%')[0])
 
+    def order_good_count(self):
+        num = 0
+        for good in self.ordergoods_set.all():
+            num += good.count
+        return num
+
     def order_dict(self):
         order_data = {
             'order_time': self.order_time,
@@ -42,7 +48,7 @@ class OrderInfo(BaseModel):
             'order_id': self.order_id,
             'customer': self.customer,
             'total_price': self.total_price,
-            'order_g_num': self.ordergoods_set.count(),
+            'order_g_num': self.order_good_count(),
             'order_income': self.order_income,
             'order_profit': self.order_profit,
         }

@@ -6,9 +6,9 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.generic.base import View
 
-from spider.goods_spider import PhGoodsSpider, MYGoodsSpiper, ThGoodsSpiper
+from spider.goods_spider import PhGoodsSpider, MYGoodsSpider, ThGoodsSpider
 from goods.models import GoodsSKU, Goods
-
+from spider.import_excel import ImportExcel
 
 class GoodsListView(View):
     """商品列表页"""
@@ -148,11 +148,11 @@ class GoodsSpiderView(View):
 
         # 判断国家
         if country_type == 'MY':
-            shopee = MYGoodsSpiper()
+            shopee = MYGoodsSpider()
         elif country_type == 'PH':
             shopee = PhGoodsSpider()
         elif country_type == 'TH':
-            shopee = ThGoodsSpiper
+            shopee = ThGoodsSpider()
         else:
             return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
@@ -166,3 +166,9 @@ class GoodsSpiderView(View):
         else:
             return JsonResponse({'status': 3, 'msg': '商品或SKU参数错误'})
 
+
+class ImportExcelView(View):
+    def get(self, request):
+        excel_obj = ImportExcel()
+        excel_obj.save_data()
+        return JsonResponse('ok')

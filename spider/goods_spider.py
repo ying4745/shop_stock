@@ -33,6 +33,7 @@ class PhGoodsSpider():
         self.cookies_path = sp_config.PH_COOKIES_SAVE
         self.error_path = sp_config.PH_ERROR_LOG
         self.update_path = sp_config.PH_UPDATE_LOG
+        self.order_path = sp_config.PH_ORDER_LOG
 
         # 兑换汇率
         self.exchange_rate = sp_config.PHP_CONVERT_RMB
@@ -104,7 +105,7 @@ class PhGoodsSpider():
             'page_number': page,
             'page_size': 24,
             'list_order_type': 'list_time_dsc'
-        }
+            }
         return self.parse_url(self.product_url, data)
 
     def save_goods_data(self, goods_data):
@@ -147,7 +148,7 @@ class PhGoodsSpider():
                     'goods': g_spu,
                     'image': file_path,
                     'desc': good['name'],
-                }
+                    }
                 # 判断国家  添加到不同价格
                 if self.country == 'ph':
                     defaults['ph_sale_price'] = good['price']
@@ -191,7 +192,7 @@ class PhGoodsSpider():
             'page_number': 1,
             'page_size': 24,
             'search': goodsku
-        }
+            }
         return self.parse_url(self.product_url, data)
 
     def save_single_good(self, good_data):
@@ -228,7 +229,7 @@ class PhGoodsSpider():
                     'goods': g_spu,
                     'image': file_path,
                     'desc': good['name'],
-                }
+                    }
                 # 判断国家  添加到不同价格
                 if self.country == 'ph':
                     defaults['ph_sale_price'] = good['price']
@@ -267,7 +268,7 @@ class PhGoodsSpider():
             'offset': page,
             'limit': 40,
             'type': type
-        }
+            }
         return self.parse_url(self.order_url, data)
 
     def list_filter_data(self, params, list_data):
@@ -277,89 +278,17 @@ class PhGoodsSpider():
     def save_order_data(self, order_data):
         """解析订单信息 保存到数据库"""
         for order_info in order_data['orders']:
-            order_id = order_info['ordersn']  # 19042610247KN45
-
             # 订单用户信息
             user_info = self.list_filter_data(order_info['userid'], order_data['users'])
 
-            # 订单用户收货率
-            delivery_order = user_info['delivery_order_count']
-            # 考虑订单用户第一次购物
-            if delivery_order == 0:
-                customer_info = '100%&0'
-            else:
-                customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(
-                    delivery_order)
-            # 商品总价
-            total_price = order_info['buyer_paid_amount']
+            # 解析订单 用户数据  生成订单详情
+            order_obj = parse_create_order(user_info, order_info)
 
-            # 判断是否是卖家的优惠卷
-            voucher_price = order_info['voucher_price'] if order_info['voucher_absorbed_by_seller'] else '0.00'
-            # 实际运费
-            actual_shipping_fee = order_info['actual_shipping_fee']
-            # 买家支付运费
-            shipping_fee = order_info['shipping_fee']
-            # 手续费
-            card_txn_fee = order_info['card_txn_fee_info']['card_txn_fee']
-            # 平台运费回扣
-            shipping_rebate = order_info['shipping_rebate']
+            if not order_obj:
+                save_log(self.order_path, order_info['ordersn'], err_type='$已取消的订单：')
+                continue
 
-            # 没出货，无实际运费时 不计算订单收入
-            order_income = '0.00'
-            if actual_shipping_fee != '0.00':
-                # 订单收入
-                order_income = Decimal(total_price) + Decimal(shipping_rebate) + Decimal(shipping_fee) \
-                               - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price)
-
-            o_data = {
-                'order_time': order_id[:6],
-                'customer': user_info['username'],
-                'receiver': order_info['buyer_address_name'],
-                'customer_info': customer_info,
-                'total_price': total_price,
-                'order_income': order_income,
-                'order_country': order_info['currency']
-            }
-            order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_id, defaults=o_data)
-
-            order_cost = 0  # 订单成本(人民币）
-            # 订单下的商品，商品对象为唯一的
-            for order_item in order_info['order_items']:
-                good_info = self.list_filter_data(order_item, order_data['order-items'])
-
-                good_sku = self.list_filter_data(good_info['modelid'], order_data['item-models'])['sku']
-                try:
-                    good_obj = GoodsSKU.objects.get(sku_id=good_sku)
-                except Exception as e:
-                    if is_c:
-                        order_obj.delete()
-                    save_log(self.error_path, str(e.args))
-                    raise e
-
-                # 商品的成本  每件商品进价上加一元 国内运杂费
-                order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) * good_info['amount']
-
-                g_data = {
-                    'count': good_info['amount'],
-                    'price': good_info['order_price'],
-                }
-                try:
-                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-                except Exception as e:
-                    if is_c:
-                        order_obj.delete()
-                        save_log(self.error_path, e.args)
-                    raise e
-
-            # 有订单收入的状态下，计算订单利润(人民币)
-            if order_income != '0.00':
-                order_profit = order_income * Decimal(self.exchange_rate) \
-                               - Decimal(order_cost) - Decimal(self.order_add_fee)
-                order_obj.order_profit = order_profit
-                # 更新订单状态(已完成)
-                order_obj.order_status = 3
-                order_obj.save()
+            self.parse_create_ordergood(order_obj, order_info, order_data)
 
             self.num += 1
 
@@ -380,101 +309,76 @@ class PhGoodsSpider():
             for i in range(1, total_page + 1):
                 self.get_order(type, page=i * 40, is_all=False)
 
+    def parse_create_ordergood(self, order_obj, order_info, order_data):
+        """
+        解析数据 创建订单商品 统计订单进货成本
+        :param order_obj: 订单对象
+        :param order_info: 订单数据
+        :param order_data: 抓取到的全部数据
+        :return: 订单进货成本
+        """
+
+        order_cost = 0  # 订单成本(人民币）
+        is_complete_order = True
+        # 订单下的商品，商品对象为唯一的
+        for order_item in order_info['order_items']:
+            good_info = self.list_filter_data(order_item, order_data['order-items'])
+
+            good_sku = self.list_filter_data(good_info['modelid'], order_data['item-models'])['sku']
+            try:
+                good_obj = GoodsSKU.objects.get(sku_id=good_sku)
+            except Exception as e:
+                save_log(self.error_path, str(e.args))
+                msg = order_info['ordersn'] + ' >> ' + good_sku
+                save_log(self.order_path, msg, err_type='@订单商品错误：')
+                # 标记订单商品完整
+                is_complete_order = False
+                # 跳过该商品， 记录下 手动修复
+                continue
+
+            # 商品的成本  每件商品进价上加一元 国内运杂费
+            order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) * good_info['amount']
+
+            g_data = {
+                'count': good_info['amount'],
+                'price': good_info['order_price'],
+                }
+            try:
+                # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
+            except Exception as e:
+                save_log(self.error_path, str(e.args))
+
+        if order_obj.order_income != '0.00' and is_complete_order:
+            order_profit = order_obj.order_income * Decimal(self.exchange_rate) \
+                           - Decimal(order_cost) - Decimal(self.order_add_fee)
+            order_obj.order_profit = order_profit
+            # 更新订单状态(已完成)
+            order_obj.order_status = 3
+            order_obj.save()
+
     def parse_single_order_url(self, order_id):
         data = {
             'SPC_CDS': self.cookies['SPC_CDS'],
             'SPC_CDS_VER': 2,
             'keyword': order_id,
             'query': order_id,
-        }
+            }
         return self.parse_url(self.search_order_url, data)
 
     def save_single_order(self, order_data):
         if order_data['orders']:
             order = order_data['orders'][0]
-            order_id = order['ordersn']  # 19042610247KN45
-
-            # 订单用户信息
             user_info = order_data['users'][0]
 
-            # 订单用户收货率
-            delivery_order = user_info['delivery_order_count']
-            # 考虑订单用户第一次购物
-            if delivery_order == 0:
-                customer_info = '100%&0'
+            order_obj = parse_create_order(user_info, order)
+
+            if order_obj:
+                self.parse_create_ordergood(order_obj, order, order_data)
+
+                return '订单同步完成'
             else:
-                customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(
-                    delivery_order)
-            # 商品总价
-            total_price = order['buyer_paid_amount']
-
-            # 判断是否是卖家的优惠卷
-            voucher_price = order['voucher_price'] if order['voucher_absorbed_by_seller'] else '0.00'
-            # 实际运费
-            actual_shipping_fee = order['actual_shipping_fee']
-            # 买家支付运费
-            shipping_fee = order['shipping_fee']
-            # 手续费
-            card_txn_fee = order['card_txn_fee_info']['card_txn_fee']
-            # 平台运费回扣
-            shipping_rebate = order['shipping_rebate']
-
-            # 没出货，无实际运费时 不计算订单收入
-            order_income = '0.00'
-            if actual_shipping_fee != '0.00':
-                # 订单收入
-                order_income = Decimal(total_price) + Decimal(shipping_rebate) + Decimal(shipping_fee) \
-                               - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price)
-
-            o_data = {
-                'order_time': order_id[:6],
-                'customer': user_info['username'],
-                'receiver': order['buyer_address_name'],
-                'customer_info': customer_info,
-                'total_price': total_price,
-                'order_income': order_income,
-                'order_country': order['currency']
-            }
-            order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_id, defaults=o_data)
-
-            order_cost = 0  # 订单成本(人民币）
-            # 订单下的商品，商品对象为唯一的
-            for order_item in order['order_items']:
-                good_info = self.list_filter_data(order_item, order_data['order-items'])
-
-                good_sku = self.list_filter_data(good_info['modelid'], order_data['item-models'])['sku']
-                try:
-                    good_obj = GoodsSKU.objects.get(sku_id=good_sku)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
-                    msg = order_id + ' >> ' + good_sku
-                    save_log(self.update_path, msg, err_type='@订单商品错误：')
-                    # 跳过该商品， 记录下 手动修复
-                    continue
-
-                # 商品的成本  每件商品进价上加一元 国内运杂费
-                order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) * good_info['amount']
-
-                g_data = {
-                    'count': good_info['amount'],
-                    'price': good_info['order_price'],
-                }
-                try:
-                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
-                    return str(e.args)
-
-            # 有订单收入的状态下，计算订单利润(人民币)
-            if order_income != '0.00':
-                order_profit = order_income * Decimal(self.exchange_rate) \
-                               - Decimal(order_cost) - Decimal(self.order_add_fee)
-                order_obj.order_profit = order_profit
-                # 更新订单状态(已完成)
-                order_obj.order_status = 3
-                order_obj.save()
-            return '订单同步完成'
+                return '订单已取消'
 
         return '没找到订单'
 
@@ -484,7 +388,8 @@ class PhGoodsSpider():
         order_data = self.parse_single_order_url(order_id)
         return self.save_single_order(order_data)
 
-class MYGoodsSpiper(PhGoodsSpider):
+
+class MYGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
         self.name = sp_config.MY_USERNAME
@@ -501,6 +406,7 @@ class MYGoodsSpiper(PhGoodsSpider):
         self.cookies_path = sp_config.MY_COOKIES_SAVE
         self.error_path = sp_config.MY_ERROR_LOG
         self.update_path = sp_config.MY_UPDATE_LOG
+        self.order_path = sp_config.MY_ORDER_LOG
 
         # 兑换汇率
         self.exchange_rate = sp_config.MYR_CONVERT_RMB
@@ -513,7 +419,7 @@ class MYGoodsSpiper(PhGoodsSpider):
         self.num = 0
 
 
-class ThGoodsSpiper(PhGoodsSpider):
+class ThGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
         self.name = sp_config.TH_USERNAME
@@ -530,6 +436,7 @@ class ThGoodsSpiper(PhGoodsSpider):
         self.cookies_path = sp_config.TH_COOKIES_SAVE
         self.error_path = sp_config.TH_ERROR_LOG
         self.update_path = sp_config.TH_UPDATE_LOG
+        self.order_path = sp_config.TH_ORDER_LOG
 
         # 兑换汇率
         self.exchange_rate = sp_config.THB_CONVERT_RMB
@@ -564,25 +471,73 @@ def get_cookies_from_file(filename):
     return cookies_dict
 
 
+def parse_create_order(user_info, order_info):
+    # 如果订单状态为取消，不创建，如已有订单 则删除
+    # 订单状态：待出货和已运送 为1，已取消为5，已完成为4
+    if order_info['status'] == 5:
+        order_obj = OrderInfo.objects.filter(order_id=order_info['ordersn'])
+        if order_obj:
+            order_obj[0].delete()
+        return ''
+
+    # 订单用户收货率
+    delivery_order = user_info['delivery_order_count']
+    # 考虑订单用户第一次购物
+    if delivery_order == 0:
+        customer_info = '100%&0'
+    else:
+        customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(
+            delivery_order)
+    # 商品总价
+    total_price = order_info['buyer_paid_amount']
+
+    # 判断是否是卖家的优惠卷
+    voucher_price = order_info['voucher_price'] if order_info['voucher_absorbed_by_seller'] else '0.00'
+    # 实际运费
+    actual_shipping_fee = order_info['actual_shipping_fee']
+    # 买家支付运费
+    shipping_fee = order_info['shipping_fee']
+    # 手续费
+    card_txn_fee = order_info['card_txn_fee_info']['card_txn_fee']
+    # 平台运费回扣
+    shipping_rebate = order_info['shipping_rebate']
+
+    # 没出货，无实际运费时 不计算订单收入
+    order_income = '0.00'
+    if actual_shipping_fee != '0.00':
+        # 订单收入
+        order_income = Decimal(total_price) + Decimal(shipping_rebate) + Decimal(shipping_fee) \
+                       - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price)
+
+    o_data = {
+        'order_time': order_info['ordersn'][:6],
+        'customer': user_info['username'],
+        'receiver': order_info['buyer_address_name'],
+        'customer_info': customer_info,
+        'total_price': total_price,
+        'order_income': order_income,
+        'order_country': order_info['currency']
+        }
+    order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_info['ordersn'], defaults=o_data)
+
+    return order_obj
+
+
+# 手动计算 马来 利润
 def compute_profit():
     all_order = OrderInfo.objects.filter(order_country='MYR').all()
     for order_info in all_order:
+        if order_info.order_status == 3:
+            # order_cost = 0  # 订单成本(人民币）
+            for order_good in order_info.ordergoods_set.all():
+                order_good.price = order_good.sku_good.my_sale_price
+                # 商品的成本  每件商品进价上加一元 国内运杂费
+                # order_cost += (order_good.price + Decimal(1)) * order_good.count
+                order_good.save()
 
-        order_cost = 0  # 订单成本(人民币）
-        for order_good in order_info.ordergoods_set.all():
-
-            order_good.price = order_good.sku_good.buy_price
-            # 商品的成本  每件商品进价上加一元 国内运杂费
-            order_cost += (order_good.price + Decimal(1)) * order_good.count
-            order_good.save()
-
-        # 有订单收入的状态下，计算订单利润(人民币)
-        if order_info.order_income != '0.00':
-            order_profit = order_income * Decimal(1.65) - Decimal(order_cost) - Decimal(2)
-            order_info.order_profit = order_profit
-            # 更新订单状态(已完成)
-            order_info.order_status = 3
-            order_info.save()
+            # order_profit = order_info.order_income * Decimal(1.65) - Decimal(order_cost) - Decimal(2)
+            # order_info.order_profit = order_profit
+            # order_info.save()
 
 
 if __name__ == '__main__':

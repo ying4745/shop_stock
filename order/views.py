@@ -10,7 +10,7 @@ from django.db.models import F, Q, Count
 from django.views.generic.base import View
 
 from goods.models import GoodsSKU
-from spider.goods_spider import PhGoodsSpider, MYGoodsSpiper, ThGoodsSpiper
+from spider.goods_spider import PhGoodsSpider, MYGoodsSpider, ThGoodsSpider
 from order.models import OrderInfo, PurchaseOrder, PurchaseGoods
 
 
@@ -415,7 +415,7 @@ class OrderSpiderView(View):
 
         # 判断国家
         if country_type == 'MY':
-            shopee = MYGoodsSpiper()
+            shopee = MYGoodsSpider()
         elif country_type == 'PH':
             shopee = PhGoodsSpider()
         elif country_type == 'TH':
@@ -424,7 +424,7 @@ class OrderSpiderView(View):
             return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
         if order_type == 'many':
-            if data_type in ['toship', 'shipping', 'completed']:
+            if data_type in ['toship', 'shipping', 'completed', 'cancelled']:
                 shopee.get_order(data_type)
                 return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新'})
             else:

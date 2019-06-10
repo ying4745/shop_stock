@@ -8,6 +8,7 @@
         <div class="row">
             <p class="update_div text-blue">获取商品信息</p>
             <div class="update_div">
+{#                <a href="{% url 'import_excel' %}">填充数据</a>#}
                 <div class="btn-group">
                     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
@@ -292,7 +293,7 @@
             // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
             $("#order_table").on('mouseover mouseout', '.good_img', function (e) {
                 if (e.type === 'mouseover') {
-                    $(this).append('<p id="bigimage"><img src="' +
+                    $(this).append('<p id="bigimage"><img width="450" height="450" src="' +
                         $(this).find('img').attr('src') + '"></p>');
                 } else {
                     $("#bigimage").remove();

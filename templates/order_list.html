@@ -153,9 +153,9 @@
             };
             api.columns([5,7,8]).indexes().flatten().each(function(i){
                 // 所有页数据统计
-                total = api.column(i).data().reduce(function(a, b){
-                        return a + intVal(b);
-                    }, 0);
+                //total = api.column(i).data().reduce(function(a, b){
+                //        return a + intVal(b);
+                //    }, 0);
 
                 // 当前页数据统计
                 pageTotal = api.column(i, {page: 'current'})
@@ -163,12 +163,12 @@
                         return a + intVal(b);
                     }, 0);
 
-                total = total / 100;
+                //total = total / 100;
                 pageTotal = pageTotal / 100; 
 
                 // 更新表脚
                 $(api.column(i).footer()).html(
-                    '当前：'+ pageTotal +'<br/>全部：'+ total
+                    '当前：'+ pageTotal  // +'<br/>全部：'+ total
                 )
             })
         }
