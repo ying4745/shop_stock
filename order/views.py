@@ -10,7 +10,7 @@ from django.db.models import F, Q, Count
 from django.views.generic.base import View
 
 from goods.models import GoodsSKU
-from spider.goods_spider import PhGoodsSpider, MYGoodsSpider, ThGoodsSpider
+from spider.goods_spider import country_type_dict
 from order.models import OrderInfo, PurchaseOrder, PurchaseGoods
 
 
@@ -19,10 +19,10 @@ class IndexView(View):
 
     def get(self, request):
         """获取待出货订单 待出货订单和已完成订单总数"""
-        orders = OrderInfo.objects.filter(order_status=1).order_by('-order_time')
+        orders = OrderInfo.objects.filter(Q(order_status=1) | Q(order_status=4)).order_by('-order_time')
 
         unfinished_orders = orders.count()
-        shipping_orders = OrderInfo.objects.filter(order_status=2).count()
+        bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).count()
         finished_orders = OrderInfo.objects.filter(order_status=3).count()
 
         my_orders = orders.filter(order_country='MYR').count()
@@ -40,7 +40,7 @@ class IndexView(View):
         orders_list = json.loads(request.POST.get('data_list', ''))
 
         if not orders_list:
-            return JsonResponse({'status': 3, 'msg': '请选中订单'})
+            return JsonResponse({'status': 3, 'msg': '无订单参数'})
 
         # 根据订单 计算是否有缺货商品
         orders_obj = OrderInfo.objects.filter(order_id__in=orders_list)
@@ -49,6 +49,16 @@ class IndexView(View):
         out_of_num = len(out_of_stock)
         if out_of_num > 0:
             return JsonResponse({'status': 1, 'msg': str(out_of_num) + ' 件商品缺货'})
+
+        un_orders = orders_obj.filter(order_status=1)
+        orders_dict = waybill_order_dict(un_orders)
+        # 未处理的订单 提交到平台生成运单号
+        for k in orders_dict.keys():
+            shopee = country_type_dict[k]()
+            for v in order_dict[k]:
+                msg = shopee.make_order_waybill(v)
+                if msg:
+                    return JsonResponse({'status': 2, 'msg': msg})
 
         # 事务保存点
         save_id = transaction.savepoint()
@@ -71,6 +81,40 @@ class IndexView(View):
         return JsonResponse({'status': 0, 'msg': str(order_num) + ' 个订单发货成功'})
 
 
+class BaleOrderView(View):
+    """待打包订单"""
+
+    def get(self, request):
+        bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).order_by('-order_time')
+        bale_orders_count = bale_orders.count()
+        return render(request, 'bale_order.html', {'orders': bale_orders,
+                                                   'bale_orders_count': bale_orders_count})
+
+    def post(self, request):
+        orders_dict = json.loads(request.POST.get('data_dict', ''))
+        # print(orders_dict)
+        if not orders_dict or 'print_type' not in orders_dict:
+            return JsonResponse({'status': 3, 'msg': '参数错误'})
+
+        if orders_dict['print_type'] == 'all':
+            bale_orders = OrderInfo.objects.filter(order_status=2)
+            orders_dict = waybill_order_dict(bale_orders)
+        elif orders_dict['print_type'] == 'part':
+            del orders_dict['print_type']
+        else:
+            return JsonResponse({'status': 3, 'msg': '参数错误'})
+
+        # print("结束", orders_dict) down_order_waybill
+        for k in orders_dict.keys():
+            shopee = country_type_dict[k]()
+            order_list_str = list(map(lambda x: int(x), orders_dict[k]))
+            msg = shopee.down_order_waybill(str(order_list_str))
+            if msg:
+                return JsonResponse({'status': 2, 'msg': msg})
+
+        return JsonResponse({'status': 2, 'msg': '打单完成'})
+
+
 class OrderListView(View):
     """订单列表页"""
     COUNTRY = {
@@ -85,9 +129,6 @@ class OrderListView(View):
 
     def post(self, request):
         """ajax 请求订单数据"""
-        # 订单状态类型
-        order_data_type = request.POST.get('order_type', '')
-        order_status = 2 if order_data_type == 'shipping' else 3
 
         # 第一条数据的起始位置
         start = int(request.POST.get('start', 0))
@@ -112,7 +153,7 @@ class OrderListView(View):
         min_date = request.POST.get('min_date', '')
         max_date = request.POST.get('max_date', '')
 
-        all_orders = OrderInfo.objects.filter(order_status=order_status)
+        all_orders = OrderInfo.objects.filter(order_status=3)
         # 总订单数
         recordsTotal = all_orders.count()
 
@@ -154,6 +195,8 @@ class OrderListView(View):
 
 
 class OrderInfoView(View):
+    """订单详情视图"""
+
     def get(self, request):
         order_id = request.GET.get('order_id', '')
 
@@ -222,7 +265,7 @@ class BuyGoodsView(View):
         goods_list = json.loads(request.POST.get('data_list'))
 
         if not goods_list:
-            return JsonResponse({'status': 3, 'msg': '请选中商品'})
+            return JsonResponse({'status': 3, 'msg': '无商品参数'})
 
         # 采购单号 当前时间加四位随机字母
         purchase_id = datetime.datetime.now().strftime('%y%m%d%H%M%S') + \
@@ -414,6 +457,26 @@ class StockListView(View):
         return JsonResponse(result)
 
 
+class OrderWaybillView(View):
+    """生成运单号"""
+
+    def post(self, request):
+        orders_dict = json.loads(request.POST.get('data_list'))
+
+        if not orders_dict:
+            return JsonResponse({'status': 3, 'msg': '无订单ID参数'})
+        # print(orders_dict)
+        for k in orders_dict.keys():
+            shopee = country_type_dict[k]()
+
+            for v in orders_dict[k]:
+                msg = shopee.make_order_waybill(v)
+                if msg:
+                    return JsonResponse({'status': 2, 'msg': msg})
+
+        return JsonResponse({'status': 0, 'msg': '成功生成运单号'})
+
+
 class OrderSpiderView(View):
     """爬取订单信息"""
 
@@ -425,13 +488,9 @@ class OrderSpiderView(View):
         if not country_type:
             return JsonResponse({'status': 1, 'msg': '无参数'})
 
-        # 判断国家
-        if country_type == 'MY':
-            shopee = MYGoodsSpider()
-        elif country_type == 'PH':
-            shopee = PhGoodsSpider()
-        elif country_type == 'TH':
-            shopee = ThGoodsSpider()
+        # 判断国家 调用不同的类
+        if country_type in country_type_dict:
+            shopee = country_type_dict[country_type]()
         else:
             return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
@@ -507,3 +566,15 @@ def order_value_list(date_list, orders_obj):
             value_list.append(0)
 
     return value_list
+
+
+def waybill_order_dict(orders):
+    """根据订单分国家 统计出待处理的订单列表"""
+    orders_dict = {}
+    for order in orders:
+        if order.order_country not in orders_dict:
+            orders_dict[order.order_country] = [order.order_shopeeid]
+        else:
+            orders_dict[order.order_country].append(order.order_shopeeid)
+
+    return orders_dict

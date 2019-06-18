@@ -11,6 +11,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from spider import sp_config
+from spider.print_waybill import CropPDF
 from goods.models import Goods, GoodsSKU
 from order.models import OrderInfo, OrderGoods
 
@@ -29,6 +30,8 @@ class PhGoodsSpider():
         self.product_url = sp_config.PH_PRODUCT_URL
         self.order_url = sp_config.PH_ORDER_URL
         self.search_order_url = sp_config.PH_ORDER_SEARCH_URL
+        self.make_waybill_url = sp_config.PH_MAKE_WAYBILL_URL
+        self.waybill_url = sp_config.PH_WAYBILL_URL
 
         self.cookies_path = sp_config.PH_COOKIES_SAVE
         self.error_path = sp_config.PH_ERROR_LOG
@@ -44,7 +47,6 @@ class PhGoodsSpider():
         # 国家标示
         self.country = 'ph'
 
-        self.request_err_num = 0
         self.num = 0
 
     def login(self):
@@ -75,8 +77,10 @@ class PhGoodsSpider():
 
     def parse_url(self, url, data):
         """处理请求, 出错 记录错误 抛出异常"""
+        self.is_cookies()
+
         try:
-            while self.request_err_num < 2:
+            for i in range(2):
                 response = requests.get(url, params=data,
                                         cookies=self.cookies, headers=self.headers)
 
@@ -85,9 +89,8 @@ class PhGoodsSpider():
 
                 print(response.status_code)  # 403
                 # 验证出错，重新登录，再请求
-                if self.request_err_num < 1:
+                if i == 0:
                     self.login()
-                self.request_err_num += 1
 
             save_log(self.error_path, '验证出错，超出请求次数')
             raise Exception('验证出错：超出请求次数')
@@ -105,7 +108,7 @@ class PhGoodsSpider():
             'page_number': page,
             'page_size': 24,
             'list_order_type': 'list_time_dsc'
-            }
+        }
         return self.parse_url(self.product_url, data)
 
     def save_goods_data(self, goods_data):
@@ -148,7 +151,7 @@ class PhGoodsSpider():
                     'goods': g_spu,
                     'image': file_path,
                     'desc': good['name'],
-                    }
+                }
                 # 判断国家  添加到不同价格
                 if self.country == 'ph':
                     defaults['ph_sale_price'] = good['price']
@@ -169,7 +172,6 @@ class PhGoodsSpider():
 
     def get_goods(self, page=1, is_all=False):
         """获取商品信息 保存到数据库"""
-        self.is_cookies()
 
         goods_data = self.parse_goods_url(page)
         self.save_goods_data(goods_data)
@@ -192,7 +194,7 @@ class PhGoodsSpider():
             'page_number': 1,
             'page_size': 24,
             'search': goodsku
-            }
+        }
         return self.parse_url(self.product_url, data)
 
     def save_single_good(self, good_data):
@@ -229,7 +231,7 @@ class PhGoodsSpider():
                     'goods': g_spu,
                     'image': file_path,
                     'desc': good['name'],
-                    }
+                }
                 # 判断国家  添加到不同价格
                 if self.country == 'ph':
                     defaults['ph_sale_price'] = good['price']
@@ -253,7 +255,6 @@ class PhGoodsSpider():
             return '没找到商品'
 
     def get_single_good(self, goodsku):
-        self.is_cookies()
 
         good_data = self.parse_single_good_url(goodsku)
         return self.save_single_good(good_data)
@@ -268,12 +269,8 @@ class PhGoodsSpider():
             'offset': page,
             'limit': 40,
             'type': type
-            }
+        }
         return self.parse_url(self.order_url, data)
-
-    def list_filter_data(self, params, list_data):
-        """过滤数据列表中符合的数据字典"""
-        return list(filter(lambda x: x['id'] == params, list_data))[0]
 
     def save_order_data(self, order_data):
         """解析订单信息 保存到数据库"""
@@ -298,7 +295,6 @@ class PhGoodsSpider():
                     'shipping' 运输中订单
                     'completed' 已完成订单
         """
-        self.is_cookies()
 
         order_data = self.parse_order_url(type, page)
         self.save_order_data(order_data)
@@ -308,6 +304,10 @@ class PhGoodsSpider():
         if total_page > 0 and is_all:
             for i in range(1, total_page + 1):
                 self.get_order(type, page=i * 40, is_all=False)
+
+    def list_filter_data(self, params, list_data):
+        """过滤数据列表中符合的数据字典"""
+        return list(filter(lambda x: x['id'] == params, list_data))[0]
 
     def parse_create_ordergood(self, order_obj, order_info, order_data):
         """
@@ -342,7 +342,7 @@ class PhGoodsSpider():
             g_data = {
                 'count': good_info['amount'],
                 'price': good_info['order_price'],
-                }
+            }
             try:
                 # 同一个订单 同种商品 记录只能有一条 唯一确认标志
                 OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
@@ -357,13 +357,14 @@ class PhGoodsSpider():
             order_obj.order_status = 3
             order_obj.save()
 
+    # 单个订单
     def parse_single_order_url(self, order_id):
         data = {
             'SPC_CDS': self.cookies['SPC_CDS'],
             'SPC_CDS_VER': 2,
             'keyword': order_id,
             'query': order_id,
-            }
+        }
         return self.parse_url(self.search_order_url, data)
 
     def save_single_order(self, order_data):
@@ -383,10 +384,87 @@ class PhGoodsSpider():
         return '没找到订单'
 
     def get_single_order(self, order_id):
-        self.is_cookies()
 
         order_data = self.parse_single_order_url(order_id)
         return self.save_single_order(order_data)
+
+    # 生成运单号
+    def make_order_waybill(self, orderid):
+        # 组成URL 平台订单号
+        url = self.make_waybill_url.format(orderid, self.cookies['SPC_CDS'])
+
+        headers = {'content-type': 'application/json; charset=UTF-8'}
+        headers.update(self.headers)
+
+        # request payload 参数
+        data = {"orderLogistic": {"userid": 0, "orderid": None, "type": 0, "status": 0, "channelid": 0,
+                                  "channel_status": "", "consignment_no": "", "booking_no": "",
+                                  "pickup_time": 0, "actual_pickup_time": 0, "deliver_time": 0,
+                                  "actual_deliver_time": 0, "ctime": 0, "mtime": 0, "seller_realname": "",
+                                  "branchid": 0, "slug": "", "shipping_carrier": "",
+                                  "logistic_command": "generate_tracking_no", "extra_data": "{}"}}
+
+        try:
+            for i in range(2):
+                response = requests.put(url, data=json.dumps(data), cookies=self.cookies, headers=headers)
+
+                if response.status_code == 200:
+                    return ''
+                # print(response.status_code)
+
+                if i == 0:
+                    self.login()
+
+            save_log(self.error_path, '验证出错，超出请求次数')
+            return '验证出错：超出请求次数'
+
+        except Exception as e:
+            save_log(self.error_path, str(e.args))
+            return '发送请求出错'
+
+    def down_order_waybill(self, orderids):
+        """下载运单号
+        orderids: 订单号列表的字符串"""
+        data = {
+            'orderids': orderids,
+            'language': 'zh-my',
+            'api_from': 'waybill',
+        }
+
+        self.is_cookies()
+        headers = {'upgrade-insecure-requests': '1'}
+        headers.update(self.headers)
+
+        try:
+            for i in range(2):
+                response = requests.get(self.waybill_url, params=data,
+                                        cookies=self.cookies, headers=headers)
+
+                if response.status_code == 200:
+                    # 文件名
+                    file_name = response.headers._store['content-disposition'][1][-20:-1]
+                    file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
+                    with open(file_name, 'wb') as f:
+                        f.write(response.content)
+
+                    if os.path.isfile(file_name):
+
+                        # TODO 打印操作
+                        print('打印运单号')
+
+                    return ''
+
+                print(response.status_code)  # 403
+                # 验证出错，重新登录，再请求
+                if i == 0:
+                    self.login()
+
+            save_log(self.error_path, '验证出错，超出请求次数')
+            return '验证出错：超出请求次数'
+
+        except Exception as e:
+            save_log(self.error_path, str(e.args))
+            return '发送请求出错'
 
 
 class MYGoodsSpider(PhGoodsSpider):
@@ -402,6 +480,8 @@ class MYGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.MY_PRODUCT_URL
         self.order_url = sp_config.MY_ORDER_URL
         self.search_order_url = sp_config.MY_ORDER_SEARCH_URL
+        self.make_waybill_url = sp_config.MY_MAKE_WAYBILL_URL
+        self.waybill_url = sp_config.MY_WAYBILL_URL
 
         self.cookies_path = sp_config.MY_COOKIES_SAVE
         self.error_path = sp_config.MY_ERROR_LOG
@@ -415,7 +495,6 @@ class MYGoodsSpider(PhGoodsSpider):
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
         self.country = 'my'
 
-        self.request_err_num = 0
         self.num = 0
 
 
@@ -432,6 +511,8 @@ class ThGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.TH_PRODUCT_URL
         self.order_url = sp_config.TH_ORDER_URL
         self.search_order_url = sp_config.TH_ORDER_SEARCH_URL
+        self.make_waybill_url = sp_config.TH_MAKE_WAYBILL_URL
+        self.waybill_url = sp_config.TH_WAYBILL_URL
 
         self.cookies_path = sp_config.TH_COOKIES_SAVE
         self.error_path = sp_config.TH_ERROR_LOG
@@ -445,7 +526,6 @@ class ThGoodsSpider(PhGoodsSpider):
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
         self.country = 'th'
 
-        self.request_err_num = 0
         self.num = 0
 
 
@@ -511,13 +591,14 @@ def parse_create_order(user_info, order_info):
 
     o_data = {
         'order_time': order_info['ordersn'][:6],
+        'order_shopeeid': orderinfo['id'],
         'customer': user_info['username'],
         'receiver': order_info['buyer_address_name'],
         'customer_info': customer_info,
         'total_price': total_price,
         'order_income': order_income,
         'order_country': order_info['currency']
-        }
+    }
     order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_info['ordersn'], defaults=o_data)
 
     return order_obj
@@ -539,6 +620,11 @@ def compute_profit():
             # order_info.order_profit = order_profit
             # order_info.save()
 
+country_type_dict = {
+    'MYR': MYGoodsSpider,
+    'PHP': PhGoodsSpider,
+    'THB': ThGoodsSpider
+}
 
 if __name__ == '__main__':
     ss = PhGoodsSpider()

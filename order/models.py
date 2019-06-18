@@ -7,8 +7,10 @@ class OrderInfo(BaseModel):
     """订单详情"""
     ORDER_STATUS_CHOICES = (
         (1, '待发货'),
-        (2, '已发货'),
+        (2, '待打包'),
         (3, '已完成'),
+        (4, '已处理'),
+        (5, '已打单')
     )
     ORDER_COUNTRY_CHOICES = (
         ('MYR', '马来西亚'),
@@ -18,6 +20,7 @@ class OrderInfo(BaseModel):
 
     order_id = models.CharField(max_length=16, unique=True, verbose_name='订单编号')
     order_time = models.CharField(max_length=16, verbose_name='订单时间')
+    order_shopeeid = models.CharField(max_length=16, default='', verbose_name='平台订单号')
     customer = models.CharField(max_length=64, verbose_name='客户名字')
     receiver = models.CharField(max_length=64, default='默认', verbose_name='收件人')
     customer_info = models.CharField(max_length=32, default='100%/0', verbose_name='客户收货率')

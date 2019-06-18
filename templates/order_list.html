@@ -23,20 +23,10 @@
             <div class="update_div">
                 <a class="btn bg-blue" href="/"><i class="fa fa-clone"></i> 待出货订单</a>
 
-                {% if request.GET.order_type == 'shipping' %}
-                    <a class="btn bg-blue-active"><i class="fa fa-truck"></i> 运送中订单</a>
-                {% else %}
-                    <a class="btn bg-blue" href="{% url 'order_list' %}?order_type=shipping">
-                        <i class="fa fa-truck"></i> 运送中订单</a>
-                {% endif %}
+                <a class="btn bg-blue" href="{% url 'bale_order' %}">
+                    <i class="fa fa-truck"></i> 待打包订单</a>
 
-                {% if request.GET.order_type == 'finished' %}
-                    <a class="btn bg-blue-active"><i class="fa fa-check-square"></i> 已完成订单</a>
-                {% else %}
-                    <a class="btn bg-blue" href="{% url 'order_list' %}?order_type=finished">
-                        <i class="fa fa-check-square"></i> 已完成订单</a>
-                {% endif %}
-                <p id="hide_order_type" style="display: none;">{{ request.GET.order_type }}</p>
+                <a class="btn bg-blue-active"><i class="fa fa-check-square"></i> 已完成订单</a>
             </div>
         </div>
 
@@ -214,7 +204,6 @@
                         return $.extend(d, {
                             "min_date": $('#date_range').attr('data-min'),
                             "max_date": $('#date_range').attr('data-max'),
-                            "order_type": $('#hide_order_type').text(),
                             "csrfmiddlewaretoken": $.cookie('csrftoken')
                         });
                     }

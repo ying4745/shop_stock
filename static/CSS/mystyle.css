@@ -40,6 +40,9 @@
     right: 6%;
     z-index: 988;
 }
+.ship_btn button {
+    margin-right: 8px;
+}
 
 /*商品更新输入框*/
 .good_update {

@@ -21,7 +21,8 @@ from django.conf.urls.static import static
 
 from goods.views import GoodsListView, GoodsSpiderView, ModifyGoodsView, ImportExcelView
 from order.views import OrderListView, IndexView, OrderSpiderView, BuyGoodsView, ModifyPurchaseView
-from order.views import StockView, StockListView, OrderChartsView, OrderInfoView
+from order.views import StockView, StockListView, OrderChartsView, OrderInfoView, OrderWaybillView
+from order.views import BaleOrderView
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
@@ -43,9 +44,13 @@ urlpatterns = [
     path('get/product/', GoodsSpiderView.as_view(), name='get_product'),            # 抓取商品信息
     path('get/order/', OrderSpiderView.as_view(), name='get_order'),                # 抓取订单信息
 
-    #path('import/excel/', ImportExcelView.as_view(), name='import_excel'),          # 填充数据
+    path('order/waybill/', OrderWaybillView.as_view(), name='order_waybill'),       # 生成运单号
 
-    path('', IndexView.as_view())                                                   # 主页 发货管理
+    path('bale/order/', BaleOrderView.as_view(), name='bale_order'),                # 打包订单 打印运单号
+
+    #path('import/excel/', ImportExcelView.as_view(), name='import_excel'),         # 填充数据
+
+    path('', IndexView.as_view(), name='index')                                     # 主页 发货管理
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

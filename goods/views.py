@@ -146,13 +146,9 @@ class GoodsSpiderView(View):
         if not country_type:
             return JsonResponse({'status': 1, 'msg': '无国家参数'})
 
-        # 判断国家
-        if country_type == 'MY':
-            shopee = MYGoodsSpider()
-        elif country_type == 'PH':
-            shopee = PhGoodsSpider()
-        elif country_type == 'TH':
-            shopee = ThGoodsSpider()
+        # 判断国家 调用不同的类
+        if country_type in country_type_dict:
+            shopee = country_type_dict[country_type]()
         else:
             return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
