@@ -2,6 +2,7 @@
 # DateTime: 2019/4/28 10:31
 import os
 import re
+import win32api
 
 from PyPDF2 import PdfFileReader, PdfFileWriter
 
@@ -18,7 +19,7 @@ class CropPDF():
         self.gt = 164
         self.gb = 394
 
-        self.new_file = self.file_dir + '/NewPDF.pdf'
+        self.new_file = self.file_dir + '/WorkPDF.pdf'
         self.pdfFileWriter = PdfFileWriter()
 
     def cut_size_pdf(self, file_name):
@@ -60,7 +61,7 @@ class CropPDF():
                                   self.new_file,
                                   '.', 0)
             # 打印完删除
-            os.remove(self.new_file)
+            #os.remove(self.new_file)
 
 
 if __name__ == '__main__':

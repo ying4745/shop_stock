@@ -53,12 +53,9 @@ class IndexView(View):
         un_orders = orders_obj.filter(order_status=1)
         orders_dict = waybill_order_dict(un_orders)
         # 未处理的订单 提交到平台生成运单号
-        for k in orders_dict.keys():
-            shopee = country_type_dict[k]()
-            for v in order_dict[k]:
-                msg = shopee.make_order_waybill(v)
-                if msg:
-                    return JsonResponse({'status': 2, 'msg': msg})
+        msg = make_waybill(orders_dict)
+        if msg:
+            return msg
 
         # 事务保存点
         save_id = transaction.savepoint()
@@ -85,12 +82,14 @@ class BaleOrderView(View):
     """待打包订单"""
 
     def get(self, request):
+        """待打包列表"""
         bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).order_by('-order_time')
         bale_orders_count = bale_orders.count()
         return render(request, 'bale_order.html', {'orders': bale_orders,
                                                    'bale_orders_count': bale_orders_count})
 
     def post(self, request):
+        """处理下载、打印请求"""
         orders_dict = json.loads(request.POST.get('data_dict', ''))
         # print(orders_dict)
         if not orders_dict or 'print_type' not in orders_dict:
@@ -112,7 +111,11 @@ class BaleOrderView(View):
             if msg:
                 return JsonResponse({'status': 2, 'msg': msg})
 
-        return JsonResponse({'status': 2, 'msg': '打单完成'})
+            OrderInfo.objects.filter(order_country=k,
+                                     order_shopeeid__in=orders_dict[k],
+                                     order_status=2).update(order_status=5)
+
+        return JsonResponse({'status': 0, 'msg': '打单完成'})
 
 
 class OrderListView(View):
@@ -466,15 +469,9 @@ class OrderWaybillView(View):
         if not orders_dict:
             return JsonResponse({'status': 3, 'msg': '无订单ID参数'})
         # print(orders_dict)
-        for k in orders_dict.keys():
-            shopee = country_type_dict[k]()
+        msg = make_waybill(orders_dict)
 
-            for v in orders_dict[k]:
-                msg = shopee.make_order_waybill(v)
-                if msg:
-                    return JsonResponse({'status': 2, 'msg': msg})
-
-        return JsonResponse({'status': 0, 'msg': '成功生成运单号'})
+        return msg if msg else JsonResponse({'status': 0, 'msg': '成功生成运单号'})
 
 
 class OrderSpiderView(View):
@@ -578,3 +575,17 @@ def waybill_order_dict(orders):
             orders_dict[order.order_country].append(order.order_shopeeid)
 
     return orders_dict
+
+
+def make_waybill(orders_dict):
+    for k in orders_dict.keys():
+        shopee = country_type_dict[k]()
+        for v in orders_dict[k]:
+            msg = shopee.make_order_waybill(v)
+            if msg:
+                return JsonResponse({'status': 2, 'msg': msg})
+
+        OrderInfo.objects.filter(order_country=k,
+                                 order_shopeeid__in=orders_dict[k],
+                                 order_status=1).update(order_status=4)
+    return ''

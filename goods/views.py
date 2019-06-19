@@ -6,9 +6,9 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.generic.base import View
 
-from spider.goods_spider import PhGoodsSpider, MYGoodsSpider, ThGoodsSpider
+from spider.goods_spider import country_type_dict
 from goods.models import GoodsSKU, Goods
-# from spider.import_excel import ImportExcel
+from spider.import_excel import ImportExcel
 
 class GoodsListView(View):
     """商品列表页"""

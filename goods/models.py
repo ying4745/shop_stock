@@ -26,12 +26,16 @@ def good_spu_path(instance, filename):
     """默认上传文件路径"""
     file_suffix = filename.split('.')[1]
     # 处理文件名
-    if '#' in instance.sku_id:
-        if re.match(r'(.*#[^.]{2})', instance.sku_id):
-            filename = re.match(r'(.*#[^.]{2})', instance.sku_id).group() + '.' + file_suffix
+    good_sku = instance.sku_id.replace('+', '_')
+    if '#' in good_sku:
+        file_name = re.match(r'(.*#[^._]*)', good_sku).group(0).replace('#', '')
     elif '_' in instance.sku_id:
-        filename = re.match(r'(.*)_', instance.sku_id).group(1) + '.' + file_suffix
-    return '{0}/{1}'.format(instance.goods.spu_id, filename)
+        file_name = re.match(r'(.*)_', good_sku).group(1)
+    else:
+        file_name = good_sku[:-1]
+    file_name = file_name + '.' + file_suffix
+
+    return '{0}/{1}'.format(instance.goods.spu_id, file_name)
 
 
 class GoodsSKU(BaseModel):

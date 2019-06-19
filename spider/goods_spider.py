@@ -1,3 +1,4 @@
+import os
 import re
 import time
 import json
@@ -6,9 +7,7 @@ import datetime
 from decimal import Decimal
 
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from django.db import transaction
 
 from spider import sp_config
 from spider.print_waybill import CropPDF
@@ -77,7 +76,6 @@ class PhGoodsSpider():
 
     def parse_url(self, url, data):
         """处理请求, 出错 记录错误 抛出异常"""
-        self.is_cookies()
 
         try:
             for i in range(2):
@@ -108,7 +106,7 @@ class PhGoodsSpider():
             'page_number': page,
             'page_size': 24,
             'list_order_type': 'list_time_dsc'
-        }
+            }
         return self.parse_url(self.product_url, data)
 
     def save_goods_data(self, goods_data):
@@ -116,62 +114,12 @@ class PhGoodsSpider():
         马来西亚 则保存马来价格，菲律宾 则保存菲律宾价格"""
         for goods in goods_data['data']['list']:
             parent_sku = goods['parent_sku']
-            print('spu信息：', parent_sku)
-            g_spu, is_c = Goods.objects.get_or_create(spu_id=parent_sku)
-
-            # 创建 则为新增记录
-            if is_c:
-                msg = '第' + str(goods_data['data']['page_info']['page_number']) + '页' \
-                      + ' 商品： ' + parent_sku
-                save_log(self.update_path, msg, err_type='新增商品：')
-                # 记录新增商品数
-                self.num += 1
-
-            for good in goods['model_list']:
-                # 判断sku与spu是否一样 相同则抛出异常
-                if parent_sku == good['sku']:
-                    err_msg = 'SPU与SKU号相同，异常SPU为：' + parent_sku + ' 在第' + \
-                              str(goods_data['data']['page_info']['page_number']) + '页'
-                    save_log(self.error_path, err_msg)
-                    raise Exception(err_msg)
-
-                # 根据sku_id中的'#','_'，设置默认图片路径
-                file_path = good['sku'] + '.jpg'
-                if '#' in good['sku']:
-                    # 提取编号 '主spu号_#03' 去除'#' 保存默认图片路径为'主spu号_03.jpg
-                    if re.match(r'(.*#[^.]{2})', good['sku']):
-                        file_path = re.match(r'(.*#[^.]{2})', good['sku']).group(0).replace('#', '')
-                        file_path = parent_sku + '/' + file_path + '.jpg'
-                elif '_' in good['sku']:
-                    # 除去最后一个'_'和它之后的字符
-                    file_path = re.match(r'(.*)_', good['sku']).group(1)
-                    file_path = parent_sku + '/' + file_path + '.jpg'
-
-                defaults = {
-                    'goods': g_spu,
-                    'image': file_path,
-                    'desc': good['name'],
-                }
-                # 判断国家  添加到不同价格
-                if self.country == 'ph':
-                    defaults['ph_sale_price'] = good['price']
-                elif self.country == 'my':
-                    defaults['my_sale_price'] = good['price']
-                elif self.country == 'th':
-                    defaults['th_sale_price'] = good['price']
-
-                # 子sku创建时 异常处理
-                try:
-                    GoodsSKU.objects.update_or_create(sku_id=good['sku'], defaults=defaults)
-                except Exception as e:
-                    # 如果是创建spu记录 sku异常时 删除spu 报错 更新记录会记录两次
-                    if is_c:
-                        g_spu.delete()
-                        save_log(self.error_path, e.args)
-                    raise e
+            # print('spu信息：', parent_sku)
+            self.parse_create_goodsku(parent_sku, goods)
 
     def get_goods(self, page=1, is_all=False):
         """获取商品信息 保存到数据库"""
+        self.is_cookies()
 
         goods_data = self.parse_goods_url(page)
         self.save_goods_data(goods_data)
@@ -185,76 +133,83 @@ class PhGoodsSpider():
             for i in range(page + 1, pages + 1):
                 self.get_goods(i, is_all=False)
 
+    @transaction.atomic
+    def parse_create_goodsku(self, parent_sku, product_data):
+        g_spu, is_c = Goods.objects.get_or_create(spu_id=parent_sku)
+
+        # 事务保存点
+        save_id = transaction.savepoint()
+
+        for good in product_data['model_list']:
+            # 判断sku与spu是否一样 相同则抛出异常
+            if parent_sku == good['sku']:
+                err_msg = 'SPU与SKU号相同，异常SPU为：' + parent_sku
+                save_log(self.update_path, err_msg, err_type='**异常商品：')
+                continue
+
+            defaults = {'goods': g_spu,}
+
+            # 非英文数字加字符的商品规格 不添加 （排除小语种语言）
+            if re.match(r'^[+\w #,)(\-]+$', good['name']):
+                defaults['desc'] = good['name']
+
+            # 判断国家  添加到不同价格
+            if self.country == 'ph':
+                defaults['ph_sale_price'] = good['price']
+            elif self.country == 'my':
+                defaults['my_sale_price'] = good['price']
+            elif self.country == 'th':
+                defaults['th_sale_price'] = good['price']
+
+            # 子sku创建时 异常处理
+            try:
+                goodsku_obj, is_create = GoodsSKU.objects.update_or_create(sku_id=good['sku'], defaults=defaults)
+            except Exception as e:
+                save_log(self.update_path, parent_sku, err_type='——同步未成功商品：')
+                save_log(self.error_path, str(e.args))
+                # 更新有错误 则事务回滚到保存点
+                transaction.savepoint_rollback(save_id)
+            else:
+                # 创建sku 则设置默认图片地址
+                if is_create:
+                    file_path = format_file_path(good['sku'])
+                    goodsku_obj.image = parent_sku + '/' + file_path + '.jpg'
+                    goodsku_obj.save()
+
+        # 提交事务
+        transaction.savepoint_commit(save_id)
+
+        # 创建 则为新增记录
+        if is_c:
+            save_log(self.update_path, parent_sku, err_type='新增单个商品：')
+            self.num += 1
+
     # 单个商品抓取
-    def parse_single_good_url(self, goodsku):
+    def parse_single_good_url(self, goodspu):
         """发送请求，获取单个商品信息"""
         data = {
             'SPC_CDS': self.cookies['SPC_CDS'],
             'SPC_CDS_VER': 2,
             'page_number': 1,
             'page_size': 24,
-            'search': goodsku
-        }
+            'search': goodspu
+            }
         return self.parse_url(self.product_url, data)
 
     def save_single_good(self, good_data):
         if good_data['data']['page_info']['total'] == 1:
             product_data = good_data['data']['list'][0]
             parent_sku = product_data['parent_sku']
-            print('spu信息：', parent_sku)
-            g_spu, is_c = Goods.objects.get_or_create(spu_id=parent_sku)
+            # print('spu信息：', parent_sku)
 
-            # 创建 则为新增记录
-            if is_c:
-                save_log(self.update_path, parent_sku, err_type='新增单个商品：')
-
-            for good in product_data['model_list']:
-                # 判断sku与spu是否一样 相同则抛出异常
-                if parent_sku == good['sku']:
-                    err_msg = 'SPU与SKU号相同，异常SPU为：' + parent_sku
-                    save_log(self.error_path, err_msg)
-                    raise Exception(err_msg)
-
-                # 根据sku_id中的'#','_'，设置默认图片路径
-                file_path = good['sku'] + '.jpg'
-                if '#' in good['sku']:
-                    # 提取编号 '主spu号_#03' 去除'#' 保存默认图片路径为'主spu号_03.jpg
-                    if re.match(r'(.*#[^.]{2})', good['sku']):
-                        file_path = re.match(r'(.*#[^.]{2})', good['sku']).group(0).replace('#', '')
-                        file_path = parent_sku + '/' + file_path + '.jpg'
-                elif '_' in good['sku']:
-                    # 除去最后一个'_'和它之后的字符
-                    file_path = re.match(r'(.*)_', good['sku']).group(1)
-                    file_path = parent_sku + '/' + file_path + '.jpg'
-
-                defaults = {
-                    'goods': g_spu,
-                    'image': file_path,
-                    'desc': good['name'],
-                }
-                # 判断国家  添加到不同价格
-                if self.country == 'ph':
-                    defaults['ph_sale_price'] = good['price']
-                elif self.country == 'my':
-                    defaults['my_sale_price'] = good['price']
-                elif self.country == 'th':
-                    defaults['th_sale_price'] = good['price']
-
-                # 子sku创建时 异常处理
-                try:
-                    GoodsSKU.objects.update_or_create(sku_id=good['sku'], defaults=defaults)
-                except Exception as e:
-                    # 如果是创建spu记录 sku异常时 删除spu 报错 更新记录会记录两次
-                    if is_c:
-                        g_spu.delete()
-                        save_log(self.error_path, e.args)
-                    raise e
+            self.parse_create_goodsku(parent_sku, product_data)
 
             return '商品同步成功'
         else:
             return '没找到商品'
 
     def get_single_good(self, goodsku):
+        self.is_cookies()
 
         good_data = self.parse_single_good_url(goodsku)
         return self.save_single_good(good_data)
@@ -269,7 +224,7 @@ class PhGoodsSpider():
             'offset': page,
             'limit': 40,
             'type': type
-        }
+            }
         return self.parse_url(self.order_url, data)
 
     def save_order_data(self, order_data):
@@ -295,7 +250,7 @@ class PhGoodsSpider():
                     'shipping' 运输中订单
                     'completed' 已完成订单
         """
-
+        self.is_cookies()
         order_data = self.parse_order_url(type, page)
         self.save_order_data(order_data)
 
@@ -331,7 +286,7 @@ class PhGoodsSpider():
                 save_log(self.error_path, str(e.args))
                 msg = order_info['ordersn'] + ' >> ' + good_sku
                 save_log(self.order_path, msg, err_type='@订单商品错误：')
-                # 标记订单商品完整
+                # 标记订单商品是否完整
                 is_complete_order = False
                 # 跳过该商品， 记录下 手动修复
                 continue
@@ -342,13 +297,14 @@ class PhGoodsSpider():
             g_data = {
                 'count': good_info['amount'],
                 'price': good_info['order_price'],
-            }
+                }
             try:
                 # 同一个订单 同种商品 记录只能有一条 唯一确认标志
                 OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
             except Exception as e:
                 save_log(self.error_path, str(e.args))
 
+        # 订单无收入  订单商品不完整 不计算利润
         if order_obj.order_income != '0.00' and is_complete_order:
             order_profit = order_obj.order_income * Decimal(self.exchange_rate) \
                            - Decimal(order_cost) - Decimal(self.order_add_fee)
@@ -364,7 +320,7 @@ class PhGoodsSpider():
             'SPC_CDS_VER': 2,
             'keyword': order_id,
             'query': order_id,
-        }
+            }
         return self.parse_url(self.search_order_url, data)
 
     def save_single_order(self, order_data):
@@ -384,12 +340,13 @@ class PhGoodsSpider():
         return '没找到订单'
 
     def get_single_order(self, order_id):
-
+        self.is_cookies()
         order_data = self.parse_single_order_url(order_id)
         return self.save_single_order(order_data)
 
     # 生成运单号
     def make_order_waybill(self, orderid):
+        self.is_cookies()
         # 组成URL 平台订单号
         url = self.make_waybill_url.format(orderid, self.cookies['SPC_CDS'])
 
@@ -411,7 +368,6 @@ class PhGoodsSpider():
                 if response.status_code == 200:
                     return ''
                 # print(response.status_code)
-
                 if i == 0:
                     self.login()
 
@@ -429,7 +385,7 @@ class PhGoodsSpider():
             'orderids': orderids,
             'language': 'zh-my',
             'api_from': 'waybill',
-        }
+            }
 
         self.is_cookies()
         headers = {'upgrade-insecure-requests': '1'}
@@ -437,20 +393,21 @@ class PhGoodsSpider():
 
         try:
             for i in range(2):
-                response = requests.get(self.waybill_url, params=data,
-                                        cookies=self.cookies, headers=headers)
+                response = requests.get(self.waybill_url, params=data, cookies=self.cookies, headers=headers)
 
                 if response.status_code == 200:
                     # 文件名
                     file_name = response.headers._store['content-disposition'][1][-20:-1]
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
-                    with open(file_name, 'wb') as f:
+
+                    with open(file_path, 'wb') as f:
                         f.write(response.content)
 
-                    if os.path.isfile(file_name):
-
-                        # TODO 打印操作
-                        print('打印运单号')
+                    if os.path.isfile(file_path):
+                        # 调用打印类  打印运单号
+                        crop_pdf = CropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
+                        crop_pdf.run()
+                        # print('打单成功')
 
                     return ''
 
@@ -551,6 +508,24 @@ def get_cookies_from_file(filename):
     return cookies_dict
 
 
+def format_file_path(goodsku):
+    """根据商品sku，设置默认图片名"""
+
+    # 替换sku中的+号
+    good_sku = goodsku.replace('+', '_')
+    # 根据sku_id中的'#','_'，设置默认图片路径
+    if '#' in good_sku:
+        # 提取编号 '主spu号_#03' 去除'#' 保存默认图片路径为'主spu号_03.jpg
+        file_path = re.match(r'(.*#[^._]*)', good_sku).group(0).replace('#', '')
+    elif '_' in good_sku:
+        # 除去最后一个'_'和它之后的字符
+        file_path = re.match(r'(.*)_', good_sku).group(1)
+    else:
+        file_path = good_sku[:-1]
+
+    return file_path
+
+
 def parse_create_order(user_info, order_info):
     # 如果订单状态为取消，不创建，如已有订单 则删除
     # 订单状态：待出货和已运送 为1，已取消为5，已完成为4
@@ -591,14 +566,14 @@ def parse_create_order(user_info, order_info):
 
     o_data = {
         'order_time': order_info['ordersn'][:6],
-        'order_shopeeid': orderinfo['id'],
+        'order_shopeeid': order_info['id'],
         'customer': user_info['username'],
         'receiver': order_info['buyer_address_name'],
         'customer_info': customer_info,
         'total_price': total_price,
         'order_income': order_income,
         'order_country': order_info['currency']
-    }
+        }
     order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_info['ordersn'], defaults=o_data)
 
     return order_obj
@@ -620,11 +595,12 @@ def compute_profit():
             # order_info.order_profit = order_profit
             # order_info.save()
 
+
 country_type_dict = {
     'MYR': MYGoodsSpider,
     'PHP': PhGoodsSpider,
     'THB': ThGoodsSpider
-}
+    }
 
 if __name__ == '__main__':
     ss = PhGoodsSpider()
