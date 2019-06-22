@@ -117,6 +117,7 @@
                                 <th>(PH)售价</th>
                                 <th>(TH)售价</th>
                                 <th>货架号</th>
+                                <th>上下架</th>
                             </tr>
                             </thead>
 
@@ -137,6 +138,7 @@
                                 <th>(PH)售价</th>
                                 <th>(TH)售价</th>
                                 <th>货架号</th>
+                                <th>上下架</th>
                             </tr>
                             </tfoot>
                         </table>
@@ -260,6 +262,23 @@
                     {"data": "ph_sale_price"},
                     {"data": "th_sale_price"},
                     {"data": "shelf"},
+                    // 上下架按钮
+                    {
+                        "data": null,
+                        "width": '60px',
+                        "render": function (data, type, row) {
+                            //console.log(row[1]['@data-order']);
+                            return '<div class="btn-group">\n' +
+                                '  <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n' +
+                                '    上下架 <span class="caret"></span>\n' +
+                                '  </button>\n' +
+                                '  <ul class="dropdown-menu" style="min-width:80px"  data-skuid="'+ row['sku_id'] +'">' +
+                                '    <li><a href="javascript:;" data-value="up" class="up_down_sheif">上架</a></li>\n' +
+                                '    <li><a href="javascript:;" data-value="down" class="up_down_sheif">下架</a></li>\n' +
+                                '  </ul>\n' +
+                                '</div>'
+                        }
+                    }
                 ]
 
             });
@@ -393,6 +412,21 @@
                 } else {
                     showMessage('输入SKU号')
                 }
+            });
+
+            // 上下架商品
+            $('#order_table').on('click', '.up_down_sheif', function () {
+                var data = {
+                    "sku_id": $(this).parents('ul').attr('data-skuid'),
+                    "res_type": $(this).attr('data-value')
+                };
+                $.get("{% url 'modify_good' %}", params=data, function(e){
+                    if (e.status) {
+                        showMessage(e.msg);
+                    } else {
+                        showMessage(e.msg, 'bg-success')
+                    }
+                })
             });
 
         });

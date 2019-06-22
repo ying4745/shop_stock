@@ -56,6 +56,7 @@ class GoodsSKU(BaseModel):
     shelf = models.CharField(max_length=64, default='001', verbose_name='货架号')
     image = models.ImageField(upload_to=good_spu_path, null=True,
                               blank=True, verbose_name='商品图片')
+    status = models.BooleanField(default=1, verbose_name='商品状态')
 
     class Meta:
         db_table = 'goods_sku'

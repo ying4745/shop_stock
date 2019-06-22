@@ -46,7 +46,7 @@ class GoodsListView(View):
         order_name_s = request.POST.get('columns[{0}][data]'.format(order_id_s), '')
         order_type_s = '-' if request.POST.get('order[1][dir]', '') == 'desc' else ''
 
-        all_goods = GoodsSKU.objects.all()
+        all_goods = GoodsSKU.objects.filter(status=1)
         # 总商品数
         recordsTotal = all_goods.count()
 
@@ -81,6 +81,32 @@ class GoodsListView(View):
 
 
 class ModifyGoodsView(View):
+
+    def get(self, request):
+        sku_id = request.GET.get('sku_id', '')
+        res_type = request.GET.get('res_type', '')
+
+        if not all([sku_id, res_type]):
+            return JsonResponse({'status': 1, 'msg': '参数不完整'})
+
+        if res_type == 'down':
+            good_status = 0
+            msg = '下架成功'
+        elif res_type == 'up':
+            good_status = 1
+            msg = '成功上架'
+        else:
+            return JsonResponse({'status': 2, 'msg': '参数错误'})
+
+        try:
+            good_obj = GoodsSKU.objects.get(sku_id=sku_id)
+        except:
+            return JsonResponse({'status': 3, 'msg': '没找到这个商品'})
+
+        good_obj.status = good_status
+        good_obj.save()
+
+        return JsonResponse({'status': 0, 'msg': msg})
 
     @transaction.atomic
     def post(self, request):
