@@ -93,6 +93,8 @@
                                           style="width: 90px;" placeholder="最大实重(g)"></label>
                             <label><input type="text" class="form-control input-sm" id="input_price"
                                           style="width: 80px;" placeholder="进货价"></label>
+                            <label><input type="text" class="form-control input-sm" id="input_shelf"
+                                          style="width: 80px;" placeholder="货架号"></label>
                             <label>
                                 <button onclick="update_price()" class="btn-sm btn-primary">更新选中</button>
                             </label>
@@ -252,15 +254,36 @@
                     {
                         "data": "stock",
                         "render": function (data, type, row, meta) {
-                            $(table.cell(meta.row, meta.col).node())
-                                .addClass('edit_td').attr('data-type', 'stock');
+                            var cell_obj = $(table.cell(meta.row, meta.col).node());
+                            cell_obj.addClass('edit_td').attr('data-type', 'stock');
+                            if(data <= 1){
+                                cell_obj.css("color","red");
+                            }
                             return data
                         }
                     },
                     {"data": "sales"},
-                    {"data": "my_sale_price"},
-                    {"data": "ph_sale_price"},
-                    {"data": "th_sale_price"},
+                    {
+                        "data": "my_sale_price",
+                        "render": function (data, type, row, meta) {
+                            $(table.cell(meta.row, meta.col).node()).css("color", "#9e5b04");
+                            return data
+                        }
+                    },
+                    {
+                        "data": "ph_sale_price",
+                        "render": function (data, type, row, meta) {
+                            $(table.cell(meta.row, meta.col).node()).css("color", "#00a65a");
+                            return data
+                        }
+                    },
+                    {
+                        "data": "th_sale_price",
+                        "render": function (data, type, row, meta) {
+                            $(table.cell(meta.row, meta.col).node()).css("color", "#605ca8");
+                            return data
+                        }
+                    },
                     {"data": "shelf"},
                     // 上下架按钮
                     {
@@ -431,7 +454,7 @@
 
         });
 
-        // 更新商品的进价，实重， URL
+        // 更新商品的进价，实重， URL，货架号
         function update_price() {
             var table = $('#order_table').DataTable();
 
@@ -439,14 +462,15 @@
             var new_price = $('#input_price').val();
             var new_weight = $('#input_weight').val();
             var new_url = $('#input_url').val();
+            var new_shelf = $('#input_shelf').val();
 
             // 校验数字和重量的正则表达式
             var reg_num = /^[0-9]+\.?[0-9]*$/;
             var reg_weight = /^[0-9]+0$/;
             var reg_url = /^((ht|f)tps?):\/\/[\w\-]+(\.[\w\-]+)+([\w\-.,@?^=%&:\/~+#]*[\w\-@?^=%&\/~+#])?$/;
 
-            // 价格和重量、URL必须输入一项
-            if (new_price || new_weight || new_url) {
+            // 价格和重量、URL、货架号必须输入一项
+            if (new_price || new_weight || new_url || new_shelf) {
                 var data = {};
                 // 如果有价格输入，检验处理保存
                 if (new_price) {
@@ -482,11 +506,15 @@
                         return;
                     }
                 }
+                if (new_shelf) {
+                    data.shelf = new_shelf
+                }
                 // 判断有无选中行
                 if (!table.cell('.selected').index()) {
                     showMessage('先选中');
                 } else {
-                    data.spu_id = $('td.selected').text();
+                    // 去除空白符
+                    data.spu_id = $.trim($('td.selected').text());
                     // 发起请求 更新数据库
                     $.ajax({
                         url: '{% url 'modify_good' %}',
@@ -501,7 +529,9 @@
                                 // 表格刷新，保留分页
                                 table.ajax.reload(null, false);
                                 $('#input_url').val('');
+                                $('#input_weight').val('');
                                 $('#input_price').val('');
+                                $('#input_shelf').val('');
                             } else {
                                 showMessage(e.msg)
                             }

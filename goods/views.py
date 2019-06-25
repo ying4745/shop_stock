@@ -108,7 +108,6 @@ class ModifyGoodsView(View):
 
         return JsonResponse({'status': 0, 'msg': msg})
 
-    @transaction.atomic
     def post(self, request):
         update_data = json.loads(request.POST.get('update_data', ''))
 
@@ -126,16 +125,9 @@ class ModifyGoodsView(View):
                 return JsonResponse({'status': 3, 'msg': '商品更新错误'})
 
             if 'buy_price' in update_data:
-                # 事务操作 如一个更新有错误，其他更新都取消
-                save_id = transaction.savepoint()
-                for good_sku in good_spu.goodssku_set.all():
-                    try:
-                        good_sku.buy_price = update_data['buy_price']
-                        good_sku.save()
-                    except:
-                        transaction.savepoint_rollback(save_id)
-                        return JsonResponse({'status': 4, 'msg': '商品进价更新错误'})
-                transaction.savepoint_commit(save_id)
+                GoodsSKU.objects.filter(goods=good_spu).update(buy_price=update_data['buy_price'])
+            if 'shelf' in update_data:
+                GoodsSKU.objects.filter(goods=good_spu).update(shelf=update_data['shelf'])
 
             return JsonResponse({'status': 0, 'msg': '更新成功'})
 
@@ -156,7 +148,7 @@ class ModifyGoodsView(View):
 
             return JsonResponse({'status': 0, 'msg': '更新成功'})
 
-        return JsonResponse({'status': 1, 'msg': '无更新目标'})
+        return JsonResponse({'status': 1, 'msg': '无更新参数'})
 
 
 class GoodsSpiderView(View):
