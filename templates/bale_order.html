@@ -62,8 +62,8 @@
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
-                                <th>商品售价</th>
                                 <th>商品数量</th>
+                                <th>商品售价</th>
                                 <th>商品库存</th>
                             </tr>
                             </thead>
@@ -123,8 +123,8 @@
                                                 <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                             </td>
 
+                                            <td class="division-line" style="font-weight: bold;">{{ order_good.count }}</td>
                                             <td class="division-line">{{ order_good.price }}</td>
-                                            <td class="division-line">{{ order_good.count }}</td>
                                             <td class="division-line">{{ order_good.sku_good.stock }}</td>
 
                                         {% else %}
@@ -143,8 +143,8 @@
                                                 <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                             </td>
 
+                                            <td style="font-weight: bold;">{{ order_good.count }}</td>
                                             <td>{{ order_good.price }}</td>
-                                            <td>{{ order_good.count }}</td>
                                             <td>{{ order_good.sku_good.stock }}</td>
                                         {% endif %}
 
@@ -169,8 +169,8 @@
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
-                                <th>商品售价</th>
                                 <th>商品数量</th>
+                                <th>商品售价</th>
                                 <th>商品库存</th>
                             </tr>
                             </tfoot>
@@ -201,6 +201,13 @@
                 "orderable": false
             },
         ];
+
+        // 数量大于1的商品
+        function createdRow(row, data, index) {
+            if (data[10] > 1) {
+                $(row).css("background-color", "#f9efd4");
+            }
+        }
 
         // 添加下拉式筛选框
         function col_search() {
@@ -238,6 +245,7 @@
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
                 "dom": '<"pull-left"f><"pull-right"i>rtp',
+                "createdRow": createdRow,
 
                 <!-- 指定列 添加下拉搜索框 -->
                 initComplete: col_search,

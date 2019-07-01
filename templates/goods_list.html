@@ -256,7 +256,8 @@
                         "render": function (data, type, row, meta) {
                             var cell_obj = $(table.cell(meta.row, meta.col).node());
                             cell_obj.addClass('edit_td').attr('data-type', 'stock');
-                            if(data <= 1){
+                            cell_obj.css("font-weight","bold");
+                            if(data <= 0){
                                 cell_obj.css("color","red");
                             }
                             return data

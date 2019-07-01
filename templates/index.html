@@ -165,8 +165,8 @@
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
-                                <th>商品售价</th>
                                 <th>商品数量</th>
+                                <th>商品售价</th>
                                 <th>商品库存</th>
                             </tr>
                             </thead>
@@ -223,8 +223,8 @@
                                                 <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                             </td>
 
+                                            <td class="division-line" style="font-weight: bold;">{{ order_good.count }}</td>
                                             <td class="division-line">{{ order_good.price }}</td>
-                                            <td class="division-line">{{ order_good.count }}</td>
                                             <td class="division-line">{{ order_good.sku_good.stock }}</td>
 
                                         {% else %}
@@ -243,8 +243,8 @@
                                                 <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                             </td>
 
+                                            <td style="font-weight: bold;">{{ order_good.count }}</td>
                                             <td>{{ order_good.price }}</td>
-                                            <td>{{ order_good.count }}</td>
                                             <td>{{ order_good.sku_good.stock }}</td>
                                         {% endif %}
 
@@ -269,8 +269,8 @@
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
-                                <th>商品售价</th>
                                 <th>商品数量</th>
+                                <th>商品售价</th>
                                 <th>商品库存</th>
                             </tr>
                             </tfoot>
@@ -305,13 +305,14 @@
         // 缺货商品sku  注意'符号会转义
         var out_of_stock = {{ out_of_stock | safe }};
 
-        // 缺货商品添加背景色
-        function createdRow(row, data, index ) {
+        // 缺货商品添加背景色, 数量大于1的商品
+        function createdRow(row, data, index) {
+            var api = this.api();
             if ($.inArray(data[7], out_of_stock) !== -1) {
                 $(row).css("background-color", "#eadada");
             }
-            if (data[11] > 1) {
-                $(row).css("background-color", "#dab3b3");
+            if (data[10] > 1) {
+                $(api.cell(index, 10).node()).css("background-color", "#ff9a5b");
             }
         }
 
