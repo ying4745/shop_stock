@@ -74,11 +74,12 @@
                                 {% for order_good in order.ordergoods_set.all %}
                                     <tr>
                                         {% if forloop.first %}
-                                            <td>{{ forloop.parentloop.counter }}</td>
+                                            <td class="division-line">{{ forloop.parentloop.counter }}</td>
 
 
                                             <td data-order="{{ order.order_shopeeid }}"
-                                                data-search="{{ order.order_country }}">
+                                                data-search="{{ order.order_country }}"
+                                                class="division-line">
                                                 {% if order.order_status == 2 %}
                                                     <i class="fa fa-sticky-note-o"></i>
                                                 {% else %}
@@ -86,36 +87,45 @@
                                                 {% endif %}
                                             </td>
 
-                                            {% if order.order_country == 'PHP' %}
-                                                <td data-search="{{ order.get_order_country_display }}"
-                                                    class="text-green text-bold">{{ order.get_order_country_display }}</td>
-                                            {% elif order.order_country == 'MYR' %}
-                                                <td data-search="{{ order.get_order_country_display }}"
-                                                    class="text-blue text-bold">{{ order.get_order_country_display }}</td>
-                                            {% else %}
-                                                <td data-search="{{ order.get_order_country_display }}"
-                                                    class="text-purple text-bold">{{ order.get_order_country_display }}</td>
-                                            {% endif %}
+                                            <td data-search="{{ order.get_order_country_display }}"
+                                                {% if order.order_country == 'PHP' %}
+                                                class="text-green text-bold division-line"
+                                                {% elif order.order_country == 'MYR' %}
+                                                class="text-blue text-bold division-line"
+                                                {% else %}
+                                                class="text-purple text-bold division-line"
+                                                {% endif %}
+                                                >{{ order.get_order_country_display }}
+                                            </td>
 
-                                            <td data-search="{{ order.order_id }}" data-order="{{ order.order_time}}">{{ order.order_id }}</td>
+                                            <td class="division-line" data-search="{{ order.order_id }}"
+                                                data-order="{{ order.order_time}}">{{ order.order_id }}</td>
 
-                                            <td>{{ order.customer }}</td>
+                                            <td class="division-line">{{ order.customer }}</td>
 
-                                            <td>{{ order.receiver }}</td>
+                                            <td class="division-line">{{ order.receiver }}</td>
 
-                                            {% if order.customer_grade < 60 %}
-                                                <td><label
-                                                        class="label label-danger">{{ order.customer_info }}</label>
-                                                </td>
-                                            {% elif order.customer_grade < 80 %}
-                                                <td><label
-                                                        class="label label-warning">{{ order.customer_info }}</label>
-                                                </td>
-                                            {% else %}
-                                                <td><label
-                                                        class="label label-default">{{ order.customer_info }}</label>
-                                                </td>
-                                            {% endif %}
+                                            <td class="division-line"><label
+                                                {% if order.customer_grade < 60 %}
+                                                    class="label label-danger"
+                                                {% elif order.customer_grade < 80 %}
+                                                    class="label label-warning"
+                                                {% else %}
+                                                    class="label label-default"
+                                                {% endif %}
+                                                >{{ order.customer_info }}</label>
+                                            </td>
+
+                                            <td class="division-line">{{ order_good.sku_good.sku_id }}</td>
+                                            <td class="division-line">{{ order_good.sku_good.desc }}</td>
+
+                                            <td class="good_img division-line">
+                                                <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
+                                            </td>
+
+                                            <td class="division-line">{{ order_good.price }}</td>
+                                            <td class="division-line">{{ order_good.count }}</td>
+                                            <td class="division-line">{{ order_good.sku_good.stock }}</td>
 
                                         {% else %}
                                             <td></td>
@@ -125,18 +135,18 @@
                                             <td ></td>
                                             <td></td>
                                             <td></td>
+
+                                            <td>{{ order_good.sku_good.sku_id }}</td>
+                                            <td>{{ order_good.sku_good.desc }}</td>
+
+                                            <td class="good_img">
+                                                <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
+                                            </td>
+
+                                            <td>{{ order_good.price }}</td>
+                                            <td>{{ order_good.count }}</td>
+                                            <td>{{ order_good.sku_good.stock }}</td>
                                         {% endif %}
-
-                                        <td>{{ order_good.sku_good.sku_id }}</td>
-                                        <td>{{ order_good.sku_good.desc }}</td>
-
-                                        <td class="good_img">
-                                            <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
-                                        </td>
-
-                                        <td>{{ order_good.price }}</td>
-                                        <td>{{ order_good.count }}</td>
-                                        <td>{{ order_good.sku_good.stock }}</td>
 
                                     </tr>
                                 {% endfor %}

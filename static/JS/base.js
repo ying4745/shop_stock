@@ -54,7 +54,7 @@ $('#order_table').on('mouseover mouseout', 'tr', function (e) {
 // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
 $(".good-img-parent").on('mouseover mouseout', '.good_img', function (e) {
     if (e.type === 'mouseover') {
-        $(this).append('<p id="bigimage"><img width="450" height="450" src="' +
+        $(this).append('<p id="bigimage"><img width="500" height="500" src="' +
             $(this).find('img').attr('src') + '"></p>');
     } else {
         $("#bigimage").remove();

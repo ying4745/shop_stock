@@ -19,7 +19,7 @@ class IndexView(View):
 
     def get(self, request):
         """获取待出货订单 待出货订单和已完成订单总数"""
-        orders = OrderInfo.objects.filter(Q(order_status=1) | Q(order_status=4)).order_by('-order_time')
+        orders = OrderInfo.objects.filter(Q(order_status=1) | Q(order_status=4)).order_by('-order_id')
 
         unfinished_orders = orders.count()
         bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).count()
@@ -494,12 +494,12 @@ class OrderSpiderView(View):
         if order_type == 'many':
             if data_type in ['toship', 'shipping', 'completed', 'cancelled']:
                 shopee.get_order(data_type)
-                return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新'})
+                return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新', 'err_order': shopee.message})
             else:
                 return JsonResponse({'status': 4, 'msg': '订单状态参数错误'})
         elif order_type == 'single' and order_id:
             msg = shopee.get_single_order(order_id)
-            return JsonResponse({'status': 0, 'msg': msg})
+            return JsonResponse({'status': 0, 'msg': msg, 'err_order': shopee.message})
         else:
             return JsonResponse({'status': 3, 'msg': '订单号参数错误'})
 

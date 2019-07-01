@@ -55,10 +55,10 @@
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="MYR">
                                 <i class="fa fa-battery-full"></i> 运输中</a>
                         </li>
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="MYR">
-                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>
-                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="MYR">#}
+{#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
+{#                        </li>#}
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="MYR">
                                 <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
@@ -80,10 +80,10 @@
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="PHP">
                                 <i class="fa fa-battery-full"></i> 运输中</a>
                         </li>
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="PHP">
-                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>
-                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="PHP">#}
+{#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
+{#                        </li>#}
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="PHP">
                                 <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
@@ -105,10 +105,10 @@
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="THB">
                                 <i class="fa fa-battery-full"></i> 运输中</a>
                         </li>
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="THB">
-                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>
-                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="THB">#}
+{#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
+{#                        </li>#}
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="THB">
                                 <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
@@ -135,6 +135,7 @@
                     </div>
                 </div>
 
+                <p id="err_order" style="color: #ff0000;"></p>
             </div>
         </div>
         <div class="row">
@@ -176,46 +177,55 @@
                                 {% for order_good in order.ordergoods_set.all %}
                                     <tr>
                                         {% if forloop.first %}
-                                            <td>{{ forloop.parentloop.counter }}</td>
+                                            <td class="division-line">{{ forloop.parentloop.counter }}</td>
 
                                             {% if order.order_status == 1 %}
                                                 <td data-order="{{ order.order_shopeeid }}"
-                                                    data-search="{{ order.order_country }}">
+                                                    data-search="{{ order.order_country }}" class="division-line">
                                                     <i class="fa fa-square-o"></i></td>
                                             {% else %}
-                                                <td><i class="fa fa-square"></i></td>
+                                                <td class="division-line"><i class="fa fa-square"></i></td>
                                             {% endif %}
 
-                                            {% if order.order_country == 'PHP' %}
-                                                <td data-search="{{ order.get_order_country_display }}"
-                                                    class="text-green text-bold">{{ order.get_order_country_display }}</td>
-                                            {% elif order.order_country == 'MYR' %}
-                                                <td data-search="{{ order.get_order_country_display }}"
-                                                    class="text-blue text-bold">{{ order.get_order_country_display }}</td>
-                                            {% else %}
-                                                <td data-search="{{ order.get_order_country_display }}"
-                                                    class="text-purple text-bold">{{ order.get_order_country_display }}</td>
-                                            {% endif %}
+                                            <td data-search="{{ order.get_order_country_display }}"
+                                                {% if order.order_country == 'PHP' %}
+                                                class="text-green text-bold division-line"
+                                                {% elif order.order_country == 'MYR' %}
+                                                class="text-blue text-bold division-line"
+                                                {% else %}
+                                                class="text-purple text-bold division-line"
+                                                {% endif %}
+                                                >{{ order.get_order_country_display }}
+                                            </td>
 
-                                            <td data-search="{{ order.order_id }}" data-order="{{ order.order_id}}">{{ order.order_id }}</td>
+                                            <td class="division-line" data-search="{{ order.order_id }}"
+                                                data-order="{{ order.order_id}}">{{ order.order_id }}</td>
 
-                                            <td>{{ order.customer }}</td>
+                                            <td class="division-line">{{ order.customer }}</td>
 
-                                            <td>{{ order.receiver }}</td>
+                                            <td class="division-line">{{ order.receiver }}</td>
 
-                                            {% if order.customer_grade < 60 %}
-                                                <td><label
-                                                        class="label label-danger">{{ order.customer_info }}</label>
-                                                </td>
-                                            {% elif order.customer_grade < 80 %}
-                                                <td><label
-                                                        class="label label-warning">{{ order.customer_info }}</label>
-                                                </td>
-                                            {% else %}
-                                                <td><label
-                                                        class="label label-default">{{ order.customer_info }}</label>
-                                                </td>
-                                            {% endif %}
+                                            <td class="division-line"><label
+                                                {% if order.customer_grade < 60 %}
+                                                    class="label label-danger"
+                                                {% elif order.customer_grade < 80 %}
+                                                    class="label label-warning"
+                                                {% else %}
+                                                    class="label label-default"
+                                                {% endif %}
+                                                >{{ order.customer_info }}</label>
+                                            </td>
+
+                                            <td class="division-line">{{ order_good.sku_good.sku_id }}</td>
+                                            <td class="division-line">{{ order_good.sku_good.desc }}</td>
+
+                                            <td class="good_img division-line">
+                                                <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
+                                            </td>
+
+                                            <td class="division-line">{{ order_good.price }}</td>
+                                            <td class="division-line">{{ order_good.count }}</td>
+                                            <td class="division-line">{{ order_good.sku_good.stock }}</td>
 
                                         {% else %}
                                             <td></td>
@@ -225,18 +235,18 @@
                                             <td ></td>
                                             <td></td>
                                             <td></td>
+
+                                            <td>{{ order_good.sku_good.sku_id }}</td>
+                                            <td>{{ order_good.sku_good.desc }}</td>
+
+                                            <td class="good_img">
+                                                <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
+                                            </td>
+
+                                            <td>{{ order_good.price }}</td>
+                                            <td>{{ order_good.count }}</td>
+                                            <td>{{ order_good.sku_good.stock }}</td>
                                         {% endif %}
-
-                                        <td>{{ order_good.sku_good.sku_id }}</td>
-                                        <td>{{ order_good.sku_good.desc }}</td>
-
-                                        <td class="good_img">
-                                            <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
-                                        </td>
-
-                                        <td>{{ order_good.price }}</td>
-                                        <td>{{ order_good.count }}</td>
-                                        <td>{{ order_good.sku_good.stock }}</td>
 
                                     </tr>
                                 {% endfor %}
@@ -298,7 +308,10 @@
         // 缺货商品添加背景色
         function createdRow(row, data, index ) {
             if ($.inArray(data[7], out_of_stock) !== -1) {
-                $(row).css("background-color", "#adc2ef");
+                $(row).css("background-color", "#eadada");
+            }
+            if (data[11] > 1) {
+                $(row).css("background-color", "#dab3b3");
             }
         }
 
@@ -424,6 +437,9 @@
                 modal_obj.modal('show');
             });
 
+            // 解除悬停 高亮事件
+            $('#order_table').off('mouseover mouseout', 'tr')
+
         });
 
         // 模态框 确认按钮 发货更新订单状态、库存，或生产采购单
@@ -496,9 +512,13 @@
             $.get("{% url 'get_order' %}", params=data, function (e) {
                 if(!e.status){
                     showMessage(e.msg, 'bg-success');
-                    window.setTimeout(function () {
+                    if(e.err_order){
+                        $('#err_order').text(e.err_order)
+                    } else {
+                        window.setTimeout(function () {
                             location.reload()
                         }, 2100);
+                    }
                 } else {
                     showMessage(e.msg)
                 }

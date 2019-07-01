@@ -47,6 +47,7 @@ class PhGoodsSpider():
         self.country = 'ph'
 
         self.num = 0
+        self.message = ''
 
     def login(self):
         """登录获取cookies"""
@@ -147,7 +148,7 @@ class PhGoodsSpider():
                 save_log(self.update_path, err_msg, err_type='**异常商品：')
                 continue
 
-            defaults = {'goods': g_spu,}
+            defaults = {'goods': g_spu, }
 
             # 非英文数字加字符的商品规格 不添加 （排除小语种语言）
             if re.match(r'^[+\w #,)(\-]+$', good['name']):
@@ -237,12 +238,13 @@ class PhGoodsSpider():
             order_obj = parse_create_order(user_info, order_info)
 
             if not order_obj:
-                save_log(self.order_path, order_info['ordersn'], err_type='$已取消的订单：')
+                # save_log(self.order_path, order_info['ordersn'], err_type='$已取消的订单：')
                 continue
 
-            self.parse_create_ordergood(order_obj, order_info, order_data)
+            if order_obj.order_status != 3:
+                self.parse_create_ordergood(order_obj, order_info, order_data)
 
-            self.num += 1
+                self.num += 1
 
     def get_order(self, type='toship', page=0, is_all=True):
         """获取订单信息 保存到数据库
@@ -284,8 +286,9 @@ class PhGoodsSpider():
                 good_obj = GoodsSKU.objects.get(sku_id=good_sku)
             except Exception as e:
                 save_log(self.error_path, str(e.args))
-                msg = order_info['ordersn'] + ' >> ' + good_sku
+                msg = '(' + order_info['ordersn'] + ') 缺失商品： ' + good_sku + '\t'
                 save_log(self.order_path, msg, err_type='@订单商品错误：')
+                self.message += msg
                 # 标记订单商品是否完整
                 is_complete_order = False
                 # 跳过该商品， 记录下 手动修复
@@ -453,6 +456,7 @@ class MYGoodsSpider(PhGoodsSpider):
         self.country = 'my'
 
         self.num = 0
+        self.message = ''
 
 
 class ThGoodsSpider(PhGoodsSpider):
@@ -484,6 +488,7 @@ class ThGoodsSpider(PhGoodsSpider):
         self.country = 'th'
 
         self.num = 0
+        self.message = ''
 
 
 def save_log(filename, msg, err_type='Error'):

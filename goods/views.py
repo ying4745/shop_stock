@@ -185,4 +185,4 @@ class ImportExcelView(View):
     def get(self, request):
         excel_obj = ImportExcel()
         excel_obj.save_data()
-        return JsonResponse('ok')
+        return JsonResponse({'msg': 'ok'})

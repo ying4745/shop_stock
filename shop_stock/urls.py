@@ -48,7 +48,7 @@ urlpatterns = [
 
     path('bale/order/', BaleOrderView.as_view(), name='bale_order'),                # 打包订单 打印运单号
 
-    #path('import/excel/', ImportExcelView.as_view(), name='import_excel'),         # 填充数据
+    # path('import/excel/', ImportExcelView.as_view(), name='import_excel'),         # 填充数据
 
     path('', IndexView.as_view(), name='index')                                     # 主页 发货管理
 
