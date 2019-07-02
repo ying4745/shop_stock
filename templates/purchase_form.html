@@ -8,7 +8,7 @@
     {% csrf_token %}
 </div>
 <div class="modal-body">
-    <div class="box-content" style="padding: 0 60px;">
+    <div class="box-content" style="padding: 0 40px;">
 
         <button id="add-good" class="btn btn-default btn-block" style="margin-bottom: 8px">新增商品</button>
 
@@ -18,9 +18,14 @@
 
                     <li class="list-group-item">
                         <div class="input-group">
-                            <span class="input-group-addon good_img" style="padding: 0;">
-                                <img src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}" width="31" height="31">
+                            <span class="input-group-addon input-group-add">
+                                    <i class="fa fa-trash"></i>
                             </span>
+                            <span class="input-group-addon" style="padding: 0;">
+                                <img class="good_img" src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}" width="31" height="31">
+                            </span>
+
+                            <span class="input-group-addon">2</span>
 
                             <input type="text" class="form-control input-col1"
                                    onchange="update_img(this)" value="{{ pur_good.sku_good.sku_id }}">
@@ -89,8 +94,8 @@
     $('#add-good').click(function () {
         var good_html = '<li class="list-group-item">' +
             '               <div class="input-group">' +
-            '                    <span class="input-group-addon good_img" style="padding: 0;">' +
-            '                        <img src="" width="31" height="31">' +
+            '                    <span class="input-group-addon" style="padding: 0;">' +
+            '                        <img class="good_img" src="" width="31" height="31">' +
             '                    </span>' +
             '                    <input type="text" class="form-control input-col1" onchange="update_img(this)">' +
             '                    <div class="input-group input-col2">' +
@@ -113,6 +118,10 @@
     // 点击删除 商品
     $('.modal-content').on('click', '.input-group-del', function () {
         $(this).parents('.list-group-item').remove();
+    });
+
+    $('.modal-content').on('click', '.input-group-add', function () {
+
     });
 
     // 商品数量加

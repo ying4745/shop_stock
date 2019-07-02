@@ -1,6 +1,6 @@
 import xadmin
 
-from order.models import OrderInfo, OrderGoods
+from order.models import OrderInfo, OrderGoods, PurchaseOrder, PurchaseGoods
 
 
 class OrderInfoXadmin(object):
@@ -12,6 +12,7 @@ class OrderInfoXadmin(object):
     # 点击排序
     date_hierarchy = ('create_time',)
     ordering = ('-order_id',)
+    list_editable = ['order_profit', 'order_status']
 
     class OrderGoodsInline:
         model = OrderGoods
@@ -39,5 +40,30 @@ class OrderGoodsXadmin(object):
     get_good_desc.short_description = '规格'
 
 
+class PurchaseOrderXadmin(object):
+    list_display = ['purchase_id', 'total_price', 'desc', 'pur_status']
+    search_fields = ['purchase_id']
+    # 点击排序
+    date_hierarchy = ('create_time',)
+    ordering = ('-purchase_id',)
+    list_editable = ['total_price', 'desc']
+
+    class PurchaseGoodsInline:
+        model = PurchaseGoods
+        extra = 0
+
+    inlines = [PurchaseGoodsInline]
+
+
+class PurchaseGoodsXadmin(object):
+    list_display = ['purchase', 'sku_good', 'count', 'price']
+    search_fields = ['purchase', 'sku_good']
+    list_filter = ['purchase', 'sku_good']
+    date_hierarchy = ('create_time', 'purchase')
+    ordering = ('purchase',)
+
+
 xadmin.site.register(OrderInfo, OrderInfoXadmin)
 xadmin.site.register(OrderGoods, OrderGoodsXadmin)
+xadmin.site.register(PurchaseOrder, PurchaseOrderXadmin)
+xadmin.site.register(PurchaseGoods, PurchaseGoodsXadmin)

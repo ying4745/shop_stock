@@ -195,8 +195,8 @@
                         "data": "sku_img",
                         "render": function (data, type, row, meta) {
                             // meta row和col 索引信息
-                            $(table.cell(meta.row, meta.col).node()).addClass('good_img');
-                            return '<img width="60" height="60" src="{{ MEDIA_URL }}' + data + '">'
+                            // $(table.cell(meta.row, meta.col).node()).addClass('good_img');
+                            return '<img class="good_img" width="60" height="60" src="{{ MEDIA_URL }}' + data + '">'
                         }
                     },
                     {"data": "count"},

@@ -44,7 +44,7 @@ function getFloat2(x) {
 
 // 鼠标悬停 高亮行
 $('#order_table').on('mouseover mouseout', 'tr', function (e) {
-    if(e.type === 'mouseover'){
+    if (e.type === 'mouseover') {
         $(this).addClass('highlight')
     } else {
         $(this).removeClass('highlight')
@@ -54,10 +54,20 @@ $('#order_table').on('mouseover mouseout', 'tr', function (e) {
 // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
 $(".good-img-parent").on('mouseover mouseout', '.good_img', function (e) {
     if (e.type === 'mouseover') {
-        $(this).append('<p id="bigimage"><img width="500" height="500" src="' +
-            $(this).find('img').attr('src') + '"></p>');
+        var bot_height = $(window).height() - $(this).height() - $(this).offset().top + $(document).scrollTop();
+        $(this).parent().css('position', 'relative');
+        // 根据距离底部位置，选择放置图片位置
+        if (bot_height < 370) {
+            $(this).parent().append(
+                '<p id="top-image"><img width="500" height="500" src="' + $(this).attr('src') + '"></p>');
+        } else {
+            $(this).parent().append(
+                '<p id="bot-image"><img width="500" height="500" src="' + $(this).attr('src') + '"></p>');
+        }
+
     } else {
-        $("#bigimage").remove();
+        $("#bot-image").remove();
+        $("#top-image").remove();
     }
 });
 

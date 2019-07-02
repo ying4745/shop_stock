@@ -219,8 +219,9 @@
                                             <td class="division-line">{{ order_good.sku_good.sku_id }}</td>
                                             <td class="division-line">{{ order_good.sku_good.desc }}</td>
 
-                                            <td class="good_img division-line">
-                                                <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
+                                            <td class="division-line">
+                                                <img class="good_img" width="60" height="60"
+                                                     src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                             </td>
 
                                             <td class="division-line" style="font-weight: bold;">{{ order_good.count }}</td>
@@ -239,8 +240,9 @@
                                             <td>{{ order_good.sku_good.sku_id }}</td>
                                             <td>{{ order_good.sku_good.desc }}</td>
 
-                                            <td class="good_img">
-                                                <img width="60" height="60" src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
+                                            <td>
+                                                <img class="good_img" width="60" height="60"
+                                                     src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                             </td>
 
                                             <td style="font-weight: bold;">{{ order_good.count }}</td>

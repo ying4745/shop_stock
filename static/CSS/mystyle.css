@@ -1,12 +1,14 @@
 /*悬浮小图显示图片*/
-.good_img {
-    position: relative;
-}
-
-#bigimage {
+#bot-image {
     position: absolute;
     right: 80px;
     top: 55px;
+}
+
+#top-image {
+    position: absolute;
+    right: 80px;
+    top: -475px;
 }
 
 /*高亮样式*/
@@ -103,11 +105,11 @@
 
 /*采购单 商品列表布局*/
 .input-group input.input-col1 {
-    width: 270px;
+    width: 260px;
 }
 
 .input-col2 {
-    width: 116px;
+    width: 95px;
 }
 
 /*表格内容居中*/

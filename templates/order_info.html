@@ -4,6 +4,7 @@
     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
         <span aria-hidden="true">×</span></button>
     <h4 class="modal-title">
+        <b>{{ order_obj.get_order_country_display }}</b>&nbsp;&nbsp;&nbsp;
         订单编号：{% if order_obj %}{{ order_obj.order_id }}{% else %}无此单号信息{% endif %}</h4>
 </div>
 <div class="modal-body" style="text-align: center;">
@@ -26,7 +27,7 @@
         <tbody>
         {% for good in order_obj.ordergoods_set.all %}
             <tr>
-                <td class="good_img"><img src="{{ MEDIA_URL }}{{ good.sku_good.image }}" width="35" height="35"></td>
+                <td><img class="good_img" src="{{ MEDIA_URL }}{{ good.sku_good.image }}" width="35" height="35"></td>
                 <td>{{ good.sku_good.sku_id }}</td>
                 <td>{{ good.price }}</td>
                 <td>{{ good.count }}</td>

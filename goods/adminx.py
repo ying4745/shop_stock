@@ -2,7 +2,7 @@ import xadmin
 from xadmin import views
 
 from goods.models import Goods, GoodsSKU
-from order.models import OrderGoods, OrderInfo
+from order.models import OrderGoods, OrderInfo, PurchaseOrder, PurchaseGoods
 
 
 class GoodsXadmin(object):
@@ -62,6 +62,8 @@ class GlobalSetting(object):
                 {'title': '商品sku信息', 'url': self.get_model_url(GoodsSKU, 'changelist')},
                 {'title': '订单信息', 'url': self.get_model_url(OrderInfo, 'changelist')},
                 {'title': '订单商品', 'url': self.get_model_url(OrderGoods, 'changelist')},
+                {'title': '采购信息', 'url': self.get_model_url(PurchaseOrder, 'changelist')},
+                {'title': '采购商品', 'url': self.get_model_url(PurchaseGoods, 'changelist')},
             )},)
 
 xadmin.site.register(Goods, GoodsXadmin)
