@@ -1,5 +1,22 @@
 {% load static %}
 
+    <!-- 同种商品sku选择列表 模态框 -->
+    <div class="modal fade" id="skulist-Modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" style="width:400px;"> role="document">
+            <div class="modal-content good-img-parent">
+                <div class="modal-header">
+                    <button type="button" class="close" onclick="off_modal()" aria-label="Close">
+                        <span aria-hidden="true">×</span></button>
+                    <h4 class="modal-title">采购商品选择</h4>
+                </div>
+                <div class="modal-body goodsku-body">
+                    <!-- 模态框内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 模态框 结束 -->
+
 <div class="modal-header" style="text-align: center">
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
     </button>
@@ -10,7 +27,8 @@
 <div class="modal-body">
     <div class="box-content" style="padding: 0 40px;">
 
-        <button id="add-good" class="btn btn-default btn-block" style="margin-bottom: 8px">新增商品</button>
+        <button class="btn btn-default btn-block" onclick="add_good_html(null, 0, '')"
+                style="margin-bottom: 8px">新增商品</button>
 
         <ul id="pur_good" class="list-group">
             {% if pur_obj %}
@@ -18,17 +36,16 @@
 
                     <li class="list-group-item">
                         <div class="input-group">
-                            <span class="input-group-addon input-group-add">
-                                    <i class="fa fa-trash"></i>
+                            <span class="input-group-addon input-group-add" style="padding: 6px 10px">
+                                    <i class="fa fa-list"></i>
                             </span>
-                            <span class="input-group-addon" style="padding: 0;">
-                                <img class="good_img" src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}" width="31" height="31">
+                            <span class="input-group-addon img-box" style="padding: 0;">
+                                <img class="good_img" src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}" width="32" height="32">
                             </span>
 
-                            <span class="input-group-addon">2</span>
+                            <span class="input-group-addon">{{ pur_good.sku_good.stock }}</span>
 
-                            <input type="text" class="form-control input-col1"
-                                   onchange="update_img(this)" value="{{ pur_good.sku_good.sku_id }}">
+                            <input type="text" class="form-control input-col1" value="{{ pur_good.sku_good.sku_id }}">
 
                             <div class="input-group input-col2">
                                 <input id="good_count" type="text" class="form-control" value="{{ pur_good.count }}">
@@ -69,35 +86,18 @@
 
 <script>
 
-    // 输入sku_id 更新默认图片地址（不是默认方式找不到）
-    function update_img(input_obj) {
-        var sku_id = $(input_obj).val(), spu_id;
-        // 根据sku 按默认存储方式 匹配出文件名
-        if (sku_id.indexOf('#') !== -1 && sku_id.match(/.+_#[^.]{2}/)) {
-            sku_id = sku_id.match(/.+_#[^.]{2}/)[0].replace('#', '');
-        } else if (sku_id.indexOf('_') !== -1) {
-            sku_id = sku_id.match(/(.*)_/)[1];
-        }
-        // 有'_' 则去除符号之后字符 即为spu
-        if (sku_id.indexOf('_') !== -1) {
-            spu_id = sku_id.match(/(.+?)_/)[1];
-        } else {
-            spu_id = sku_id
-        }
-        // 更新图片src
-        var img_path = '/media/' + spu_id + '/' + sku_id + '.jpg';
-        //console.log(img_path);
-        $(input_obj).prev().find('img').attr('src', img_path);
-    }
-
-    // 新增商品
-    $('#add-good').click(function () {
+    // 新增商品 html
+    function add_good_html(img_path, good_stock, goodsku_id) {
         var good_html = '<li class="list-group-item">' +
             '               <div class="input-group">' +
-            '                    <span class="input-group-addon" style="padding: 0;">' +
-            '                        <img class="good_img" src="" width="31" height="31">' +
+            '                    <span class="input-group-addon input-group-add" style="padding: 6px 10px">' +
+            '                        <i class="fa fa-list"></i>' +
             '                    </span>' +
-            '                    <input type="text" class="form-control input-col1" onchange="update_img(this)">' +
+            '                    <span class="input-group-addon img-box" style="padding: 0;">' +
+            '                        <img class="good_img" src="' + img_path + '" width="32" height="32">' +
+            '                    </span>' +
+            '                    <span class="input-group-addon">' + good_stock + '</span>' +
+            '                    <input type="text" class="form-control input-col1" value="' + goodsku_id + '">' +
             '                    <div class="input-group input-col2">' +
             '                        <input id="good_count" type="text" class="form-control" value="1">' +
             '                        <div class="input-group-btn-vertical">' +
@@ -112,7 +112,26 @@
             '                    </div>' +
             '                </div>' +
             '            </li>';
-        $(this).next().append(good_html);
+        $('#pur_good').append(good_html);
+    }
+
+    // 输入sku 更新图片地址和库存
+    $('#pur_good').on('change', '.input-col1', function () {
+        var this_obj = $(this);
+        var sku_id = this_obj.val();
+        if (!sku_id) {
+            return;
+        }
+        $.get("{% url 'goodsku_list' %}", params ={'sku_id': sku_id}, function (e) {
+            if (!e.status) {
+                var id = Object.keys(e.msg)[0];
+                this_obj.prev().text(e.msg[id][0]);
+                this_obj.prevAll('.img-box').children().attr('src', e.msg[id][1]);
+            } else {
+                showMessage(e.msg);
+                this_obj.val('')
+            }
+        })
     });
 
     // 点击删除 商品
@@ -120,8 +139,78 @@
         $(this).parents('.list-group-item').remove();
     });
 
-    $('.modal-content').on('click', '.input-group-add', function () {
+    // 采购单中已有商品
+    function purchase_good_data(){
+        var pur_data = [];
+        $('#pur_good li').each(function () {
+            pur_data.push($(this).find('.input-col1').val())
+        });
+        return pur_data
+    }
 
+    // 同spu商品列表 加载
+    $('.modal-content').on('click', '.input-group-add', function () {
+        var data = {
+            'sku_id': $(this).nextAll('input').val(),
+            'search_type': 'all'
+        };
+        var pur_data = purchase_good_data();
+        $.get("{% url 'goodsku_list' %}", params=data, function (e) {
+            if (e.status){
+                showMessage(e.msg);
+            } else {
+                var html_str = '<ul class="list-group goodsku-list">';
+                for ( i in e.msg) {
+                    html_str += '<li class="list-group-item">' +
+                        '        ' +
+                        '            <span id="sku_list_img" class="input-group-addon" style="padding: 0;">' +
+                        '                <img class="good_img" src="' + e.msg[i][1] +
+                        '                   " width="32" height="32">' +
+                        '            </span>' +
+                        '            <span id="sku_list_id" style="width: 235px;" class="input-group-addon">' + i +
+                        '            </span>' +
+                        '            <span class="input-group-addon">' + e.msg[i][0] +
+                        '            </span>' +
+                        '            <span class="input-group-addon purchase-good-add">' +
+                        '                <i class="fa ';
+                    // 已经添加的商品 不再添加
+                    if ($.inArray(i, pur_data) !== -1) {
+                        html_str += 'fa-plus-square'
+                    } else {
+                        html_str += 'fa-plus-square-o'
+                    }
+                    html_str +='"></i></span></li>';
+                }
+                html_str += '</ul>';
+                $('.goodsku-body').html(html_str);
+                $('#skulist-Modal').modal('show')
+            }
+        })
+
+    });
+
+    // 点击 添加商品到采购单
+    $('.goodsku-body').on('click', '.purchase-good-add', function () {
+        var plus_fac = $(this).children();
+        if (plus_fac.hasClass('fa-plus-square-o')) {
+            plus_fac.removeClass('fa-plus-square-o').addClass('fa-plus-square');
+            var sku_id = $.trim($(this).prevAll('#sku_list_id').text());
+            var sku_image = $.trim($(this).prevAll('#sku_list_img').children().attr('src'));
+            var sku_stock = $.trim($(this).prev().text());
+            //console.log(sku_id, sku_image, sku_stock);
+            add_good_html(sku_image, sku_stock, sku_id)
+        }
+
+
+    });
+
+    // 二级模态框隐藏
+    function off_modal(){
+	    $("#skulist-Modal").modal('hide');
+    }
+    // 二级模态框隐藏后事件，再次给body添加遮盖罩，防止一级模态框滚动条消失
+    $('#skulist-Modal').on('hidden.bs.modal', function (e) {
+        $('body').addClass('modal-open');
     });
 
     // 商品数量加

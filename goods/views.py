@@ -8,7 +8,7 @@ from django.views.generic.base import View
 
 from spider.goods_spider import country_type_dict
 from goods.models import GoodsSKU, Goods
-from spider.import_excel import ImportExcel
+# from spider.import_excel import ImportExcel
 
 class GoodsListView(View):
     """商品列表页"""
@@ -83,6 +83,7 @@ class GoodsListView(View):
 class ModifyGoodsView(View):
 
     def get(self, request):
+        """商品上下架修改"""
         sku_id = request.GET.get('sku_id', '')
         res_type = request.GET.get('res_type', '')
 
@@ -109,6 +110,7 @@ class ModifyGoodsView(View):
         return JsonResponse({'status': 0, 'msg': msg})
 
     def post(self, request):
+        """商品URL、重量、进价、货架号修改"""
         update_data = json.loads(request.POST.get('update_data', ''))
 
         if 'spu_id' in update_data:
@@ -151,6 +153,29 @@ class ModifyGoodsView(View):
         return JsonResponse({'status': 1, 'msg': '无更新参数'})
 
 
+class SingleGoodsListView(View):
+    """单个spu商品 sku列表"""
+    def get(self, request):
+        sku_id = request.GET.get('sku_id', '')
+        search_type = request.GET.get('search_type', '')
+
+        if not sku_id:
+            return JsonResponse({'status': 1, 'msg': '无参数'})
+
+        good_obj = GoodsSKU.objects.filter(sku_id=sku_id, status=1)
+        if not good_obj:
+            return JsonResponse({'status': 3, 'msg': '没找到这个商品'})
+
+        if search_type == 'all':
+            good_obj = GoodsSKU.objects.filter(goods=good_obj[0].goods, status=1)
+
+        res_data = {}
+        for good in good_obj:
+            res_data[good.sku_id] = [good.stock, good.image.url]
+
+        return JsonResponse({'status': 0, 'msg': res_data})
+
+
 class GoodsSpiderView(View):
     """爬取商品信息"""
 
@@ -181,8 +206,8 @@ class GoodsSpiderView(View):
             return JsonResponse({'status': 3, 'msg': '商品或SKU参数错误'})
 
 
-class ImportExcelView(View):
-    def get(self, request):
-        excel_obj = ImportExcel()
-        excel_obj.save_data()
-        return JsonResponse({'msg': 'ok'})
+# class ImportExcelView(View):
+#     def get(self, request):
+#         excel_obj = ImportExcel()
+#         excel_obj.save_data()
+#         return JsonResponse({'msg': 'ok'})

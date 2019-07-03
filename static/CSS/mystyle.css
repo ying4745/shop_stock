@@ -32,7 +32,7 @@
     font-size: 20px;
     width: 500px;
     text-align: center;
-    z-index: 999;
+    z-index: 1999;
 }
 
 /*发货按钮*/
@@ -105,11 +105,20 @@
 
 /*采购单 商品列表布局*/
 .input-group input.input-col1 {
-    width: 260px;
+    width: 255px;
 }
 
 .input-col2 {
     width: 95px;
+}
+
+/*采购单 选择商品列表布局*/
+.goodsku-list {
+    border: 1px solid #ddd;
+}
+.goodsku-list li {
+    padding: 5px 15px;
+    border: none;
 }
 
 /*表格内容居中*/

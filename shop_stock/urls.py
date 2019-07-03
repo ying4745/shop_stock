@@ -19,7 +19,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
-from goods.views import GoodsListView, GoodsSpiderView, ModifyGoodsView, ImportExcelView
+from goods.views import GoodsListView, GoodsSpiderView, ModifyGoodsView, SingleGoodsListView
 from order.views import OrderListView, IndexView, OrderSpiderView, BuyGoodsView, ModifyPurchaseView
 from order.views import StockView, StockListView, OrderChartsView, OrderInfoView, OrderWaybillView
 from order.views import BaleOrderView
@@ -30,6 +30,7 @@ urlpatterns = [
 
     path('goods/list/', GoodsListView.as_view(), name='goods_list'),                # 商品列表 get页面 post数据
     path('modify/good/', ModifyGoodsView.as_view(), name='modify_good'),            # 修改商品数据
+    path('goodsku/list/', SingleGoodsListView.as_view(), name='goodsku_list'),      # 单个spu商品 sku列表
 
     path('order/list/', OrderListView.as_view(), name='order_list'),                # 已完成订单列表 get页面 post数据
     path('order/info/', OrderInfoView.as_view(), name='order_info'),                # 已完成订单详情

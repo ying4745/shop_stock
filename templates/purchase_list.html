@@ -294,13 +294,16 @@
         function update_purchase() {
             var pur_goods = [];
             $('#pur_good li').each(function () {
-                var good_info = {};
-                good_info.sku_id = $(this).find('.input-col1').val();
-                good_info.count = $(this).find('#good_count').val();
-                pur_goods.push(good_info);
+                var good_info = {
+                    'sku_id': $(this).find('.input-col1').val(),
+                    'count': $(this).find('#good_count').val()
+                };
+                if (good_info.count !== '0') {
+                    pur_goods.push(good_info);
+                }
             });
             var data = {
-                'purchase_id': $('#myModalLabel').text(),
+                'purchase_id': $.trim($('#myModalLabel').text()),
                 'purchase_price': $('#pur_price').val(),
                 'purchase_desc': $('#pur_desc').val(),
                 'purchase_goods': pur_goods
