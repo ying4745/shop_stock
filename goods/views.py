@@ -167,7 +167,7 @@ class SingleGoodsListView(View):
             return JsonResponse({'status': 3, 'msg': '没找到这个商品'})
 
         if search_type == 'all':
-            good_obj = GoodsSKU.objects.filter(goods=good_obj[0].goods, status=1)
+            good_obj = GoodsSKU.objects.filter(goods=good_obj[0].goods, status=1).order_by('sku_id')
 
         res_data = {}
         for good in good_obj:

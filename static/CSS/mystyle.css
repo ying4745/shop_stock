@@ -3,12 +3,14 @@
     position: absolute;
     right: 80px;
     top: 55px;
+    z-index: 9999;
 }
 
 #top-image {
     position: absolute;
     right: 80px;
     top: -475px;
+    z-index: 9999;
 }
 
 /*高亮样式*/
