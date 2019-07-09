@@ -314,6 +314,9 @@
                 '    <span class="input-group-btn">\n' +
                 '        <button class="btn btn-default" id="jump_btn" type="button">页码跳转</button>\n' +
                 '    </span>\n' +
+                '    <span style="padding-left:10px;" class="input-group-btn">\n' +
+                '        <button class="btn btn-default" id="reload_btn" type="button">刷新</button>' +
+                '    </span>\n' +
                 '</div>'
             );
             // 跳转按钮
@@ -324,6 +327,11 @@
                 } else {
                     showMessage('输入正确页码')
                 }
+            });
+
+            // 刷新
+            $('#reload_btn').click(function () {
+                table.ajax.reload(null, false);
             });
 
             // 双击单元格 变输入框 进价、库存修改

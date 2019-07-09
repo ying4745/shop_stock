@@ -198,7 +198,7 @@ class OrderListView(View):
 
 
 class OrderInfoView(View):
-    """订单详情视图"""
+    """订单详情视图，订单备注修改"""
 
     def get(self, request):
         order_id = request.GET.get('order_id', '')
@@ -209,6 +209,19 @@ class OrderInfoView(View):
             order_obj = order_obj[0]
 
         return render(request, 'order_info.html', {'order_obj': order_obj})
+
+    def post(self, request):
+        data = json.loads(request.POST.get('update_data', ''))
+
+        if not data.get('order_id', '') or not data.get('order_desc', ''):
+            return JsonResponse({'status': 1, 'msg': '参数错误'})
+
+        try:
+            OrderInfo.objects.filter(order_id=data['order_id']).update(order_desc=data['order_desc'])
+        except:
+            return JsonResponse({'status': 2, 'msg': '修改失败'})
+
+        return JsonResponse({'status': 0, 'msg': '修改成功'})
 
 
 class OrderChartsView(View):
@@ -258,9 +271,20 @@ class BuyGoodsView(View):
 
         purchase_orders = PurchaseOrder.objects.filter(pur_status=1).order_by('-create_time')
         stock_orders_num = PurchaseOrder.objects.filter(pur_status=2).count()
+        # 采购中商品
+        pur_goods_list = purchase_orders.values_list('purchasegoods__sku_good__sku_id', flat=True)
+
+        orders = OrderInfo.objects.filter(Q(order_status=1) | Q(order_status=4))
+        out_of_stock, orders_goods = out_of_stock_good_list(orders)
+
+        # 还未采购的缺货商品
+        un_pur_goods_list = list(set(out_of_stock).difference(set(pur_goods_list)))
+        un_pur_goods = GoodsSKU.objects.filter(sku_id__in=un_pur_goods_list).order_by('sku_id')
 
         return render(request, 'purchase_list.html', {'purchase_orders': purchase_orders,
-                                                      'stock_orders_num': stock_orders_num})
+                                                      'stock_orders_num': stock_orders_num,
+                                                      'orders_goods': orders_goods,
+                                                      'un_pur_goods': un_pur_goods})
 
     @transaction.atomic
     def post(self, request):
@@ -319,24 +343,26 @@ class ModifyPurchaseView(View):
         except:
             return JsonResponse({'status': 2, 'msg': '采购单参数错误'})
 
+        if not pur_dict.get('purchase_goods', ''):
+            return JsonResponse({'status': 3, 'msg': '采购单商品错误'})
+
+        # 新增或更新商品
         pur_obj = pur_order[0]
         pur_good_list = []
 
         p_save = transaction.savepoint()
 
-        # 新增或更新商品
-        if pur_dict['purchase_goods']:
-            for good in pur_dict['purchase_goods']:
-                pur_good_list.append(good['sku_id'])
-                try:
-                    sku_good = GoodsSKU.objects.get(sku_id=good['sku_id'])
-                    PurchaseGoods.objects.update_or_create(purchase=pur_obj,
-                                                           sku_good=sku_good,
-                                                           defaults={'count': good['count']})
-                except Exception as e:
-                    print(e)
-                    transaction.savepoint_rollback(p_save)
-                    return JsonResponse({'status': 3, 'msg': '失败：' + str(e)})
+        for good in pur_dict['purchase_goods']:
+            pur_good_list.append(good['sku_id'])
+            try:
+                sku_good = GoodsSKU.objects.get(sku_id=good['sku_id'])
+                PurchaseGoods.objects.update_or_create(purchase=pur_obj,
+                                                       sku_good=sku_good,
+                                                       defaults={'count': good['count']})
+            except Exception as e:
+                # print(e)
+                transaction.savepoint_rollback(p_save)
+                return JsonResponse({'status': 4, 'msg': '失败：' + str(e)})
 
         transaction.savepoint_commit(p_save)
 
@@ -353,6 +379,7 @@ class StockView(View):
 
     @transaction.atomic
     def get(self, request):
+        """采购单 入库"""
         purchase_id = request.GET.get('purchase_id', '')
 
         if not purchase_id:
@@ -366,6 +393,9 @@ class StockView(View):
 
         pur_obj = pur_order[0]
         for pur_good in pur_obj.purchasegoods_set.all():
+            # 已入库的商品 不操作
+            if pur_good.status:
+                continue
             try:
                 GoodsSKU.objects.filter(sku_id=pur_good.sku_good.sku_id).update(
                     stock=F('stock') + pur_good.count)
@@ -375,6 +405,32 @@ class StockView(View):
 
         transaction.savepoint_commit(s_save)
         pur_order.update(pur_status=2)
+
+        return JsonResponse({'status': 0, 'msg': '更新成功'})
+
+    def post(self, request):
+        """采购商品单项 入库"""
+        data = json.loads(request.POST.get('data_dict'))
+        # print(data)
+
+        if not data.get('pur_id', '') or not data.get('sku_id', ''):
+            return JsonResponse({'status': 1, 'msg': '参数错误'})
+
+        skugood_obj = GoodsSKU.objects.filter(sku_id=data['sku_id'])
+        if not skugood_obj:
+            return JsonResponse({'status': 2, 'msg': '没找到该商品信息'})
+
+        pur_good = PurchaseGoods.objects.filter(purchase__purchase_id=data['pur_id'],
+                                                sku_good__sku_id=data['sku_id'],
+                                                status=0)
+        if not pur_good:
+            return JsonResponse({'status': 3, 'msg': '没找到这条记录'})
+
+        try:
+            skugood_obj.update(stock=F('stock') + pur_good[0].count)
+            pur_good.update(status=1)
+        except:
+            return JsonResponse({'status': 4, 'msg': '更新失败'})
 
         return JsonResponse({'status': 0, 'msg': '更新成功'})
 

@@ -8,16 +8,18 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
                     <h4 class="modal-title" id="myModalLabel"></h4>
                     {% csrf_token %}
                 </div>
                 <div class="modal-body">
-                ...
+                    ...
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
-                    <button id="confirm_btn" type="button" onclick="shipping_good(this)" class="btn btn-primary"></button>
+                    <button id="confirm_btn" type="button" onclick="shipping_good(this)"
+                            class="btn btn-primary"></button>
                 </div>
             </div>
         </div>
@@ -55,10 +57,10 @@
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="MYR">
                                 <i class="fa fa-battery-full"></i> 运输中</a>
                         </li>
-{#                        <li>#}
-{#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="MYR">#}
-{#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
-{#                        </li>#}
+                        {#                        <li>#}
+                        {#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="MYR">#}
+                        {#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
+                        {#                        </li>#}
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="MYR">
                                 <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
@@ -80,10 +82,10 @@
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="PHP">
                                 <i class="fa fa-battery-full"></i> 运输中</a>
                         </li>
-{#                        <li>#}
-{#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="PHP">#}
-{#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
-{#                        </li>#}
+                        {#                        <li>#}
+                        {#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="PHP">#}
+                        {#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
+                        {#                        </li>#}
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="PHP">
                                 <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
@@ -105,10 +107,10 @@
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="THB">
                                 <i class="fa fa-battery-full"></i> 运输中</a>
                         </li>
-{#                        <li>#}
-{#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="THB">#}
-{#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
-{#                        </li>#}
+                        {#                        <li>#}
+                        {#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="THB">#}
+                        {#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
+                        {#                        </li>#}
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="THB">
                                 <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
@@ -162,6 +164,7 @@
                                 <th>客户名</th>
                                 <th>收件人</th>
                                 <th>客户信誉</th>
+                                <th>订单备注</th>
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
@@ -188,32 +191,40 @@
                                             {% endif %}
 
                                             <td data-search="{{ order.get_order_country_display }}"
-                                                {% if order.order_country == 'PHP' %}
+                                                    {% if order.order_country == 'PHP' %}
                                                 class="text-green text-bold division-line"
-                                                {% elif order.order_country == 'MYR' %}
+                                                    {% elif order.order_country == 'MYR' %}
                                                 class="text-blue text-bold division-line"
-                                                {% else %}
+                                                    {% else %}
                                                 class="text-purple text-bold division-line"
-                                                {% endif %}
-                                                >{{ order.get_order_country_display }}
+                                                    {% endif %}
+                                            >{{ order.get_order_country_display }}
                                             </td>
 
                                             <td class="division-line" data-search="{{ order.order_id }}"
-                                                data-order="{{ order.order_id}}">{{ order.order_id }}</td>
+                                                data-order="{{ order.order_id }}">{{ order.order_id }}</td>
 
                                             <td class="division-line">{{ order.customer }}</td>
 
                                             <td class="division-line">{{ order.receiver }}</td>
 
                                             <td class="division-line"><label
-                                                {% if order.customer_grade < 60 %}
-                                                    class="label label-danger"
-                                                {% elif order.customer_grade < 80 %}
-                                                    class="label label-warning"
+                                                    {% if order.customer_grade < 60 %}
+                                                        class="label label-danger"
+                                                    {% elif order.customer_grade < 80 %}
+                                                        class="label label-warning"
+                                                    {% else %}
+                                                        class="label label-default"
+                                                    {% endif %}
+                                            >{{ order.customer_info }}</label>
+                                            </td>
+
+                                            <td class="division-line edit-desc" data-order="{{ order.order_id }}">
+                                                {% if order.order_desc != 'nothing' %}
+                                                    {{ order.order_desc }}
                                                 {% else %}
-                                                    class="label label-default"
+                                                    <span style="color: #7d7d7d">（空）</span>
                                                 {% endif %}
-                                                >{{ order.customer_info }}</label>
                                             </td>
 
                                             <td class="division-line">{{ order_good.sku_good.sku_id }}</td>
@@ -224,7 +235,8 @@
                                                      src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                             </td>
 
-                                            <td class="division-line" style="font-weight: bold;">{{ order_good.count }}</td>
+                                            <td class="division-line"
+                                                style="font-weight: bold;">{{ order_good.count }}</td>
                                             <td class="division-line">{{ order_good.price }}</td>
                                             <td class="division-line">{{ order_good.sku_good.stock }}</td>
 
@@ -232,8 +244,10 @@
                                             <td></td>
                                             <td></td>
                                             <td data-search="{{ order.get_order_country_display }}"></td>
-                                            <td data-search="{{ order.order_id }}" data-order="{{ order.order_id}}"></td>
-                                            <td ></td>
+                                            <td data-search="{{ order.order_id }}"
+                                                data-order="{{ order.order_id }}"></td>
+                                            <td></td>
+                                            <td></td>
                                             <td></td>
                                             <td></td>
 
@@ -254,7 +268,7 @@
                                 {% endfor %}
 
                             {% empty %}
-                                <tr>没有数据！</tr>
+                                <p>没有数据！</p>
                             {% endfor %}
 
                             </tbody>
@@ -268,6 +282,7 @@
                                 <th>客户名</th>
                                 <th>收件人</th>
                                 <th>客户信誉</th>
+                                <th>订单备注</th>
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
@@ -277,6 +292,7 @@
                             </tr>
                             </tfoot>
                         </table>
+
                     </div> <!-- /.box-body -->
                 </div> <!-- /.box -->
             </div> <!-- /.col -->
@@ -295,11 +311,11 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0,1,5,6,9,10,11],
+                "targets": [0, 1, 5, 6, 7, 10, 11, 12],
                 "searchable": false
             },
             {
-                "targets": [0,1,2,4,5,6,7,8,9,10,11],
+                "targets": [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                 "orderable": false
             },
         ];
@@ -310,33 +326,33 @@
         // 缺货商品添加背景色, 数量大于1的商品
         function createdRow(row, data, index) {
             var api = this.api();
-            if ($.inArray(data[7], out_of_stock) !== -1) {
-                $(row).css("background-color", "#eadada");
+            if ($.inArray(data[8], out_of_stock) !== -1) {
+                $(row).css("background-color", "#a9b8c3");
             }
-            if (data[10] > 1) {
-                $(api.cell(index, 10).node()).css("background-color", "#ff9a5b");
+            if (data[11] > 1) {
+                $(api.cell(index, 11).node()).css("background-color", "#ff9a5b");
             }
         }
 
         // 添加下拉式筛选框
         function col_search() {
             var api = this.api();
-            api.columns([2,3,7]).indexes().flatten().each( function ( i ) {
-                var column = api.column( i );
+            api.columns([2, 3, 8]).indexes().flatten().each(function (i) {
+                var column = api.column(i);
                 var select = $('<select><option value=""></option></select>')
-                    .appendTo( $(column.footer()).empty() )
-                    .on( 'change', function () {
+                    .appendTo($(column.footer()).empty())
+                    .on('change', function () {
                         var val = $.fn.dataTable.util.escapeRegex(
                             $(this).val()
                         );
                         column
-                            .search( val ? '^'+val+'$' : '', true, false )
+                            .search(val ? '^' + val + '$' : '', true, false)
                             .draw();
-                    } );
-                column.data().unique().sort().each( function ( d, j ) {
-                    select.append( '<option value="'+d+'">'+d+'</option>' )
-                } );
-            } );
+                    });
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
+                });
+            });
         }
 
         $(function () {
@@ -348,8 +364,8 @@
                 "order": [[3, 'desc']],     <!-- 初始排序列表 -->
                 "info": true,         <!-- 显示信息 -->
                 "pageLength": 50,    <!-- 每页显示 -->
-                "autoWidth": false,  <!-- 自动宽度 -->
-                "scrollX": true,  <!-- 水平滚动 -->
+                "autoWidth": true,  <!-- 自动宽度 -->
+                "scrollX": false,  <!-- 水平滚动 -->
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
@@ -361,13 +377,13 @@
             });
 
             // 多选行，选中添加class
-            $('#order_table tbody').on('click', 'tr', function (){
+            $('#order_table tbody').on('click', 'tr', function () {
                 $(this).toggleClass('selected');
             });
 
             // 处理按钮，提交平台生成运单号（平台订单ID）
             $('#make_waybill').click(function () {
-                if(!$('tr.selected').length) {
+                if (!$('tr.selected').length) {
                     showMessage('先选中');
                     return
                 }
@@ -377,9 +393,9 @@
 
                 var order_num = 0;
                 var ship_html = '<ul class="list-group text-center">';
-                table.rows('.selected').data().each( function (i) {
-                    if (i[1]['@data-order'] && i[1]['@data-search']){
-                        ship_html = ship_html + '<li class="list-group-item" data-country='+ i[1]['@data-search']
+                table.rows('.selected').data().each(function (i) {
+                    if (i[1]['@data-order'] && i[1]['@data-search']) {
+                        ship_html = ship_html + '<li class="list-group-item" data-country=' + i[1]['@data-search']
                             + '>' + i[1]['@data-order'] + '</li>';
                         order_num += 1
                     }
@@ -393,7 +409,7 @@
 
             // 发货按钮 点击弹出模态框 传入选中数据（订单号）
             $('#ship_good').click(function () {
-                if(!$('tr.selected').length) {
+                if (!$('tr.selected').length) {
                     showMessage('先选中');
                     return
                 }
@@ -403,8 +419,8 @@
 
                 var order_num = 0;
                 var ship_html = '<ul class="list-group text-center">';
-                table.rows('.selected').data().each( function (i) {
-                    if (i[3]['display']){
+                table.rows('.selected').data().each(function (i) {
+                    if (i[3]['display']) {
                         ship_html = ship_html + '<li class="list-group-item" >' + i[3]['display'] + '</li>';
                         order_num += 1
                     }
@@ -418,7 +434,7 @@
 
             // 采购按钮 传入选中数据（skuID）
             $('#buy_good').click(function () {
-                if(!$('tr.selected').length) {
+                if (!$('tr.selected').length) {
                     showMessage('先选中');
                     return
                 }
@@ -428,9 +444,9 @@
 
                 var order_num = 0;
                 var ship_html = '<ul class="list-group text-center">';
-                table.rows('.selected').data().each( function (i) {
-                    if (i[7]){
-                        ship_html = ship_html + '<li class="list-group-item">' + i[7] + '</li>';
+                table.rows('.selected').data().each(function (i) {
+                    if (i[8]) {
+                        ship_html = ship_html + '<li class="list-group-item">' + i[8] + '</li>';
                         order_num += 1
                     }
                 });
@@ -441,31 +457,85 @@
             });
 
             // 解除悬停 高亮事件
-            $('#order_table').off('mouseover mouseout', 'tr')
+            $('#order_table').off('mouseover mouseout', 'tr');
 
+            // 备注 双击弹出 编辑框
+            $('.edit-desc').dblclick(function () {
+                var old_text = $.trim($(this).text());
+                if (old_text === '（空）') {
+                    old_text = ''
+                }
+                var edit_html = '<div id="input-edit-desc">\n' +
+                    '       <h5>订单备注<button id="close-edit-desc" class="close" style="margin-top: -4px;">×</button></h5>\n' +
+                    '       <textarea type="text" rows="2" class="form-control" style="margin-bottom: 10px;width:230px;">' +
+                                old_text + '</textarea>\n' +
+                    '       <button id="desc-sub" type="button" class="btn btn-success btn-block btn-sm">确认</button>\n' +
+                    '       </div>';
+                $(this).append(edit_html);
+                $(this).find('textarea').focus();
+            });
+            // 编辑框 关闭按钮
+            $('.edit-desc').on('click', '#close-edit-desc', function () {
+                $('#input-edit-desc').remove();
+            });
+            // 确认修改按钮
+            $('.edit-desc').on('click', '#desc-sub', function () {
+                var element = $(this).parents('.edit-desc');
+                var order_desc = $(this).prev().val();
+                if(!order_desc){
+                    return;
+                }
+                var data={
+                    'order_id': element.attr('data-order'),
+                    'order_desc': order_desc
+                };
+                $.ajax({
+                    url: '{% url 'order_info' %}',
+                    type: 'post',
+                    headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                    data: {
+                        'update_data': JSON.stringify(data),
+                    },
+                    success: function (e) {
+                        if (e.status) {
+                            showMessage(e.msg);
+                        } else {
+                            showMessage(e.msg, 'bg-success');
+                            $('#input-edit-desc').remove();
+                            if(order_desc === 'nothing'){
+                                order_desc = '（空）';
+                                element.text(order_desc).css('color','#7d7d7d')
+                            }
+                            element.text(order_desc);
+                        }
+                    }
+                })
+
+
+            })
         });
 
-        // 模态框 确认按钮 发货更新订单状态、库存，或生产采购单
-        function shipping_good(btn_obj){
+        // 模态框 确认按钮 发货更新订单状态、库存，或生成采购单
+        function shipping_good(btn_obj) {
             var post_type = $(btn_obj).attr('data-value');
             var data_list = [];
-            $('#myModal').find('li').each( function () {
-                data_list.push($(this).text());
+            $('#myModal').find('li').each(function () {
+                data_list.push($.trim($(this).text()));
             });
 
             // 判断发送请求的类型
-            if (post_type === 'ship'){
+            if (post_type === 'ship') {
                 url = "{% url 'index' %}";
-            } else if (post_type === 'buy'){
+            } else if (post_type === 'buy') {
                 url = "{% url 'buy_product' %}";
-            } else if (post_type === 'make'){
+            } else if (post_type === 'make') {
                 // 运单号需要数据 平台订单ID、国家
                 url = "{% url 'order_waybill' %}";
                 var data_list = {};
-                $('#myModal').find('li').each( function () {
+                $('#myModal').find('li').each(function () {
                     var order_country = $(this).attr('data-country');
                     var order_shopeeid = $(this).text();
-                    if (order_country in data_list){
+                    if (order_country in data_list) {
                         data_list[order_country].push(order_shopeeid)
                     } else {
                         data_list[order_country] = [order_shopeeid]
@@ -489,8 +559,8 @@
                         showMessage(e.msg);
                     } else {
                         $('#myModal').modal('hide');
-                        if(post_type === 'buy'){
-                            window.location.href="{% url 'buy_product' %}"
+                        if (post_type === 'buy') {
+                            window.location.href = "{% url 'buy_product' %}"
                         } else {
                             showMessage(e.msg, 'bg-success');
                             window.setTimeout(function () {
@@ -512,10 +582,10 @@
                 'data_type': order_status_type,
                 'country_type': country_type
             };
-            $.get("{% url 'get_order' %}", params=data, function (e) {
-                if(!e.status){
+            $.get("{% url 'get_order' %}", params = data, function (e) {
+                if (!e.status) {
                     showMessage(e.msg, 'bg-success');
-                    if(e.err_order){
+                    if (e.err_order) {
                         $('#err_order').text(e.err_order)
                     } else {
                         window.setTimeout(function () {
@@ -537,7 +607,7 @@
                 'order_id': order_id,
                 'country_type': country_type
             };
-            if(order_id){
+            if (order_id) {
                 $.get("{% url 'get_order' %}", params = data, function (e) {
                     if (!e.status) {
                         showMessage(e.msg, 'bg-success');

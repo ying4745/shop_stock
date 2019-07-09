@@ -25,10 +25,10 @@ class OrderGoodsXadmin(object):
     list_display = ['order', 'sku_good', 'get_good_desc',
                     'get_image', 'count', 'price',
                     'get_good_stock', 'create_time']
-    search_fields = ['order', 'sku_good']
-    list_filter = ['order', 'sku_good']
-    date_hierarchy = ('create_time', 'order')
-    ordering = ('order',)
+    search_fields = ['order__order_id', 'sku_good__sku_id']
+    list_filter = ['order__order_id', 'sku_good__sku_id']
+    date_hierarchy = ('create_time', 'order__order_id')
+    ordering = ('order__order_id',)
 
     def get_good_stock(self, obj):
         return obj.sku_good.stock
@@ -57,10 +57,10 @@ class PurchaseOrderXadmin(object):
 
 class PurchaseGoodsXadmin(object):
     list_display = ['purchase', 'sku_good', 'count', 'price']
-    search_fields = ['purchase', 'sku_good']
-    list_filter = ['purchase', 'sku_good']
-    date_hierarchy = ('create_time', 'purchase')
-    ordering = ('purchase',)
+    search_fields = ['purchase__purchase_id', 'sku_good__sku_id']
+    list_filter = ['purchase__purchase_id', 'sku_good__sku_id']
+    date_hierarchy = ('create_time', 'purchase__purchase_id')
+    ordering = ('purchase__purchase_id',)
 
 
 xadmin.site.register(OrderInfo, OrderInfoXadmin)

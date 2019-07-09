@@ -169,11 +169,9 @@ class SingleGoodsListView(View):
         if search_type == 'all':
             good_obj = GoodsSKU.objects.filter(goods=good_obj[0].goods, status=1).order_by('sku_id')
 
-        res_data = {}
-        for good in good_obj:
-            res_data[good.sku_id] = [good.stock, good.image.url]
+        res_data = good_obj.values('sku_id', 'desc', 'sales', 'stock', 'image')
 
-        return JsonResponse({'status': 0, 'msg': res_data})
+        return JsonResponse({'status': 0, 'msg': list(res_data)})
 
 
 class GoodsSpiderView(View):

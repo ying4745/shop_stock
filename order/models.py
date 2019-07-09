@@ -33,6 +33,7 @@ class OrderInfo(BaseModel):
                                             default=1, verbose_name='订单状态')
     order_country = models.CharField(max_length=5, choices=ORDER_COUNTRY_CHOICES,
                                      default='MYR', verbose_name='订单国家')
+    order_desc = models.CharField(max_length=128, default='nothing', verbose_name='订单备注')
 
     @property
     def customer_grade(self):
@@ -99,7 +100,7 @@ class PurchaseOrder(BaseModel):
     purchase_id = models.CharField(max_length=16, unique=True, verbose_name='采购单号')
     total_price = models.DecimalField(max_digits=10, decimal_places=2,
                                       default=0, verbose_name='采购总额')
-    desc = models.CharField(max_length=128, null=False, blank=False, verbose_name='备注')
+    desc = models.CharField(max_length=128, default='nothing', verbose_name='备注')
     pur_status = models.SmallIntegerField(choices=PURCHASE_STATUS,
                                           default=1, verbose_name='采购状态')
 
@@ -122,6 +123,7 @@ class PurchaseGoods(BaseModel):
     count = models.IntegerField(default=1, verbose_name='商品数量')
     price = models.DecimalField(max_digits=10, decimal_places=2,
                                 default=0, verbose_name='采购价格')
+    status = models.BooleanField(default=0, verbose_name='入库状态')
 
     def stock_dict(self):
         stock_data = {

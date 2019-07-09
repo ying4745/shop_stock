@@ -28,7 +28,7 @@
     padding: 6px 0;
     border-radius: 2px;
     position: fixed;
-    top: 200px;
+    top: 100px;
     left: 30%;
     color: #444444;
     font-size: 20px;
@@ -82,7 +82,7 @@
     position: relative;
     white-space: nowrap;
     vertical-align: middle;
-    display: table-cell;
+    display: inline-block;
 }
 
 .input-group-btn-vertical > .btn {
@@ -124,10 +124,23 @@
 }
 
 /*表格内容居中*/
-#order_table td, #order_table th, #order-info-table th, #order-info-table td {
+.table>tbody>tr>td, .table>thead>tr>th {
     text-align: center;
     vertical-align: middle;
 }
+
+#un-pur-table {
+    display: none;
+    position: absolute;
+    background-color: #ffffff;
+    top: 105%;
+    right: -60px;
+    /*left: -190px;*/
+    padding: 15px;
+    border: 1px solid #d8d8d8;
+    border-radius: 5px;
+}
+
 /*表格头 搜索、信息框*/
 .table_top {
     float: left;
@@ -146,4 +159,17 @@
 }
 .order-info-title span{
     margin-right: 60px;
+}
+
+.edit-desc {
+    position: relative;
+}
+#input-edit-desc {
+    position: absolute;
+    right: -110px;
+    top: -130px;
+    width:250px;
+    padding: 2px 10px 10px;
+    background-color: #f1f1f1;
+    border-radius: 5px;
 }

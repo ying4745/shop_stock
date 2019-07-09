@@ -59,6 +59,7 @@
                                 <th>客户名</th>
                                 <th>收件人</th>
                                 <th>客户信誉</th>
+                                <th>订单备注</th>
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
@@ -116,6 +117,14 @@
                                                 >{{ order.customer_info }}</label>
                                             </td>
 
+                                            <td class="division-line">
+                                                {% if order.order_desc != 'nothing' %}
+                                                    <span style="color: #f14548">{{ order.order_desc }}</span>
+                                                {% else %}
+                                                    <span style="color: #7d7d7d">（空）</span>
+                                                {% endif %}
+                                            </td>
+
                                             <td class="division-line">{{ order_good.sku_good.sku_id }}</td>
                                             <td class="division-line">{{ order_good.sku_good.desc }}</td>
 
@@ -136,6 +145,7 @@
                                             <td ></td>
                                             <td></td>
                                             <td></td>
+                                            <td></td>
 
                                             <td>{{ order_good.sku_good.sku_id }}</td>
                                             <td>{{ order_good.sku_good.desc }}</td>
@@ -154,7 +164,7 @@
                                 {% endfor %}
 
                             {% empty %}
-                                <tr>没有数据！</tr>
+                                <p>没有数据！</p>
                             {% endfor %}
 
                             </tbody>
@@ -168,6 +178,7 @@
                                 <th>客户名</th>
                                 <th>收件人</th>
                                 <th>客户信誉</th>
+                                <th>订单备注</th>
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
                                 <th>商品图片</th>
@@ -195,26 +206,27 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0,1,5,6,9,10,11],
+                "targets": [0,1,5,6,7,10,11,12],
                 "searchable": false
             },
             {
-                "targets": [0,1,2,4,5,6,7,8,9,10,11],
+                "targets": [0,1,2,4,5,6,7,8,9,10,11,12],
                 "orderable": false
             },
         ];
 
         // 数量大于1的商品
         function createdRow(row, data, index) {
-            if (data[10] > 1) {
-                $(row).css("background-color", "#f9efd4");
+            var api = this.api();
+            if (data[11] > 1) {
+                $(api.cell(index, 11).node()).css("background-color", "#ff9a5b");
             }
         }
 
         // 添加下拉式筛选框
         function col_search() {
             var api = this.api();
-            api.columns([2,3,7]).indexes().flatten().each( function ( i ) {
+            api.columns([2,8]).indexes().flatten().each( function ( i ) {
                 var column = api.column( i );
                 var select = $('<select><option value=""></option></select>')
                     .appendTo( $(column.footer()).empty() )
@@ -241,7 +253,7 @@
                 "order": [[3, 'desc']],     <!-- 初始排序列表 -->
                 "info": true,         <!-- 显示信息 -->
                 "pageLength": 50,    <!-- 每页显示 -->
-                "autoWidth": false,  <!-- 自动宽度 -->
+                "autoWidth": true,  <!-- 自动宽度 -->
                 "scrollX": false,  <!-- 水平滚动 -->
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
