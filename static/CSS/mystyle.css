@@ -124,21 +124,23 @@
 }
 
 /*表格内容居中*/
-.table>tbody>tr>td, .table>thead>tr>th {
+.table>tbody>tr>td, .table>thead>tr>th, .table>tfoot>tr>th {
     text-align: center;
     vertical-align: middle;
 }
 
+/*未采购商品列表*/
 #un-pur-table {
     display: none;
     position: absolute;
-    background-color: #ffffff;
     top: 105%;
     right: -60px;
-    /*left: -190px;*/
     padding: 15px;
+    background-color: #ffffff;
     border: 1px solid #d8d8d8;
     border-radius: 5px;
+    height: 700px;
+    overflow: auto;
 }
 
 /*表格头 搜索、信息框*/
@@ -161,6 +163,7 @@
     margin-right: 60px;
 }
 
+/*备注编辑框*/
 .edit-desc {
     position: relative;
 }
