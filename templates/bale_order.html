@@ -135,7 +135,7 @@
                                             </td>
 
                                             <td class="division-line edit-desc" data-order="{{ order.order_id }}">
-                                                {% if order.order_desc != 'nothing' %}
+                                                {% if order.order_desc %}
                                                     <span style="color: #f14548">{{ order.order_desc }}</span>
                                                 {% else %}
                                                     <span style="color: #7d7d7d">（空）</span>
@@ -348,7 +348,7 @@
                 var element = $(this).parents('.edit-desc');
                 var order_desc = $(this).prev().val();
                 if(!order_desc){
-                    return;
+                    order_desc = '';
                 }
                 var data={
                     'order_id': element.attr('data-order'),
@@ -367,11 +367,11 @@
                         } else {
                             showMessage(e.msg, 'bg-success');
                             $('#input-edit-desc').remove();
-                            if(order_desc === 'nothing'){
+                            if(order_desc === ''){
                                 order_desc = '（空）';
                                 element.text(order_desc).css('color','#7d7d7d')
                             }
-                            element.text(order_desc);
+                            element.text(order_desc).css('color', '#f14548');
                         }
                     }
                 })

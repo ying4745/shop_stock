@@ -66,6 +66,12 @@ class GoodsSKU(BaseModel):
     def __str__(self):
         return self.sku_id
 
+    @property
+    def img_url(self):
+        if self.image and hasattr(self.image, 'url'):
+            return self.image.url
+        return ''
+
     def get_image(self):
         from django.utils.safestring import mark_safe
         # mark_safe后就不会转义
@@ -79,7 +85,7 @@ class GoodsSKU(BaseModel):
             'g_url': self.goods.g_url,
             'sku_id': self.sku_id,
             'desc': self.desc,
-            'image': str(self.image),
+            'image': self.img_url,
             'buy_price': self.buy_price,
             'stock': self.stock,
             'sales': self.sales,

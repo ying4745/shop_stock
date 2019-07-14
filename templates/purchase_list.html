@@ -86,6 +86,7 @@
                                 <th>采购总额</th>
                                 <th>备注</th>
                                 <th>商品SKU</th>
+                                <th>商品规格</th>
                                 <th>商品链接</th>
                                 <th>商品图片</th>
                                 <th>采购数量</th>
@@ -120,12 +121,13 @@
                                         {% endif %}
 
                                         <td class="pur-good-id">{{ pur_good.sku_good.sku_id }}</td>
+                                        <td>{{ pur_good.sku_good.desc }}</td>
 
                                         <td>{{ pur_good.sku_good.goods.g_url }}</td>
 
                                         <td>
                                             <img class="good_img" width="60" height="60"
-                                                 src="{{ MEDIA_URL }}{{ pur_good.sku_good.image }}">
+                                                 src="{{ pur_good.sku_good.img_url }}">
                                         </td>
 
                                         <td>{{ pur_good.count }}</td>
@@ -161,6 +163,7 @@
                                 <th>采购总额</th>
                                 <th>备注</th>
                                 <th>商品SKU</th>
+                                <th>商品规格</th>
                                 <th>商品链接</th>
                                 <th>商品图片</th>
                                 <th>采购数量</th>
@@ -194,7 +197,7 @@
                     <tbody>
                     {% for good in un_pur_goods %}
                         <tr>
-                            <td><img class="good_img" src="{{ good.image.url }}" width="35"
+                            <td><img class="good_img" src="{{ good.image.img_url }}" width="35"
                                      height="35"></td>
                             <td class="good-sku">{{ good.sku_id }}</td>
                             <td>{{ good.desc }}</td>
@@ -221,15 +224,15 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12],
+                "targets": [0, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13],
                 "searchable": false
             },
             {
-                "targets": [0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "targets": [0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
                 "orderable": false
             },
             {
-                "targets": [5],
+                "targets": [6],
                 // 列渲染 以';;'分割url 分别生成超链接
                 "render": function (data, type, row) {
                     var data_html = '';
@@ -249,7 +252,7 @@
             },
             // 入库按钮
             {
-                "targets": [12],
+                "targets": [13],
                 "data": null,
                 "width": '60px',
                 "render": function (data, type, row) {
@@ -291,7 +294,7 @@
             var intVal = function (i) {
                 return i * 100
             };
-            api.columns([2, 7]).indexes().flatten().each(function (i) {
+            api.columns([2, 8]).indexes().flatten().each(function (i) {
                 // 所有页数据统计
                 total = api.column(i).data().reduce(function (a, b) {
                     return a + intVal(b);
@@ -341,12 +344,11 @@
         function un_pur_list() {
             $('#un-pur-table').toggle()
         }
-
         // 多选行，选中添加class
         $('#un-pur-table tbody').on('click', 'tr', function (){
             $(this).toggleClass('selected');
         });
-
+        // 生成采购单
         $('#c_pur_btn').click(function () {
             if(!$('tr.selected').length) {
                 showMessage('先选中');

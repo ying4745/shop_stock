@@ -240,7 +240,7 @@
                         "render": function (data, type, row, meta) {
                             // meta row和col 索引信息
                             // $(table.cell(meta.row, meta.col).node()).addClass('good_img');
-                            return '<img class="good_img" width="60" height="60" src="{{ MEDIA_URL }}' + data + '">'
+                            return '<img class="good_img" width="60" height="60" src="' + data + '">'
                         }
                     },
                     {
@@ -309,8 +309,8 @@
 
             // 页码跳转 input框
             $('.table_top').append(
-                '<div class="input-group" style="vertical-align:top; margin-top:2px; width:140px; margin-left:20px;">\n' +
-                '    <input type="text" class="form-control" id="page_num" placeholder="页码">\n' +
+                '<div class="input-group" style="vertical-align:top; margin-top:2px; margin-left:20px;">\n' +
+                '    <input type="text" class="form-control" style="width: 55px;" id="page_num" placeholder="页码">\n' +
                 '    <span class="input-group-btn">\n' +
                 '        <button class="btn btn-default" id="jump_btn" type="button">页码跳转</button>\n' +
                 '    </span>\n' +

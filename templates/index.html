@@ -237,7 +237,7 @@
                                             </td>
 
                                             <td class="division-line edit-desc" data-order="{{ order.order_id }}">
-                                                {% if order.order_desc != 'nothing' %}
+                                                {% if order.order_desc %}
                                                     {{ order.order_desc }}
                                                 {% else %}
                                                     <span style="color: #7d7d7d">（空）</span>
@@ -281,6 +281,62 @@
                                             <td>{{ order_good.sku_good.stock }}</td>
                                         {% endif %}
 
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td class="division-line">{{ forloop.counter }}</td>
+
+                                        {% if order.order_status == 1 %}
+                                            <td data-order="{{ order.order_shopeeid }}"
+                                                data-search="{{ order.order_country }}" class="division-line">
+                                                <i class="fa fa-square-o"></i></td>
+                                        {% else %}
+                                            <td class="division-line"><i class="fa fa-square"></i></td>
+                                        {% endif %}
+
+                                        <td data-search="{{ order.get_order_country_display }}"
+                                                {% if order.order_country == 'PHP' %}
+                                            class="text-green text-bold division-line"
+                                                {% elif order.order_country == 'MYR' %}
+                                            class="text-blue text-bold division-line"
+                                                {% else %}
+                                            class="text-purple text-bold division-line"
+                                                {% endif %}
+                                        >{{ order.get_order_country_display }}
+                                        </td>
+
+                                        <td class="division-line" data-search="{{ order.order_id }}"
+                                            data-order="{{ order.order_id }}">{{ order.order_id }}</td>
+
+                                        <td class="division-line">{{ order.customer }}</td>
+
+                                        <td class="division-line">{{ order.receiver }}</td>
+
+                                        <td class="division-line"><label
+                                            {% if order.customer_grade < 60 %}
+                                                class="label label-danger"
+                                            {% elif order.customer_grade < 80 %}
+                                                class="label label-warning"
+                                            {% else %}
+                                                class="label label-default"
+                                            {% endif %}
+                                        >{{ order.customer_info }}</label>
+                                        </td>
+
+                                        <td class="division-line edit-desc" data-order="{{ order.order_id }}">
+                                            {% if order.order_desc %}
+                                                {{ order.order_desc }}
+                                            {% else %}
+                                                <span style="color: #7d7d7d">（空）</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td class="division-line"></td>
+                                        <td class="division-line select-tr"></td>
+                                        <td class="division-line"></td>
+                                        <td class="division-line"></td>
+                                        <td class="division-line"></td>
+                                        <td class="division-line"></td>
                                     </tr>
                                 {% endfor %}
 
@@ -537,7 +593,7 @@
                 var element = $(this).parents('.edit-desc');
                 var order_desc = $(this).prev().val();
                 if(!order_desc){
-                    return;
+                    order_desc = '';
                 }
                 var data={
                     'order_id': element.attr('data-order'),
@@ -556,7 +612,7 @@
                         } else {
                             showMessage(e.msg, 'bg-success');
                             $('#input-edit-desc').remove();
-                            if(order_desc === 'nothing'){
+                            if(order_desc === ''){
                                 order_desc = '（空）';
                                 element.text(order_desc).css('color','#7d7d7d')
                             }

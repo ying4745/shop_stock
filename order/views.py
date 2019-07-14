@@ -213,7 +213,7 @@ class OrderInfoView(View):
     def post(self, request):
         data = json.loads(request.POST.get('update_data', ''))
 
-        if not data.get('order_id', '') or not data.get('order_desc', ''):
+        if not data.get('order_id', ''):
             return JsonResponse({'status': 1, 'msg': '参数错误'})
 
         try:
@@ -550,12 +550,12 @@ class OrderSpiderView(View):
         if order_type == 'many':
             if data_type in ['toship', 'shipping', 'completed', 'cancelled']:
                 shopee.get_order(data_type)
-                return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新', 'err_order': shopee.message})
+                return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新'})
             else:
                 return JsonResponse({'status': 4, 'msg': '订单状态参数错误'})
         elif order_type == 'single' and order_id:
             msg = shopee.get_single_order(order_id)
-            return JsonResponse({'status': 0, 'msg': msg, 'err_order': shopee.message})
+            return JsonResponse({'status': 0, 'msg': msg})
         else:
             return JsonResponse({'status': 3, 'msg': '订单号参数错误'})
 
