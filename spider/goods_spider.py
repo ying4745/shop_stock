@@ -254,7 +254,8 @@ class PhGoodsSpider():
             'is_massship': 'false',
             'offset': page,
             'limit': 40,
-            'type': type
+            'type': type,
+            'sort_type': 'sort_desc'
             }
         return self.parse_url(self.order_url, data)
 
@@ -616,23 +617,6 @@ def format_file_path(goodsku):
         file_path = good_sku[:-1]
 
     return file_path
-
-
-# 手动计算 马来 利润
-def compute_profit():
-    all_order = OrderInfo.objects.filter(order_country='MYR').all()
-    for order_info in all_order:
-        if order_info.order_status == 3:
-            # order_cost = 0  # 订单成本(人民币）
-            for order_good in order_info.ordergoods_set.all():
-                order_good.price = order_good.sku_good.my_sale_price
-                # 商品的成本  每件商品进价上加一元 国内运杂费
-                # order_cost += (order_good.price + Decimal(1)) * order_good.count
-                order_good.save()
-
-            # order_profit = order_info.order_income * Decimal(1.65) - Decimal(order_cost) - Decimal(2)
-            # order_info.order_profit = order_profit
-            # order_info.save()
 
 
 country_type_dict = {
