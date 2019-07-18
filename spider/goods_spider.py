@@ -152,7 +152,7 @@ class PhGoodsSpider():
             defaults = {'goods': g_spu, }
 
             # 非英文数字加字符的商品规格 不添加 （排除小语种语言）
-            if re.match(r'^[+\w #,)(\-]+$', good['name']):
+            if re.match(r'^[+\w #,)(\-.]+$', good['name']):
                 defaults['desc'] = good['name']
 
             # 判断国家  添加到不同价格
@@ -314,8 +314,7 @@ class PhGoodsSpider():
         if delivery_order == 0:
             customer_info = '100%&0'
         else:
-            customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(
-                delivery_order)
+            customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(delivery_order)
         # 商品总价
         total_price = order_info['buyer_paid_amount']
 
@@ -329,13 +328,15 @@ class PhGoodsSpider():
         card_txn_fee = order_info['card_txn_fee_info']['card_txn_fee']
         # 平台运费回扣
         shipping_rebate = order_info['shipping_rebate']
+        # 平台佣金
+        comm_fee = order_info['comm_fee']
 
         # 没出货，无实际运费时 不计算订单收入
         order_income = '0.00'
         if actual_shipping_fee != '0.00':
             # 订单收入
             order_income = Decimal(total_price) + Decimal(shipping_rebate) + Decimal(shipping_fee) \
-                           - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price)
+                           - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price) - Decimal(comm_fee)
 
         o_data = {
             'order_time': order_info['ordersn'][:6],
