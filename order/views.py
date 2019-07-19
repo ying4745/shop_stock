@@ -358,7 +358,8 @@ class ModifyPurchaseView(View):
                 sku_good = GoodsSKU.objects.get(sku_id=good['sku_id'])
                 PurchaseGoods.objects.update_or_create(purchase=pur_obj,
                                                        sku_good=sku_good,
-                                                       defaults={'count': good['count']})
+                                                       defaults={'count': good['count'],
+                                                                 'price': sku_good.buy_price})
             except Exception as e:
                 # print(e)
                 transaction.savepoint_rollback(p_save)
