@@ -152,7 +152,7 @@ class PhGoodsSpider():
             defaults = {'goods': g_spu, }
 
             # 非英文数字加字符的商品规格 不添加 （排除小语种语言）
-            if re.match(r'^[+\w #,)(\-]+$', good['name']):
+            if re.match(r'^[+\w #,)(\-.]+$', good['name']):
                 defaults['desc'] = good['name']
 
             # 判断国家  添加到不同价格
@@ -254,7 +254,8 @@ class PhGoodsSpider():
             'is_massship': 'false',
             'offset': page,
             'limit': 40,
-            'type': type
+            'type': type,
+            'sort_type': 'sort_desc'
             }
         return self.parse_url(self.order_url, data)
 
@@ -313,8 +314,7 @@ class PhGoodsSpider():
         if delivery_order == 0:
             customer_info = '100%&0'
         else:
-            customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(
-                delivery_order)
+            customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(delivery_order)
         # 商品总价
         total_price = order_info['buyer_paid_amount']
 
@@ -328,13 +328,15 @@ class PhGoodsSpider():
         card_txn_fee = order_info['card_txn_fee_info']['card_txn_fee']
         # 平台运费回扣
         shipping_rebate = order_info['shipping_rebate']
+        # 平台佣金
+        comm_fee = order_info['comm_fee']
 
         # 没出货，无实际运费时 不计算订单收入
         order_income = '0.00'
         if actual_shipping_fee != '0.00':
             # 订单收入
             order_income = Decimal(total_price) + Decimal(shipping_rebate) + Decimal(shipping_fee) \
-                           - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price)
+                           - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price) - Decimal(comm_fee)
 
         o_data = {
             'order_time': order_info['ordersn'][:6],
@@ -616,23 +618,6 @@ def format_file_path(goodsku):
         file_path = good_sku[:-1]
 
     return file_path
-
-
-# 手动计算 马来 利润
-def compute_profit():
-    all_order = OrderInfo.objects.filter(order_country='MYR').all()
-    for order_info in all_order:
-        if order_info.order_status == 3:
-            # order_cost = 0  # 订单成本(人民币）
-            for order_good in order_info.ordergoods_set.all():
-                order_good.price = order_good.sku_good.my_sale_price
-                # 商品的成本  每件商品进价上加一元 国内运杂费
-                # order_cost += (order_good.price + Decimal(1)) * order_good.count
-                order_good.save()
-
-            # order_profit = order_info.order_income * Decimal(1.65) - Decimal(order_cost) - Decimal(2)
-            # order_info.order_profit = order_profit
-            # order_info.save()
 
 
 country_type_dict = {
