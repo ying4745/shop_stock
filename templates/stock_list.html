@@ -111,7 +111,7 @@
         // 行创建回调
         function rowCallBack(row, data, index) {
             //row代表表格的每一行，每行数据都会进入这个方法走一遍
-            console.log(data.row_id, data.order_good_count);
+            //console.log(data.row_id, data.order_good_count);
             if (data.row_id === 1) {
                 $(row).find("td").each(function () {
                     $(this).addClass('division-line')

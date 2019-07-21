@@ -53,21 +53,30 @@ $('#order_table').on('mouseover mouseout', 'tr', function (e) {
 
 // 鼠标悬浮显示大图 生成的html 需要on绑定父元素
 $(".good-img-parent").on('mouseover mouseout', '.good_img', function (e) {
+    var big_obj = $('<p id="big-image"><img width="500" height="500" src="' + $(this).attr('src') + '"></p>');
+    // 旧元素 相对于左边 的偏移距离加元素的宽度
+    var old_offleft = $(this).offset().left + $(this).width();
     if (e.type === 'mouseover') {
-        var bot_height = $(window).height() - $(this).height() - $(this).offset().top + $(document).scrollTop();
         $(this).parent().css('position', 'relative');
-        // 根据距离底部位置，选择放置图片位置
-        if (bot_height < 370) {
-            $(this).parent().append(
-                '<p id="top-image"><img width="500" height="500" src="' + $(this).attr('src') + '"></p>');
-        } else {
-            $(this).parent().append(
-                '<p id="bot-image"><img width="500" height="500" src="' + $(this).attr('src') + '"></p>');
-        }
+        $(this).parent().append(big_obj);
 
+        big_obj.offset(function (n, c) {
+            new_off = {};
+            // 元素相对于顶部偏移位置 - 页面滚动过的距离 + 元素高度 大于 窗口高度
+            if( $(window).height() < (c.top - $(window).scrollTop() + big_obj.height()) ){
+                new_off.top = $(window).height() - big_obj.height() + $(window).scrollTop()
+            } else {
+                new_off.top = c.top
+            }
+            if (c.left <= 0) {
+               new_off.left = old_offleft + 20
+            } else {
+                new_off.left = c.left
+            }
+            return new_off
+        });
     } else {
-        $("#bot-image").remove();
-        $("#top-image").remove();
+        $("#big-image").remove();
     }
 });
 
