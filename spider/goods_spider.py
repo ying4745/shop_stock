@@ -152,7 +152,7 @@ class PhGoodsSpider():
             defaults = {'goods': g_spu, }
 
             # 非英文数字加字符的商品规格 不添加 （排除小语种语言）
-            if re.match(r'^[+\w #,)(\-.]+$', good['name']):
+            if re.match(r'^[+\w #,)(_/\-.]+$', good['name']):
                 defaults['desc'] = good['name']
 
             # 判断国家  添加到不同价格
@@ -183,7 +183,7 @@ class PhGoodsSpider():
                     goodsku_obj.image = parent_sku + '/' + file_path + '.jpg'
                     goodsku_obj.save()
 
-        # 订单商品不出错 则执行
+        # 商品不出错 则执行
         if is_success_c:
             # 提交事务
             transaction.savepoint_commit(save_id)
@@ -192,6 +192,7 @@ class PhGoodsSpider():
             if is_c:
                 save_log(self.update_path, parent_sku, err_type='新增单个商品：')
                 self.num += 1
+            # 本地数据库 与 网上 商品同步
             else:
                 # 查找这个spu的所有sku_id
                 spu_skugood_list = Goods.objects.filter(spu_id=parent_sku).values_list('goodssku__sku_id', flat=True)
@@ -209,11 +210,12 @@ class PhGoodsSpider():
                     if sku_good.stock == 0:
                         sku_good.delete()
 
-                # 有订单关联的商品  下架操作
+                # 有订单关联的商品 且库存为0 下架操作
                 wait_down_skugoods = not_have_skugood.filter(ordergoods__isnull=False)
                 for sku_good in wait_down_skugoods:
-                    sku_good.status = 0
-                    sku_good.save()
+                    if sku_good.stock == 0:
+                        sku_good.status = 0
+                        sku_good.save()
 
     # 单个商品抓取
     def parse_single_good_url(self, goodspu):
@@ -302,11 +304,14 @@ class PhGoodsSpider():
 
         # 如果订单状态为取消，不创建，如已有订单 则删除
         # 订单状态：待出货和已运送 为1，已取消为5，已完成为4
-        if order_info['status'] == 5:
-            order_obj = OrderInfo.objects.filter(order_id=order_info['ordersn'])
-            if order_obj:
+        # 已完成的订单，不再更新
+        order_obj = OrderInfo.objects.filter(order_id=order_info['ordersn'])
+        if order_obj:
+            if order_info['status'] == 5:
                 order_obj[0].delete()
-            return None
+                return None
+            if order_obj[0].order_status == 3:
+                return None
 
         # 订单用户收货率
         delivery_order = user_info['delivery_order_count']
@@ -331,11 +336,16 @@ class PhGoodsSpider():
         # 平台佣金
         comm_fee = order_info['comm_fee']
 
+        # 买家或平台支付的运费
+        our_shipping_fee = Decimal(shipping_rebate) + Decimal(shipping_fee)
+        if shipping_fee == '0.00' and shipping_rebate == '0.00':
+            our_shipping_fee = Decimal(order_info['origin_shipping_fee'])
+
         # 没出货，无实际运费时 不计算订单收入
         order_income = '0.00'
         if actual_shipping_fee != '0.00':
             # 订单收入
-            order_income = Decimal(total_price) + Decimal(shipping_rebate) + Decimal(shipping_fee) \
+            order_income = Decimal(total_price) + our_shipping_fee \
                            - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price) - Decimal(comm_fee)
 
         o_data = {
@@ -424,7 +434,7 @@ class PhGoodsSpider():
             order_obj = self.parse_create_order(user_info, order, order_data)
 
             if not order_obj:
-                return '订单已取消'
+                return '订单已取消/已完成'
 
             if order_obj.order_status != 3 and str(order_obj.order_income) != '0.00':
                 self.compute_order_profit(order_obj)

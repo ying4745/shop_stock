@@ -104,49 +104,78 @@
                                 {% for pur_good in purchase.purchasegoods_set.all %}
                                     <tr>
                                         {% if forloop.first %}
-                                            <td>{{ forloop.parentloop.counter }}</td>
-                                            <td class="pur-id" data-search="{{ purchase.purchase_id }}"
+                                            <td class="division-line">{{ forloop.parentloop.counter }}</td>
+                                            <td class="pur-id division-line" data-search="{{ purchase.purchase_id }}"
                                                 data-order="{{ purchase.purchase_id }}">
                                                 <a class="pur-info" href="javascript:;">
                                                     {{ purchase.purchase_id }}</a>
                                             </td>
-                                            <td>{{ purchase.total_price }}</td>
-                                            <td>{{ purchase.desc }}</td>
+                                            <td class="division-line">{{ purchase.total_price }}</td>
+                                            <td class="division-line">{{ purchase.desc }}</td>
+
+                                            <td class="pur-good-id division-line">{{ pur_good.sku_good.sku_id }}</td>
+                                            <td class="division-line">{{ pur_good.sku_good.desc }}</td>
+
+                                            <td class="division-line">{{ pur_good.sku_good.goods.g_url }}</td>
+
+                                            <td class="division-line">
+                                                <img class="good_img" width="60" height="60"
+                                                     src="{{ pur_good.sku_good.img_url }}">
+                                            </td>
+
+                                            <td class="division-line">{{ pur_good.count }}</td>
+
+                                            <td class="division-line" style="font-size: 24px;">
+                                                {% if pur_good.status %}
+                                                    <i class="fa fa-check-square"></i>
+                                                {% else %}
+                                                    <i class="fa fa-check-square-o check-good"></i>
+                                                {% endif %}
+                                            </td>
+
+                                            <td class="division-line">{{ pur_good.price }}</td>
+                                            <td class="division-line" style="color: #ff0000;">
+                                                {{ orders_goods | search_dict:pur_good.sku_good.sku_id }}
+                                            </td>
+                                            <td class="division-line" id="pur-good-stock">{{ pur_good.sku_good.stock }}</td>
+
+                                            <td class="division-line"></td>
                                         {% else %}
                                             <td></td>
                                             <td class="pur-id" data-search="{{ purchase.purchase_id }}"
                                                 data-order="{{ purchase.purchase_id }}"></td>
                                             <td></td>
                                             <td></td>
+
+                                            <td class="pur-good-id">{{ pur_good.sku_good.sku_id }}</td>
+                                            <td>{{ pur_good.sku_good.desc }}</td>
+
+                                            <td>{{ pur_good.sku_good.goods.g_url }}</td>
+
+                                            <td>
+                                                <img class="good_img" width="60" height="60"
+                                                     src="{{ pur_good.sku_good.img_url }}">
+                                            </td>
+
+                                            <td>{{ pur_good.count }}</td>
+
+                                            <td style="font-size: 24px;">
+                                                {% if pur_good.status %}
+                                                    <i class="fa fa-check-square"></i>
+                                                {% else %}
+                                                    <i class="fa fa-check-square-o check-good"></i>
+                                                {% endif %}
+                                            </td>
+
+                                            <td>{{ pur_good.price }}</td>
+                                            <td style="color: #ff0000;">
+                                                {{ orders_goods | search_dict:pur_good.sku_good.sku_id }}
+                                            </td>
+                                            <td id="pur-good-stock">{{ pur_good.sku_good.stock }}</td>
+
+                                            <td></td>
                                         {% endif %}
 
-                                        <td class="pur-good-id">{{ pur_good.sku_good.sku_id }}</td>
-                                        <td>{{ pur_good.sku_good.desc }}</td>
-
-                                        <td>{{ pur_good.sku_good.goods.g_url }}</td>
-
-                                        <td>
-                                            <img class="good_img" width="60" height="60"
-                                                 src="{{ pur_good.sku_good.img_url }}">
-                                        </td>
-
-                                        <td>{{ pur_good.count }}</td>
-
-                                        <td style="font-size: 24px;">
-                                            {% if pur_good.status %}
-                                                <i class="fa fa-check-square"></i>
-                                            {% else %}
-                                                <i class="fa fa-check-square-o check-good"></i>
-                                            {% endif %}
-                                        </td>
-
-                                        <td>{{ pur_good.price }}</td>
-                                        <td style="color: #ff0000;">
-                                            {{ orders_goods | search_dict:pur_good.sku_good.sku_id }}
-                                        </td>
-                                        <td id="pur-good-stock">{{ pur_good.sku_good.stock }}</td>
-
-                                        <td></td>
                                     </tr>
                                 {% endfor %}
 
@@ -206,7 +235,7 @@
                             <tbody>
                             {% for good in un_pur_goods %}
                                 <tr>
-                                    <td><img class="good_img" src="{{ good.image.img_url }}" width="35"
+                                    <td><img class="good_img" src="{{ good.img_url }}" width="35"
                                              height="35"></td>
                                     <td class="good-sku">{{ good.sku_id }}</td>
                                     <td>{{ good.desc }}</td>
