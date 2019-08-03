@@ -25,14 +25,13 @@ class GoodsXadmin(object):
 
 
 class GoodsSKUXadmin(object):
-    list_display = ['sku_id', 'goods', 'desc', 'get_image', 'my_sale_price',
-                    'ph_sale_price', 'buy_price', 'stock', 'sales', 'shelf']
+    list_display = ['sku_id', 'goods', 'desc', 'get_image', 'buy_price', 'stock', 'sales', 'status']
     search_fields = ['sku_id']
-    list_filter = ['sales']
+    list_filter = ['sales', 'status']
     ordering = ('-create_time',)
 
     # show_detail_fields = ['sku_id']
-    list_editable = ['buy_price', 'stock']
+    list_editable = ['buy_price', 'stock', 'status']
 
 
 class BaseSetting(object):

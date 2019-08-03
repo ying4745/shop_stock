@@ -3,6 +3,12 @@ import xadmin
 from order.models import OrderInfo, OrderGoods, PurchaseOrder, PurchaseGoods
 
 
+class OrderGoodsInline():
+    model = OrderGoods
+    extra = 0
+    style = 'table'
+
+
 class OrderInfoXadmin(object):
     list_display = ['order_id', 'customer', 'customer_info',
                     'receiver', 'order_income', 'order_profit',
@@ -13,10 +19,6 @@ class OrderInfoXadmin(object):
     date_hierarchy = ('create_time',)
     ordering = ('-order_id',)
     list_editable = ['order_profit', 'order_status']
-
-    class OrderGoodsInline:
-        model = OrderGoods
-        extra = 0
 
     inlines = [OrderGoodsInline]
 
@@ -29,6 +31,8 @@ class OrderGoodsXadmin(object):
     list_filter = ['order__order_id', 'sku_good__sku_id']
     date_hierarchy = ('create_time', 'order__order_id')
     ordering = ('order__order_id',)
+
+    relfield_style = 'fk_ajax'  # fk-外键 显示样式
 
     def get_good_stock(self, obj):
         return obj.sku_good.stock

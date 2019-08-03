@@ -218,7 +218,7 @@
                                             >{{ order.get_order_country_display }}
                                             </td>
 
-                                            <td class="division-line" data-search="{{ order.order_id }}"
+                                            <td class="order-update division-line" data-id="{{ order.id }}" data-search="{{ order.order_id }}"
                                                 data-order="{{ order.order_id }}">{{ order.order_id }}</td>
 
                                             <td class="division-line">{{ order.customer }}</td>
@@ -620,6 +620,13 @@
                         }
                     }
                 })
+            });
+
+            // 点击订单号， 跳转到订单修改页
+            $('.order-update').click(function () {
+                var order_id = $(this).attr('data-id');
+                var url = '/xadmin/order/orderinfo/'+ order_id +'/update/';
+                window.open(url)
             })
         });
 
