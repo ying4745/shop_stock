@@ -55,6 +55,7 @@ class PurchaseOrderXadmin(object):
     class PurchaseGoodsInline:
         model = PurchaseGoods
         extra = 0
+        style = 'table'
 
     inlines = [PurchaseGoodsInline]
 

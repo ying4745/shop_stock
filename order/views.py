@@ -12,6 +12,7 @@ from django.views.generic.base import View
 from goods.models import GoodsSKU
 from spider.goods_spider import country_type_dict
 from order.models import OrderInfo, PurchaseOrder, PurchaseGoods
+from action_logging.action_log import logger
 
 
 class IndexView(View):
@@ -69,7 +70,10 @@ class IndexView(View):
             except:
                 # 更新有错误 则事务回滚到保存点
                 transaction.savepoint_rollback(save_id)
+                logger.warning('发货错误：%s 发货异常 前面数据回滚', good_sku)
                 return JsonResponse({'status': 2, 'msg': '库存错误'})
+            else:
+                logger.info('发货操作：%s 库存减少了 %s', good_sku, orders_goods[good_sku])
 
         # 提交事务
         transaction.savepoint_commit(save_id)
@@ -220,6 +224,8 @@ class OrderInfoView(View):
             OrderInfo.objects.filter(order_id=data['order_id']).update(order_desc=data['order_desc'])
         except:
             return JsonResponse({'status': 2, 'msg': '修改失败'})
+
+        logger.info('备注修改：%s 的备注更新为 %s', data['order_id'], data['order_desc'])
 
         return JsonResponse({'status': 0, 'msg': '修改成功'})
 
@@ -397,12 +403,17 @@ class StockView(View):
             # 已入库的商品 不操作
             if pur_good.status:
                 continue
+            skuId = pur_good.sku_good.sku_id
             try:
-                GoodsSKU.objects.filter(sku_id=pur_good.sku_good.sku_id).update(
-                    stock=F('stock') + pur_good.count)
+                GoodsSKU.objects.filter(sku_id=skuId).update(stock=F('stock') + pur_good.count)
+                pur_good.status = 1
+                pur_good.save()
             except:
                 transaction.savepoint_rollback(s_save)
+                logger.warning('入库错误：%s 入库异常 前面数据回滚', skuId)
                 return JsonResponse({'status': 3, 'msg': '更新失败'})
+            else:
+                logger.info('商品入库：入库单<%s>中 %s 库存增加了 %s', purchase_id, skuId, pur_good.count)
 
         transaction.savepoint_commit(s_save)
         pur_order.update(pur_status=2)
@@ -427,11 +438,14 @@ class StockView(View):
         if not pur_good:
             return JsonResponse({'status': 3, 'msg': '没找到这条记录'})
 
+        good_num = pur_good[0].count
         try:
-            skugood_obj.update(stock=F('stock') + pur_good[0].count)
+            skugood_obj.update(stock=F('stock') + good_num)
             pur_good.update(status=1)
         except:
             return JsonResponse({'status': 4, 'msg': '更新失败'})
+        else:
+            logger.info('单品入库：入库单<%s>中 %s 库存增加了 %s', data['pur_id'], data['sku_id'], good_num)
 
         return JsonResponse({'status': 0, 'msg': '更新成功'})
 

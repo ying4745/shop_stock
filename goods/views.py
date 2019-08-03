@@ -8,6 +8,7 @@ from django.views.generic.base import View
 
 from spider.goods_spider import country_type_dict
 from goods.models import GoodsSKU, Goods
+from action_logging.action_log import logger
 # from spider.import_excel import ImportExcel
 
 class GoodsListView(View):
@@ -107,6 +108,8 @@ class ModifyGoodsView(View):
         good_obj.status = good_status
         good_obj.save()
 
+        logger.info('状态操作：%s > %s', sku_id, msg)
+
         return JsonResponse({'status': 0, 'msg': msg})
 
     def post(self, request):
@@ -128,23 +131,30 @@ class ModifyGoodsView(View):
 
             if 'buy_price' in update_data:
                 GoodsSKU.objects.filter(goods=good_spu).update(buy_price=update_data['buy_price'])
+
+                logger.info('进价修改：%s 进货价更新为 %s', good_spu, update_data['buy_price'])
+
             if 'shelf' in update_data:
                 GoodsSKU.objects.filter(goods=good_spu).update(shelf=update_data['shelf'])
 
             return JsonResponse({'status': 0, 'msg': '更新成功'})
 
         elif 'sku_id' in update_data:
-
+            skuId = update_data['sku_id']
             try:
-                goodsku_obj = GoodsSKU.objects.get(sku_id=update_data['sku_id'])
+                goodsku_obj = GoodsSKU.objects.get(sku_id=skuId)
             except:
                 return JsonResponse({'status': 5, 'msg': '商品sku不存在'})
 
             del update_data['sku_id']
 
             try:
+                old_value = getattr(goodsku_obj, list(update_data)[0])
                 goodsku_obj.set_attr(update_data)
                 goodsku_obj.save()
+                # 单个字典取值 key list(dict)[0] value list(dict.values())[0]
+                logger.info('单品修改：%s < %s > 从 %s 变更为 %s', skuId, list(update_data)[0],
+                            old_value, list(update_data.values())[0])
             except:
                 return JsonResponse({'status': 3, 'msg': '商品更新错误'})
 
