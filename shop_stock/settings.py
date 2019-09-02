@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'xadmin',
     'crispy_forms',
     'reversion',
+    'dwebsocket'
 ]
 
 
@@ -136,3 +137,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # 图片上传地址
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media').replace("\\", "/")
 MEDIA_URL = '/media/'
+
+# dwebsocket 配置
+WEBSOCKET_ACCEPT_ALL=True   # 可以允许每一个单独的视图实用websockets

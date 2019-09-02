@@ -1,14 +1,19 @@
 import json
+import time
 
 from django.db.models import Q
 from django.db import transaction
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.generic.base import View
+from dwebsocket.decorators import accept_websocket, require_websocket
 
-from spider.goods_spider import country_type_dict
 from goods.models import GoodsSKU, Goods
 from action_logging.action_log import logger
+from spider.goods_spider import country_type_dict
+from spider.auto_follow.shopfuns import country_shop_dict
+
+
 # from spider.import_excel import ImportExcel
 
 class GoodsListView(View):
@@ -165,6 +170,7 @@ class ModifyGoodsView(View):
 
 class SingleGoodsListView(View):
     """单个spu商品 sku列表"""
+
     def get(self, request):
         sku_id = request.GET.get('sku_id', '')
         search_type = request.GET.get('search_type', '')
@@ -212,6 +218,53 @@ class GoodsSpiderView(View):
             return JsonResponse({'status': 0, 'msg': msg})
         else:
             return JsonResponse({'status': 3, 'msg': '商品或SKU参数错误'})
+
+
+@accept_websocket
+def auto_follow(request):
+    if request.is_websocket():
+        req_dict = request.websocket.wait()
+        req_dict = json.loads(req_dict.decode('utf-8'))
+        # print(req_dict)
+
+        # 判断国家 调用不同的类
+        if req_dict['shop_country'] in country_shop_dict:
+            shopeefans = country_shop_dict[req_dict['shop_country']](request.websocket)
+        else:
+            request.websocket.send('> 国家类型参数错误'.encode('utf-8'))
+            time.sleep(0.5)
+            return
+
+        if req_dict['follow_type'] == 'unfollow':
+            shopeefans.batch_unfollow(req_dict['people_num'])
+        elif req_dict['follow_type'] == 'follow':
+            # 没有店铺ID 或 店铺ID不全部是数字组成
+            if not req_dict['shop_id'] or not req_dict['shop_id'].isdigit():
+                request.websocket.send('> 店铺ID错误'.encode('utf-8'))
+                return
+            shopeefans.batch_follow(req_dict['shop_id'], req_dict['people_num'])
+        else:
+            request.websocket.send('> 关注or取关参数错误'.encode('utf-8'))
+            time.sleep(0.5)
+
+    else:
+        return render(request, 'shopeefans.html')
+
+
+@require_websocket  # 只允许websocket连接
+def each_auto_follow(request):
+    req_dict = request.websocket.wait()
+    req_dict = req_dict.decode('utf-8')
+
+    if not req_dict.isdigit():
+        request.websocket.send('> 人数必须是正整数'.encode('utf-8'))
+        time.sleep(0.5)
+        return
+
+    # 循环每个国家 取关操作
+    for shopeefan_obj in country_shop_dict.values():
+        shopeefans = shopeefan_obj(request.websocket)
+        shopeefans.batch_unfollow(req_dict)
 
 
 # class ImportExcelView(View):
