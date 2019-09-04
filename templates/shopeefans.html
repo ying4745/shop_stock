@@ -12,7 +12,7 @@
         .show_view {
             margin-left: 50px;
             padding: 35px 60px;
-            height: 500px;
+            height: 650px;
             border: solid 1px #d2d6de;
             overflow: auto;
         }
@@ -35,7 +35,7 @@
                     </div>
                     <div class="box-body">
                         <div class="row" style="padding-bottom: 25px">
-                            <div class="col-xs-5">
+                            <div class="col-xs-4">
                                 <div style="margin-left: 30px">
                                     <div style="margin-bottom: 40px">
                                         <h4 style="text-align: center">自动操作</h4>
@@ -129,7 +129,7 @@
                                                 <input type="radio" name="peopleNum" value="50"> 50
                                             </label>
                                             <label>
-                                                <input type="radio" name="peopleNum" value="10" checked=""> 10
+                                                <input type="radio" name="peopleNum" value="100" checked=""> 100
                                             </label>
                                             <label>
                                                 <input type="radio" name="peopleNum" value="150"> 150
@@ -143,7 +143,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-xs-7">
+                            <div class="col-xs-8">
                                 <div class="show_view">
                                 </div>
                             </div>
@@ -214,31 +214,14 @@
                 console.log('连接成功。。。');
             };
 
-            ws.onmessage = function (evt) {
-                var received_msg = evt.data;
-                if ($.isNumeric(received_msg[0])) {
-                    html_str = '<p>' + received_msg + '</p>'
-                } else if (received_msg[0] === '>') {
-                    // 错误信息
-                    html_str = '<p style="color: #dd4b39">' + received_msg + '</p>'
-                } else if (received_msg[0] === '^') {
-                    // 以关注的用户
-                    html_str = '<p style="color: #ababab">' + received_msg + '</p>'
-                } else if (received_msg[0] === '~') {
-                    // 跳过的用户
-                    html_str = '<p style="color: #e66d6d">' + received_msg + '</p>'
-                } else {
-                    html_str = '<p style="color: #6f6f6f";>' + received_msg + '</p>'
-                }
-
-                {#console.log("数据:" + received_msg);#}
-                $('.show_view').append(html_str);
-                $('.show_view').scrollTop(2000)
+            ws.onmessage = function (e) {
+                rece_msg(e)
             };
 
             ws.onclose = function (e) {
                 // 关闭 websocket
                 $('.show_view').append('<p style="color:#2dc16c">************* 执行完毕 *************</p>');
+                $('.show_view').scrollTop(2000);
                 console.log("连接已关闭...");
             };
         }
@@ -262,6 +245,7 @@
             ws.onclose = function (e) {
                 // 关闭 websocket
                 $('.show_view').append('<p style="color:#2dc16c">************* 执行完毕 *************</p>');
+                $('.show_view').scrollTop(2000);
                 console.log("连接已关闭...");
             };
         }

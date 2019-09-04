@@ -10,7 +10,7 @@ def log():
     # 这里进行判断，如果logger.handlers列表为空，则添加，否则，直接去写日志
     if not logger.handlers:
         # 创建handler
-        fh = TimedRotatingFileHandler(filename="./action_logging/123", when="D", interval=1,
+        fh = TimedRotatingFileHandler(filename="./action_logging/log_text.log", when="D", interval=1,
                                  backupCount=7, encoding='utf-8')
 
     # 设置输出日志格式
