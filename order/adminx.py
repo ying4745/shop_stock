@@ -28,7 +28,7 @@ class OrderGoodsXadmin(object):
                     'get_image', 'count', 'price',
                     'get_good_stock', 'create_time']
     search_fields = ['order__order_id', 'sku_good__sku_id']
-    list_filter = ['order__order_id', 'sku_good__sku_id']
+    list_filter = ['order__order_country', 'sku_good__sku_id']
     date_hierarchy = ('create_time', 'order__order_id')
     ordering = ('order__order_id',)
 
