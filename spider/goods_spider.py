@@ -590,6 +590,36 @@ class ThGoodsSpider(PhGoodsSpider):
         self.num = 0
 
 
+class IdGoodsSpider(PhGoodsSpider):
+
+    def __init__(self):
+        self.name = sp_config.ID_USERNAME
+        self.password = sp_config.ID_PASSWORD
+
+        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.cookies = get_cookies_from_file(sp_config.ID_COOKIES_SAVE)
+
+        self.login_url = sp_config.ID_LOGIN_URL
+        self.product_url = sp_config.ID_PRODUCT_URL
+        self.order_url = sp_config.ID_ORDER_URL
+        self.search_order_url = sp_config.ID_ORDER_SEARCH_URL
+        self.make_waybill_url = sp_config.ID_MAKE_WAYBILL_URL
+        self.waybill_url = sp_config.ID_WAYBILL_URL
+
+        self.cookies_path = sp_config.ID_COOKIES_SAVE
+        self.error_path = sp_config.ID_ERROR_LOG
+        self.update_path = sp_config.ID_UPDATE_LOG
+        self.order_path = sp_config.ID_ORDER_LOG
+
+        # 兑换汇率
+        self.exchange_rate = sp_config.IDR_CONVERT_RMB
+        # 每个订单附加费用
+        self.order_add_fee = sp_config.ORDER_ADD_FEE
+        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.country = 'id'
+
+        self.num = 0
+
 def save_log(filename, msg, err_type='Error'):
     # 写入错误日志
     now_time = datetime.datetime.now().strftime('%y-%m-%d %H:%M')
@@ -633,7 +663,8 @@ def format_file_path(goodsku):
 country_type_dict = {
     'MYR': MYGoodsSpider,
     'PHP': PhGoodsSpider,
-    'THB': ThGoodsSpider
+    'THB': ThGoodsSpider,
+    'IDR': IdGoodsSpider
     }
 
 if __name__ == '__main__':

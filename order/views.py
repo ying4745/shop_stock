@@ -29,6 +29,7 @@ class IndexView(View):
         my_orders = orders.filter(order_country='MYR').count()
         ph_orders = orders.filter(order_country='PHP').count()
         th_orders = orders.filter(order_country='THB').count()
+        id_orders = orders.filter(order_country='IDR').count()
 
         out_of_stock, orders_goods = out_of_stock_good_list(orders)
 
@@ -127,7 +128,8 @@ class OrderListView(View):
     COUNTRY = {
         '马来西亚': 'MYR',
         '菲律宾': 'PHP',
-        '泰国': 'THB'
+        '泰国': 'THB',
+        '印尼': 'IDR'
     }
 
     def get(self, request):
@@ -248,14 +250,17 @@ class OrderChartsView(View):
         my_value_list = []
         ph_value_list = []
         th_value_list = []
+        id_value_list = []
         if all_orders:
             my_orders = all_orders.filter(order_status=3, order_country='MYR').order_by('order_time')
             ph_orders = all_orders.filter(order_status=3, order_country='PHP').order_by('order_time')
             th_orders = all_orders.filter(order_status=3, order_country='THB').order_by('order_time')
+            id_orders = all_orders.filter(order_status=3, order_country='IDR').order_by('order_time')
 
             my_value_list = order_value_list(date_list, my_orders)
             ph_value_list = order_value_list(date_list, ph_orders)
             th_value_list = order_value_list(date_list, th_orders)
+            id_value_list = order_value_list(date_list, id_orders)
 
         # 日期 去掉年份
         date_list = list(map(lambda x: x[2:], date_list))
@@ -264,6 +269,7 @@ class OrderChartsView(View):
             'my_value_list': my_value_list,
             'ph_value_list': ph_value_list,
             'th_value_list': th_value_list,
+            'id_value_list': id_value_list,
             'date_list': date_list
         }
 

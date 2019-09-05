@@ -19,7 +19,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
-from goods.views import auto_follow, each_auto_follow
+from goods.views import AutoFollowView
 from goods.views import GoodsListView, GoodsSpiderView, ModifyGoodsView, SingleGoodsListView
 from order.views import OrderListView, IndexView, OrderSpiderView, BuyGoodsView, ModifyPurchaseView
 from order.views import StockView, StockListView, OrderChartsView, OrderInfoView, OrderWaybillView
@@ -50,8 +50,9 @@ urlpatterns = [
 
     path('bale/order/', BaleOrderView.as_view(), name='bale_order'),                # 打包订单 打印运单号
 
-    path('auto/follow/', auto_follow, name='auto_follow'),                          # 刷粉操作
-    path('eachshop/autofollow/', each_auto_follow, name='each_auto_follow'),        # 每个站点 自动刷粉操作
+    # path('auto/follow/', auto_follow, name='auto_follow'),                          # 刷粉操作
+    # path('eachshop/autofollow/', each_auto_follow, name='each_auto_follow'),        # 每个站点 自动刷粉操作
+    path('auto/follow/', AutoFollowView.as_view(), name='auto_follow'),             # 刷粉操作
 
     # path('import/excel/', ImportExcelView.as_view(), name='import_excel'),         # 填充数据
 
