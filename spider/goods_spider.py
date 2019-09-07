@@ -378,28 +378,54 @@ class PhGoodsSpider():
         for order_item in order_info['order_items']:
             good_info = self.list_filter_data(order_item, order_data['order-items'])
 
-            good_sku = self.list_filter_data(good_info['modelid'], order_data['item-models'])['sku']
-            try:
-                good_obj = GoodsSKU.objects.get(sku_id=good_sku)
-            except Exception as e:
-                save_log(self.error_path, str(e.args))
-                msg = '(' + order_info['ordersn'] + ') 缺失商品： ' + good_sku + '\t'
-                save_log(self.order_path, msg, err_type='@订单商品错误：')
-                # 订单备注中 记录缺失的商品
-                order_obj.order_desc = order_obj.order_desc + good_sku + ' , '
-                order_obj.save()
-                # 跳过该商品， 记录下 手动修复
-                continue
+            # 如果是套装组合 现在只考虑到同种sku套装
+            if good_info['item_list']:
+                good_sku = self.list_filter_data(good_info['item_list'][0]['modelid'], order_data['item-models'])['sku']
+                try:
+                    good_obj = GoodsSKU.objects.get(sku_id=good_sku)
+                except Exception as e:
+                    save_log(self.error_path, str(e.args))
+                    msg = '(' + order_info['ordersn'] + ') 缺失商品： ' + good_sku + '\t'
+                    save_log(self.order_path, msg, err_type='@订单商品错误：')
+                    # 订单备注中 记录缺失的商品
+                    order_obj.order_desc = order_obj.order_desc + good_sku + ' , '
+                    order_obj.save()
+                    # 跳过该商品， 记录下 手动修复
+                    continue
 
-            g_data = {
-                'count': good_info['amount'],
-                'price': good_info['order_price'],
-                }
-            try:
-                # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-            except Exception as e:
-                save_log(self.error_path, str(e.args))
+                g_data = {
+                    'count': good_info['item_list'][0]['amount'],
+                    'price': good_info['order_price'],
+                    }
+                try:
+                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
+                except Exception as e:
+                    save_log(self.error_path, str(e.args))
+
+            else:
+                good_sku = self.list_filter_data(good_info['modelid'], order_data['item-models'])['sku']
+                try:
+                    good_obj = GoodsSKU.objects.get(sku_id=good_sku)
+                except Exception as e:
+                    save_log(self.error_path, str(e.args))
+                    msg = '(' + order_info['ordersn'] + ') 缺失商品： ' + good_sku + '\t'
+                    save_log(self.order_path, msg, err_type='@订单商品错误：')
+                    # 订单备注中 记录缺失的商品
+                    order_obj.order_desc = order_obj.order_desc + good_sku + ' , '
+                    order_obj.save()
+                    # 跳过该商品， 记录下 手动修复
+                    continue
+
+                g_data = {
+                    'count': good_info['amount'],
+                    'price': good_info['order_price'],
+                    }
+                try:
+                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
+                except Exception as e:
+                    save_log(self.error_path, str(e.args))
 
     def compute_order_profit(self, order_obj):
         """计算订单利润"""

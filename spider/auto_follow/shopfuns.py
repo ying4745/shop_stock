@@ -102,15 +102,14 @@ class MyShopFuns():
 
         response = requests.get(self.following_count_url, headers=self.headers)
 
-        # print(response.status_code)
-        # print(response.text)
         if response.status_code == 200:
             try:
                 res = json.loads(response.text)
             except:
                 print('反序列化信息失败！')
                 return ''
-            return res['data']['account']['following_count']
+            # print(res)
+            return res['users'][0]['following_count']
         else:
             print('请求失败！')
             return ''
@@ -119,6 +118,7 @@ class MyShopFuns():
         """批量取关操作，从最早关注开始取关"""
 
         following_num = self.following_count()
+        # print('关注人数 ', following_num)
         unfollow_num = int(unfollow_num)
         if not following_num:
             # print('关注人数查询失败')
@@ -142,13 +142,13 @@ class MyShopFuns():
             url = self.following_list_url.format(following_num)
             response = requests.get(url, headers=self.headers)
             # print(response.status_code)
-            # print(response.text)
 
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'lxml')
 
                 result_ele = soup.select('li[class="clickable_area middle-centered-div"]')
                 if not result_ele:
+                    print(response.text)
                     return "返回结果中没找到想要的元素"
 
                 for user_ele in result_ele:
@@ -164,11 +164,11 @@ class MyShopFuns():
                             self.login_num += 1
                         return '重新登陆失败'
                     elif follow_msg != '取关成功':
-                        return '错误：{}， < 已关注 {} 人 >'.format(follow_msg, num - 1)
+                        return '错误：{}， (当前关注：{}, 已取关 {} 人)'.format(follow_msg, following_num, num - 1)
 
                     num += 1
                     if num > unfollow_num:
-                        return '已取关 {} 人'.format(num - 1)
+                        return '当前关注：{}, 已取关 {} 人'.format(following_num, num - 1)
             else:
                 return '请求失败'
 
@@ -228,7 +228,7 @@ class MyShopFuns():
 
                         num += 1
                         if num > follow_num:
-                            return '已取关 {} 人'.format(num - 1)
+                            return '已关注 {} 人'.format(num - 1)
                         time.sleep(0.2)
                     else:
                         # print(is_follow)
