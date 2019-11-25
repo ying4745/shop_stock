@@ -29,7 +29,7 @@
     <!-- 同种商品sku选择列表 模态框 -->
     <div class="modal fade" id="skulist-Modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog"> role="document">
-            <div class="modal-content good-img-parent">
+            <div class="modal-content good-img-parent" style="width: 740px">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span></button>
@@ -726,9 +726,7 @@
             $.get("{% url 'get_order' %}", params = data, function (e) {
                 if (!e.status) {
                     showMessage(e.msg, 'bg-success');
-                    if (e.err_order) {
-                        $('#err_order').text(e.err_order)
-                    } else {
+                    if (e.msg !== '没有新订单') {
                         window.setTimeout(function () {
                             location.reload()
                         }, 2100);

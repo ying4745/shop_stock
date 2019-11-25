@@ -111,8 +111,8 @@ class BaleOrderView(View):
         # print("结束", orders_dict) down_order_waybill
         for k in orders_dict.keys():
             shopee = country_type_dict[k]()
-            order_list_str = list(map(lambda x: int(x), orders_dict[k]))
-            msg = shopee.down_order_waybill(str(order_list_str))
+            # order_list_str = list(map(lambda x: int(x), orders_dict[k]))
+            msg = shopee.down_order_waybill(orders_dict[k])
             if msg:
                 return JsonResponse({'status': 2, 'msg': msg})
 
@@ -571,7 +571,10 @@ class OrderSpiderView(View):
         if order_type == 'many':
             if data_type in ['toship', 'shipping', 'completed', 'cancelled']:
                 shopee.get_order(data_type)
-                return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新'})
+                if shopee.num == 0:
+                    return JsonResponse({'status': 0, 'msg': '没有新订单'})
+                else:
+                    return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新'})
             else:
                 return JsonResponse({'status': 4, 'msg': '订单状态参数错误'})
         elif order_type == 'single' and order_id:

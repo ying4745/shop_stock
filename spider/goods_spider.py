@@ -57,8 +57,7 @@ class PhGoodsSpider():
         time.sleep(1)
         driver.find_element_by_xpath('//input[@type="password"]').send_keys(self.password)
         time.sleep(2)
-        driver.find_element_by_xpath('//button[@class="shopee-button shopee-button--primary '
-                                     'shopee-button--normal shopee-button--block shopee-button--round"]').click()
+        driver.find_element_by_xpath('//*[@id="app"]/div[2]/div/div[1]/div/div/div[3]/div/div/div/div[2]/button').click()
         time.sleep(5)
         for cook in driver.get_cookies():
             self.cookies[cook['name']] = cook['value']
@@ -152,7 +151,7 @@ class PhGoodsSpider():
             defaults = {'goods': g_spu, }
 
             # 非英文数字加字符的商品规格 不添加 （排除小语种语言）
-            if re.match(r'^[+\w #,)(_/\-.]+$', good['name']):
+            if re.match(r'^[+\w #,)(_/\-.*]+$', good['name']):
                 defaults['desc'] = good['name']
 
             # 判断国家  添加到不同价格
@@ -256,19 +255,19 @@ class PhGoodsSpider():
             'is_massship': 'false',
             'offset': page,
             'limit': 40,
-            'type': type,
-            'sort_type': 'sort_desc'
+            'list_type': type,
+            'order_by_create_date': 'desc'
             }
         return self.parse_url(self.order_url, data)
 
     def save_order_data(self, order_data):
         """解析订单信息 保存到数据库"""
-        for order_info in order_data['orders']:
+        for order_info in order_data['data']['orders']:
             # 订单用户信息
-            user_info = self.list_filter_data(order_info['userid'], order_data['users'])
+            # user_info = self.list_filter_data(order_info['userid'], order_data['users'])
 
             # 解析订单 用户数据  生成订单详情
-            order_obj = self.parse_create_order(user_info, order_info, order_data)
+            order_obj = self.parse_create_order(order_info)
 
             if not order_obj:
                 # save_log(self.order_path, order_info['ordersn'], err_type='$已取消的订单：')
@@ -289,7 +288,7 @@ class PhGoodsSpider():
         order_data = self.parse_order_url(type, page)
         self.save_order_data(order_data)
 
-        total = order_data['meta']['total']
+        total = order_data['data']['meta']['total']
         total_page = total // 40
         if total_page > 0 and is_all:
             for i in range(1, total_page + 1):
@@ -299,13 +298,13 @@ class PhGoodsSpider():
         """过滤数据列表中符合的数据字典"""
         return list(filter(lambda x: x['id'] == params, list_data))[0]
 
-    def parse_create_order(self, user_info, order_info, order_data):
+    def parse_create_order(self, order_info):
         """解析创建订单，创建订单同时创建订单商品，更新订单不更新订单商品"""
 
         # 如果订单状态为取消，不创建，如已有订单 则删除
         # 订单状态：待出货和已运送 为1，已取消为5，已完成为4
         # 已完成的订单，不再更新
-        order_obj = OrderInfo.objects.filter(order_id=order_info['ordersn'])
+        order_obj = OrderInfo.objects.filter(order_id=order_info['order_sn'])
         if order_obj:
             if order_info['status'] == 5:
                 order_obj[0].delete()
@@ -314,14 +313,16 @@ class PhGoodsSpider():
                 return None
 
         # 订单用户收货率
-        delivery_order = user_info['delivery_order_count']
+        delivery_order = order_info['buyer_user']['delivery_order_count']
         # 考虑订单用户第一次购物
         if delivery_order == 0:
             customer_info = '100%&0'
         else:
-            customer_info = str(user_info['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(delivery_order)
+            customer_info = str(order_info['buyer_user']['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(delivery_order)
         # 商品总价
-        total_price = order_info['buyer_paid_amount']
+        total_price = 0
+        for order_good_info in order_info['order_items']:
+            total_price += float(order_good_info['order_price']) * order_good_info['amount']
 
         # 判断是否是卖家的优惠卷
         voucher_price = order_info['voucher_price'] if order_info['voucher_absorbed_by_seller'] else '0.00'
@@ -349,83 +350,83 @@ class PhGoodsSpider():
                            - Decimal(actual_shipping_fee) - Decimal(card_txn_fee) - Decimal(voucher_price) - Decimal(comm_fee)
 
         o_data = {
-            'order_time': order_info['ordersn'][:6],
-            'order_shopeeid': order_info['id'],
-            'customer': user_info['username'],
+            'order_time': order_info['order_sn'][:6],
+            'order_shopeeid': order_info['order_id'],
+            'customer': order_info['buyer_user']['user_name'],
             'receiver': order_info['buyer_address_name'],
             'customer_info': customer_info,
             'total_price': total_price,
             'order_income': order_income,
             'order_country': order_info['currency']
         }
-        order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_info['ordersn'], defaults=o_data)
+        order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_info['order_sn'], defaults=o_data)
 
         if is_c:
-            self.parse_create_ordergood(order_obj, order_info, order_data)
+            self.parse_create_ordergood(order_obj, order_info)
             self.num += 1
 
         return order_obj
 
-    def parse_create_ordergood(self, order_obj, order_info, order_data):
+    def parse_create_ordergood(self, order_obj, order_info):
         """
         解析数据 创建订单商品 统计订单进货成本
         :param order_obj: 订单对象
         :param order_info: 订单数据
-        :param order_data: 抓取到的全部数据
         """
 
         # 订单下的商品，商品对象为唯一的
         for order_item in order_info['order_items']:
-            good_info = self.list_filter_data(order_item, order_data['order-items'])
+            # good_info = self.list_filter_data(order_item, order_data['order-items'])
 
             # 如果是套装组合 现在只考虑到同种sku套装
-            if good_info['item_list']:
-                good_sku = self.list_filter_data(good_info['item_list'][0]['modelid'], order_data['item-models'])['sku']
-                try:
-                    good_obj = GoodsSKU.objects.get(sku_id=good_sku)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
-                    msg = '(' + order_info['ordersn'] + ') 缺失商品： ' + good_sku + '\t'
-                    save_log(self.order_path, msg, err_type='@订单商品错误：')
-                    # 订单备注中 记录缺失的商品
-                    order_obj.order_desc = order_obj.order_desc + good_sku + ' , '
-                    order_obj.save()
-                    # 跳过该商品， 记录下 手动修复
-                    continue
+            # if order_item['item_list']:
+            #     good_sku = self.list_filter_data(good_info['item_list'][0]['modelid'], order_data['item-models'])['sku']
+            #     try:
+            #         good_obj = GoodsSKU.objects.get(sku_id=good_sku)
+            #     except Exception as e:
+            #         save_log(self.error_path, str(e.args))
+            #         msg = '(' + order_info['ordersn'] + ') 缺失商品： ' + good_sku + '\t'
+            #         save_log(self.order_path, msg, err_type='@订单商品错误：')
+            #         # 订单备注中 记录缺失的商品
+            #         order_obj.order_desc = order_obj.order_desc + good_sku + ' , '
+            #         order_obj.save()
+            #         # 跳过该商品， 记录下 手动修复
+            #         continue
+            #
+            #     g_data = {
+            #         'count': order_item['amount'],
+            #         'price': order_item['order_price'],
+            #         }
+            #     try:
+            #         # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+            #         OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
+            #     except Exception as e:
+            #         save_log(self.error_path, str(e.args))
 
-                g_data = {
-                    'count': good_info['item_list'][0]['amount'],
-                    'price': good_info['order_price'],
-                    }
-                try:
-                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
+            # else:
+                # good_sku = self.list_filter_data(good_info['modelid'], order_data['item-models'])['sku']
+            good_sku = order_item['item_model']['sku']
+            try:
+                good_obj = GoodsSKU.objects.get(sku_id=good_sku)
+            except Exception as e:
+                save_log(self.error_path, str(e.args))
+                msg = '(' + order_info['order_sn'] + ') 缺失商品： ' + good_sku + '\t'
+                save_log(self.order_path, msg, err_type='@订单商品错误：')
+                # 订单备注中 记录缺失的商品
+                order_obj.order_desc = order_obj.order_desc + good_sku + ' , '
+                order_obj.save()
+                # 跳过该商品， 记录下 手动修复
+                continue
 
-            else:
-                good_sku = self.list_filter_data(good_info['modelid'], order_data['item-models'])['sku']
-                try:
-                    good_obj = GoodsSKU.objects.get(sku_id=good_sku)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
-                    msg = '(' + order_info['ordersn'] + ') 缺失商品： ' + good_sku + '\t'
-                    save_log(self.order_path, msg, err_type='@订单商品错误：')
-                    # 订单备注中 记录缺失的商品
-                    order_obj.order_desc = order_obj.order_desc + good_sku + ' , '
-                    order_obj.save()
-                    # 跳过该商品， 记录下 手动修复
-                    continue
-
-                g_data = {
-                    'count': good_info['amount'],
-                    'price': good_info['order_price'],
-                    }
-                try:
-                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
+            g_data = {
+                'count': order_item['amount'],
+                'price': order_item['order_price'],
+                }
+            try:
+                # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
+            except Exception as e:
+                save_log(self.error_path, str(e.args))
 
     def compute_order_profit(self, order_obj):
         """计算订单利润"""
@@ -453,11 +454,11 @@ class PhGoodsSpider():
         return self.parse_url(self.search_order_url, data)
 
     def save_single_order(self, order_data):
-        if order_data['orders']:
-            order = order_data['orders'][0]
-            user_info = order_data['users'][0]
+        if order_data['data']['orders']:
+            # order = order_data['orders'][0]
+            # user_info = order_data['users'][0]
 
-            order_obj = self.parse_create_order(user_info, order, order_data)
+            order_obj = self.parse_create_order(order_data['data']['orders'][0])
 
             if not order_obj:
                 return '订单已取消/已完成'
@@ -478,25 +479,31 @@ class PhGoodsSpider():
     def make_order_waybill(self, orderid):
         self.is_cookies()
         # 组成URL 平台订单号
-        url = self.make_waybill_url.format(orderid, self.cookies['SPC_CDS'])
+        url = self.make_waybill_url.format(self.cookies['SPC_CDS'])
 
         headers = {'content-type': 'application/json; charset=UTF-8'}
         headers.update(self.headers)
 
         # request payload 参数
-        data = {"orderLogistic": {"userid": 0, "orderid": None, "type": 0, "status": 0, "channelid": 0,
-                                  "channel_status": "", "consignment_no": "", "booking_no": "",
-                                  "pickup_time": 0, "actual_pickup_time": 0, "deliver_time": 0,
-                                  "actual_deliver_time": 0, "ctime": 0, "mtime": 0, "seller_realname": "",
-                                  "branchid": 0, "slug": "", "shipping_carrier": "",
-                                  "logistic_command": "generate_tracking_no", "extra_data": "{}"}}
+        # data = {"orderLogistic": {"userid": 0, "orderid": None, "type": 0, "status": 0, "channelid": 0,
+        #                           "channel_status": "", "consignment_no": "", "booking_no": "",
+        #                           "pickup_time": 0, "actual_pickup_time": 0, "deliver_time": 0,
+        #                           "actual_deliver_time": 0, "ctime": 0, "mtime": 0, "seller_realname": "",
+        #                           "branchid": 0, "slug": "", "shipping_carrier": "",
+        #                           "logistic_command": "generate_tracking_no", "extra_data": "{}"}}
+        data = {"channel_id":28016,"order_id":int(orderid),"forder_id":orderid}
 
         try:
             for i in range(2):
-                response = requests.put(url, data=json.dumps(data), cookies=self.cookies, headers=headers)
+                response = requests.post(url, data=json.dumps(data), cookies=self.cookies, headers=headers)
 
                 if response.status_code == 200:
-                    return ''
+                    res_msg = json.loads(response.text)
+                    if res_msg['code'] == 0:
+                        return ''
+                    else:
+                        save_log(self.error_path, res_msg['user_message'])
+                        return res_msg['user_message']
                 # print(response.status_code)
                 if i == 0:
                     self.login()
@@ -512,22 +519,18 @@ class PhGoodsSpider():
         """下载运单号
         orderids: 订单号列表的字符串"""
         data = {
-            'orderids': orderids,
-            'language': 'zh-my',
-            'api_from': 'waybill',
+            'order_ids': orderids
             }
 
         self.is_cookies()
-        headers = {'upgrade-insecure-requests': '1'}
-        headers.update(self.headers)
 
         try:
             for i in range(2):
-                response = requests.get(self.waybill_url, params=data, cookies=self.cookies, headers=headers)
+                response = requests.post(self.waybill_url, json=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
                     # 文件名
-                    file_name = response.headers._store['content-disposition'][1][-20:-1]
+                    file_name = 'WorkPDF001.pdf'
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
@@ -537,6 +540,8 @@ class PhGoodsSpider():
                         # 调用打印类  打印运单号
                         crop_pdf = CropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
                         crop_pdf.run()
+
+                        # os.remove(file_path)
                         # print('打单成功')
 
                     return ''
