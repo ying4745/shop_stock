@@ -16,6 +16,7 @@ class OrderInfo(BaseModel):
         ('MYR', '马来西亚'),
         ('PHP', '菲律宾'),
         ('THB', '泰国'),
+        ('IDR', '印尼')
     )
 
     order_id = models.CharField(max_length=16, unique=True, verbose_name='订单编号')

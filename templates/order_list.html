@@ -229,6 +229,8 @@
                                 td_obj.addClass('text-green')
                             } else if (data === '泰国') {
                                 td_obj.addClass('text-purple')
+                            } else if (data === '印尼') {
+                                td_obj.addClass('text-orange')
                             }
                             return data
                         }
@@ -329,7 +331,7 @@
                         trigger: 'axis'
                     },
                     legend: {
-                        data: ['马来西亚', '菲律宾', '泰国']
+                        data: ['马来西亚', '菲律宾', '泰国', '印尼']
                     },
                     grid: {
                         left: '3%',
@@ -369,6 +371,12 @@
                             type: 'line',
                             smooth: 0.35,
                             data: data.th_value_list
+                        },
+                        {
+                            name: '印尼',
+                            type: 'line',
+                            smooth: 0.35,
+                            data: data.id_value_list
                         },
                     ],
                 })

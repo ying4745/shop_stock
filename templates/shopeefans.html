@@ -12,7 +12,7 @@
         .show_view {
             margin-left: 50px;
             padding: 35px 60px;
-            height: 650px;
+            height: 500px;
             border: solid 1px #d2d6de;
             overflow: auto;
         }
@@ -32,12 +32,13 @@
                         <h3 class="box-title">刷粉助手
                             <small>从最早关注开始取关</small>
                         </h3>
+                        {% csrf_token %}
                     </div>
                     <div class="box-body">
                         <div class="row" style="padding-bottom: 25px">
                             <div class="col-xs-4">
                                 <div style="margin-left: 30px">
-                                    <div style="margin-bottom: 40px">
+                                    <!-- <div style="margin-bottom: 40px">
                                         <h4 style="text-align: center">自动操作</h4>
                                         <h5>每个站点自动取关
                                             <small>（默认每个取关150人）</small>
@@ -56,37 +57,43 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        {#                                        <h5>每个站点自动关注#}
-                                        {#                                            <small>（默认每个关注150人）</small>#}
-                                        {#                                        </h5>#}
-                                        {#                                        <div id="autofollow-seller-id">#}
-                                        {#                                            <h5 style="text-align: center;">目标店铺ID</h5>#}
-                                        {#                                            <div class="input-group">#}
-                                        {#                                                <span class="input-group-addon">泰国</span>#}
-                                        {#                                                <input type="text" class="form-control" id="th_seller_id" placeholder="目标店铺的ID">#}
-                                        {#                                                <span class="input-group-addon">马拉西亚</span>#}
-                                        {#                                                <input type="text" class="form-control" id="my_seller_id" placeholder="目标店铺的ID">#}
-                                        {#                                            </div>#}
-                                        {#                                            <div class="input-group">#}
-                                        {#                                                <span class="input-group-addon">印尼</span>#}
-                                        {#                                                <input type="text" class="form-control" id="id_seller_id" placeholder="目标店铺的ID">#}
-                                        {#                                                <span class="input-group-addon">菲律宾</span>#}
-                                        {#                                                <input type="text" class="form-control" id="ph_seller_id" placeholder="目标店铺的ID">#}
-                                        {#                                            </div>#}
-                                        {#                                        </div>#}
-                                        {#                                        <div class="row">#}
-                                        {#                                            <div class="col-xs-5">#}
-                                        {#                                                <div class="input-group">#}
-                                        {#                                                    <span class="input-group-addon">人数</span>#}
-                                        {#                                                    <input type="text" class="form-control" id="auto-follow-num" value="150">#}
-                                        {#                                                </div>#}
-                                        {#                                            </div>#}
-                                        {#                                            <div class="col-xs-7">#}
-                                        {#                                                <button onclick="auto_action('follow')" class="btn btn-success btn-block">自动关注</button>#}
-                                        {#                                            </div>#}
-                                        {#                                        </div>#}
-
-                                    </div>
+                                        <h5>每个站点自动关注
+                                            <small>（默认每个关注150人）</small>
+                                        </h5>
+                                        <div id="autofollow-seller-id">
+                                            <h5 style="text-align: center;">目标店铺ID</h5>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">泰国</span>
+                                                <input type="text" class="form-control" id="th_seller_id"
+                                                       placeholder="目标店铺的ID">
+                                                <span class="input-group-addon">马拉西亚</span>
+                                                <input type="text" class="form-control" id="my_seller_id"
+                                                       placeholder="目标店铺的ID">
+                                            </div>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">印尼</span>
+                                                <input type="text" class="form-control" id="id_seller_id"
+                                                       placeholder="目标店铺的ID">
+                                                <span class="input-group-addon">菲律宾</span>
+                                                <input type="text" class="form-control" id="ph_seller_id"
+                                                       placeholder="目标店铺的ID">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="input-group">
+                                                    <span class="input-group-addon">人数</span>
+                                                    <input type="text" class="form-control" id="auto-follow-num"
+                                                           value="150">
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-7">
+                                                <button onclick="auto_action('follow')"
+                                                        class="btn btn-success btn-block">自动关注
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div> -->
                                     <div>
                                         <h4 style="text-align: center;">手动操作</h4>
                                         <div class="form-group">
@@ -166,7 +173,7 @@
             // websocket 通讯版
         });
 
-        function rece_msg(e) {
+        /* function rece_msg(e) {
             var received_msg = e.data;
             if ($.isNumeric(received_msg[0])) {
                 html_str = '<p>' + received_msg + '</p>'
@@ -183,10 +190,9 @@
                 html_str = '<p style="color: #6f6f6f";>' + received_msg + '</p>'
             }
 
-            {#console.log("数据:" + received_msg);#}
             $('.show_view').append(html_str);
             $('.show_view').scrollTop(2000)
-        }
+        } */
 
         function manual_action() {
             var request_obj = {};
@@ -196,13 +202,38 @@
             request_obj.people_num = $('input[name="peopleNum"]:checked').val();
 
             if (request_obj.follow_type === 'unfollow') {
-                request_obj.shop_id = ''
+                request_obj.shop_id = '';
+                $('.show_view').append('<p style="color: #3196c1">' + request_obj.shop_country +
+                        ' > 开始取关...</p>');
+            } else {
+                if (request_obj.shop_id && $.isNumeric(request_obj.shop_id)) {
+                    $('.show_view').append('<p style="color: #3196c1">( ' + request_obj.shop_country +
+                        ' ) 目标店铺：' + request_obj.shop_id + ' > 开始关注...</p>');
+                } else {
+                    $('.show_view').append('<p style="color: #dd4b39">无店铺ID或店铺ID错误</p>');
+                    return
+                }
             }
 
-            request_msg = JSON.stringify(request_obj);
-            {#console.log(request_msg);#}
+            $.ajax({
+                url: '{% url 'auto_follow' %}',
+                type: 'post',
+                headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                data: {
+                    'request_dict': JSON.stringify(request_obj),
+                },
+                success: function (e) {
+                    if (e.status) {
+                        $('.show_view').append('<p style="color: #dd4b39">'+ e.msg + '</p>');
+                        $('.show_view').scrollTop(2000)
+                    } else {
+                        $('.show_view').append('<p>'+ e.msg + '</p>');
+                        $('.show_view').scrollTop(2000)
+                    }
+                }
+            })
 
-            ws = new WebSocket("ws://" + window.location.host + "/auto/follow/");
+            /* ws = new WebSocket("ws://" + window.location.host + "/auto/follow/");
 
             ws.onopen = function () {
                 // Web Socket 已连接上，使用 send() 方法发送数据
@@ -214,6 +245,25 @@
                 console.log('连接成功。。。');
             };
 
+            ws.onmessage = function (evt) {
+                var received_msg = evt.data;
+                if ($.isNumeric(received_msg[0])) {
+                    html_str = '<p>' + received_msg + '</p>'
+                } else if (received_msg[0] === '>') {
+                    // 错误信息
+                    html_str = '<p style="color: #dd4b39">' + received_msg + '</p>'
+                } else if (received_msg[0] === '^') {
+                    // 以关注的用户
+                    html_str = '<p style="color: #ababab">' + received_msg + '</p>'
+                } else if (received_msg[0] === '~') {
+                    // 跳过的用户
+                    html_str = '<p style="color: #e66d6d">' + received_msg + '</p>'
+                } else {
+                    html_str = '<p style="color: #6f6f6f";>' + received_msg + '</p>'
+                }
+
+                $('.show_view').append(html_str);
+                $('.show_view').scrollTop(2000)
             ws.onmessage = function (e) {
                 rece_msg(e)
             };
@@ -223,10 +273,10 @@
                 $('.show_view').append('<p style="color:#2dc16c">************* 执行完毕 *************</p>');
                 $('.show_view').scrollTop(2000);
                 console.log("连接已关闭...");
-            };
+            }; */
         }
 
-        function auto_action(follow_type) {
+        /* function auto_action(follow_type) {
             if (follow_type === 'unfollow') {
                 request_arg = $.trim($('#auto-unfollow-num').val());
             }
@@ -248,7 +298,7 @@
                 $('.show_view').scrollTop(2000);
                 console.log("连接已关闭...");
             };
-        }
+        } */
 
     </script>
 

@@ -29,7 +29,7 @@
     <!-- 同种商品sku选择列表 模态框 -->
     <div class="modal fade" id="skulist-Modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog"> role="document">
-            <div class="modal-content good-img-parent">
+            <div class="modal-content good-img-parent" style="width: 740px">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span></button>
@@ -135,6 +135,27 @@
                     </ul>
                 </div>
 
+                <div class="btn-group">
+                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        印尼 <span class="badge bg-aqua">{{ id_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="IDR">
+                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="IDR">
+                                <i class="fa fa-battery-full"></i> 运输中</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="IDR">
+                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
+                        </li>
+                    </ul>
+                </div>
+
                 <div class="col-xs-3">
                     <div class="input-group">
                         <input type="text" id="single_order_id" class="form-control" placeholder="订单编号">
@@ -149,12 +170,13 @@
                                     <i class="fa fa-university"></i> 菲律宾</a></li>
                                 <li><a href="javascript:;" class="single-order-btn" data-country="THB">
                                     <i class="fa fa-university"></i> 泰国</a></li>
+                                <li><a href="javascript:;" class="single-order-btn" data-country="IDR">
+                                    <i class="fa fa-university"></i> 印尼</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
 
-                <p id="err_order" style="color: #ff0000;"></p>
             </div>
         </div>
         <div class="row">
@@ -212,8 +234,10 @@
                                                 class="text-green text-bold division-line"
                                                     {% elif order.order_country == 'MYR' %}
                                                 class="text-blue text-bold division-line"
-                                                    {% else %}
+                                                    {% elif order.order_country == 'THB' %}
                                                 class="text-purple text-bold division-line"
+                                                    {% else %}
+                                                class="text-orange text-bold division-line"
                                                     {% endif %}
                                             >{{ order.get_order_country_display }}
                                             </td>
@@ -299,8 +323,10 @@
                                             class="text-green text-bold division-line"
                                                 {% elif order.order_country == 'MYR' %}
                                             class="text-blue text-bold division-line"
-                                                {% else %}
+                                                {% elif order.order_country == 'THB' %}
                                             class="text-purple text-bold division-line"
+                                                {% else %}
+                                            class="text-orange text-bold division-line"
                                                 {% endif %}
                                         >{{ order.get_order_country_display }}
                                         </td>
@@ -700,9 +726,7 @@
             $.get("{% url 'get_order' %}", params = data, function (e) {
                 if (!e.status) {
                     showMessage(e.msg, 'bg-success');
-                    if (e.err_order) {
-                        $('#err_order').text(e.err_order)
-                    } else {
+                    if (e.msg !== '没有新订单') {
                         window.setTimeout(function () {
                             location.reload()
                         }, 2100);

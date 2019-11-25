@@ -110,8 +110,10 @@
                                                 class="text-green text-bold division-line"
                                                 {% elif order.order_country == 'MYR' %}
                                                 class="text-blue text-bold division-line"
-                                                {% else %}
+                                                {% elif order.order_country == 'THB' %}
                                                 class="text-purple text-bold division-line"
+                                                {% else %}
+                                                class="text-orange text-bold division-line"
                                                 {% endif %}
                                                 >{{ order.get_order_country_display }}
                                             </td>
