@@ -10,13 +10,19 @@ class OrderInfo(BaseModel):
         (2, '待打包'),
         (3, '已完成'),
         (4, '已处理'),
-        (5, '已打单')
+        (5, '已打单'),
+        (6, '已拨款'),
+        (7, '异常款'),
+        (8, '丢失件')
     )
     ORDER_COUNTRY_CHOICES = (
         ('MYR', '马来西亚'),
         ('PHP', '菲律宾'),
         ('THB', '泰国'),
-        ('IDR', '印尼')
+        ('IDR', '印尼'),
+        ('SGD', '新加坡'),
+        ('BRL', '巴西'),
+        ('TWD', '台湾'),
     )
 
     order_id = models.CharField(max_length=16, unique=True, verbose_name='订单编号')
@@ -24,6 +30,7 @@ class OrderInfo(BaseModel):
     order_shopeeid = models.CharField(max_length=16, default='', verbose_name='平台订单号')
     customer = models.CharField(max_length=64, verbose_name='客户名字')
     receiver = models.CharField(max_length=64, default='默认', verbose_name='收件人')
+    customer_remark = models.CharField(max_length=256, null=True, blank=True, default='', verbose_name='客户留言')
     customer_info = models.CharField(max_length=32, default='100%/0', verbose_name='客户收货率')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='商品总额')
     order_income = models.DecimalField(max_digits=10, decimal_places=2,
@@ -35,6 +42,7 @@ class OrderInfo(BaseModel):
     order_country = models.CharField(max_length=5, choices=ORDER_COUNTRY_CHOICES,
                                      default='MYR', verbose_name='订单国家')
     order_desc = models.CharField(max_length=128, null=True, blank=True, default='', verbose_name='订单备注')
+    order_pay_time = models.CharField(max_length=16, blank=True, default='-', verbose_name='拨款时间')
 
     @property
     def customer_grade(self):
@@ -56,6 +64,7 @@ class OrderInfo(BaseModel):
             'order_g_num': self.order_good_count(),
             'order_income': self.order_income,
             'order_profit': self.order_profit,
+            'order_pay_time': self.order_pay_time
         }
         return order_data
 

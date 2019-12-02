@@ -23,7 +23,7 @@ from goods.views import AutoFollowView
 from goods.views import GoodsListView, GoodsSpiderView, ModifyGoodsView, SingleGoodsListView
 from order.views import OrderListView, IndexView, OrderSpiderView, BuyGoodsView, ModifyPurchaseView
 from order.views import StockView, StockListView, OrderChartsView, OrderInfoView, OrderWaybillView
-from order.views import BaleOrderView
+from order.views import BaleOrderView, CheckIncomeView
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
@@ -49,6 +49,8 @@ urlpatterns = [
     path('order/waybill/', OrderWaybillView.as_view(), name='order_waybill'),       # 生成运单号
 
     path('bale/order/', BaleOrderView.as_view(), name='bale_order'),                # 打包订单 打印运单号
+
+    path('check/income/', CheckIncomeView.as_view(), name='check_income'),          # 核对收款
 
     # path('auto/follow/', auto_follow, name='auto_follow'),                          # 刷粉操作
     # path('eachshop/autofollow/', each_auto_follow, name='each_auto_follow'),        # 每个站点 自动刷粉操作

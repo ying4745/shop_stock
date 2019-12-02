@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}收款审核{% endblock %}
+{% block css %}
+    <style>
+        .form-group label {
+            margin-left: 10px;
+            margin-right: 15px;
+            font-weight: normal;
+        }
+
+        .show_view {
+            margin-left: 50px;
+            padding: 35px 60px;
+            height: 400px;
+            border: solid 1px #d2d6de;
+            overflow: auto;
+        }
+    </style>
+
+    <link rel="stylesheet" href="{% static 'adminlet-2.4.10/bower_components/bootstrap-daterangepicker/daterangepicker.css' %}">
+
+{% endblock %}
+
+{% block content %}
+    <section class="content">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">收款审查
+                            <small>按打款日期范围，核对每一次打款</small>
+                        </h3>
+                        {% csrf_token %}
+                    </div>
+                    <div class="box-body">
+                        <div class="row" style="padding-bottom: 25px">
+                            <div class="col-xs-4">
+                                <div style="margin-left: 30px">
+                                    <div>
+                                        <h4 style="text-align: center;">选择站点操作</h4>
+                                        <div class="form-group">
+                                            <h4>选择站点</h4>
+                                            <label>
+                                                <input type="radio" name="shopCountry" value="MYR" checked=""> 马来西亚
+                                            </label>
+                                            <label>
+                                                <input type="radio" name="shopCountry" value="PHP"> 菲律宾
+                                            </label>
+                                            <label>
+                                                <input type="radio" name="shopCountry" value="THB"> 泰国
+                                            </label>
+                                            <label>
+                                                <input type="radio" name="shopCountry" value="IDR"> 印尼
+                                            </label>
+                                        </div>
+                                        <div style="margin-bottom: 15px;">
+                                            <h4>选择日期范围</h4>
+                                            <div class="input-group">
+                                                <div class="input-group-addon"><i class="fa fa-calendar"></i></div>
+                                                <input type="text" class="form-control pull-right" id="reservation">
+                                                <i id="date_range" data-min="" data-max=""></i>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-primary btn-block" onclick="manual_action()">执行操作
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-8">
+                                <div class="show_view">
+
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- /.box-body -->
+                </div> <!-- /.box -->
+            </div> <!-- /.col -->
+        </div> <!-- /.row -->
+    </section>
+
+{% endblock %}
+
+{% block script %}
+
+    <!-- 日期选择范围 -->
+    <script src="{% static 'adminlet-2.4.10/bower_components/moment/min/moment.min.js' %}"></script>
+    <script src="{% static 'adminlet-2.4.10/bower_components/bootstrap-daterangepicker/daterangepicker.js' %}"></script>
+
+    <script src="{% static 'JS/jquery.cookie.js' %}"></script>
+    <script src="{% static 'JS/base.js' %}"></script>
+
+    <script>
+
+        //定义locale汉化插件
+        var locale = {
+            "format": 'YYYY-MM-DD',
+            "separator": " ~ ",
+            "applyLabel": "确定",
+            "cancelLabel": "取消",
+            "fromLabel": "起始时间",
+            "toLabel": "结束时间'",
+            "customRangeLabel": "自定义",
+            "weekLabel": "W",
+            "daysOfWeek": ["日", "一", "二", "三", "四", "五", "六"],
+            "monthNames": ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"],
+            "firstDay": 1
+        };
+
+        $(function () {
+            //Date range picker  日期范围筛选
+            $('#reservation').daterangepicker({
+                'locale': locale,
+                opens: 'right', // 日期选择框 显示位置
+                linkedCalendars: false, // 禁止日期框前后为连续一个月，可任意选择月份
+                alwaysShowCalendars: true,  // 始终显示日期选择框
+                autoApply: true,  // 取消确认按钮
+                startDate: moment().subtract(6, 'days'),
+                endDate: moment()
+
+            }, function (start, end, label) {
+                $('#date_range').attr('data-min', start.format('YYYY-MM-DD'))
+                    .attr('data-max', end.format('YYYY-MM-DD'));
+            });
+
+        });
+
+        function rece_msg(e) {
+            var html_str = '<h4 style="color: #6f6f6f";>打款时间：' + e.shopee_pay_time + '</h4>'
+                + '<p>平台统计：共 <span style="color:red;">' + e.shopee_order+ '</span> 个订单，收入共计：<b>' + e.shopee_count + '</b></p>'
+                + '<p style="color:#027330;">自己统计：共 <span style="color:red;">' + e.success_order+ '</span> 个订单，收入共计：<b>' + e.order_count + '</b></p>'
+                + '<p style="color:#3945a2;">未知订单：' + e.not_found_order_list + '</p>'
+                + '<p style="color:#cc4c4c;">异常打款：' + e.error_order_list + '</p>';
+
+            $('.show_view').append(html_str);
+            $('.show_view').scrollTop(2000)
+        }
+
+        function manual_action() {
+            var request_obj = {};
+            request_obj.shop_country = $('input[name="shopCountry"]:checked').val();
+            request_obj.date_min = $('#date_range').attr('data-min');
+            request_obj.date_max = $('#date_range').attr('data-max');
+
+            if (!request_obj.date_min || !request_obj.date_max) {
+                showMessage('选择日期范围');
+            } else {
+                $.ajax({
+                    url: '{% url 'check_income' %}',
+                    type: 'post',
+                    headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                    data: {
+                        'request_dict': JSON.stringify(request_obj),
+                    },
+                    success: function (e) {
+                        if (e.status) {
+                            $('.show_view').append('<p style="color: #dd4b39">'+ e.msg + '</p>');
+                            $('.show_view').scrollTop(2000)
+                        } else {
+                            rece_msg(e.msg)
+                        }
+                    }
+                })
+            }
+
+        }
+
+    </script>
+
+{% endblock %}

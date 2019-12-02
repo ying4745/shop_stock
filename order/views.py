@@ -24,12 +24,16 @@ class IndexView(View):
 
         unfinished_orders = orders.count()
         bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).count()
-        finished_orders = OrderInfo.objects.filter(order_status=3).count()
+        finished_orders = OrderInfo.objects.filter(Q(order_status=3) | Q(order_status=6) |
+                                                   Q(order_status=7) | Q(order_status=8)).count()
 
         my_orders = orders.filter(order_country='MYR').count()
         ph_orders = orders.filter(order_country='PHP').count()
         th_orders = orders.filter(order_country='THB').count()
         id_orders = orders.filter(order_country='IDR').count()
+        sg_orders = orders.filter(order_country='SGD').count()
+        br_orders = orders.filter(order_country='BRL').count()
+        tw_orders = orders.filter(order_country='TWD').count()
 
         out_of_stock, orders_goods = out_of_stock_good_list(orders)
 
@@ -129,7 +133,10 @@ class OrderListView(View):
         '马来西亚': 'MYR',
         '菲律宾': 'PHP',
         '泰国': 'THB',
-        '印尼': 'IDR'
+        '印尼': 'IDR',
+        '新加坡': 'SGD',
+        '巴西': 'BRL',
+        '台湾': 'TWD'
     }
 
     def get(self, request):
@@ -162,7 +169,8 @@ class OrderListView(View):
         min_date = request.POST.get('min_date', '')
         max_date = request.POST.get('max_date', '')
 
-        all_orders = OrderInfo.objects.filter(order_status=3)
+        all_orders = OrderInfo.objects.filter(Q(order_status=3) | Q(order_status=6) |
+                                              Q(order_status=7) | Q(order_status=8))
         # 总订单数
         recordsTotal = all_orders.count()
 
@@ -170,7 +178,8 @@ class OrderListView(View):
         if new_search:
             all_orders = all_orders.filter(Q(order_id__contains=new_search) |
                                            Q(order_time__contains=new_search) |
-                                           Q(customer__contains=new_search))
+                                           Q(order_shopeeid__contains=new_search) |
+                                           Q(order_pay_time__contains=new_search))
 
         # 单独列参数 查询
         if col_search:
@@ -251,16 +260,32 @@ class OrderChartsView(View):
         ph_value_list = []
         th_value_list = []
         id_value_list = []
+        sg_value_list = []
+        br_value_list = []
+        tw_value_list = []
         if all_orders:
-            my_orders = all_orders.filter(order_status=3, order_country='MYR').order_by('order_time')
-            ph_orders = all_orders.filter(order_status=3, order_country='PHP').order_by('order_time')
-            th_orders = all_orders.filter(order_status=3, order_country='THB').order_by('order_time')
-            id_orders = all_orders.filter(order_status=3, order_country='IDR').order_by('order_time')
+            my_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
+                                          Q(order_status=8), order_country='MYR').order_by('order_time')
+            ph_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
+                                          Q(order_status=8), order_country='PHP').order_by('order_time')
+            th_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
+                                          Q(order_status=8), order_country='THB').order_by('order_time')
+            id_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
+                                          Q(order_status=8), order_country='IDR').order_by('order_time')
+            sg_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
+                                          Q(order_status=8), order_country='SGD').order_by('order_time')
+            br_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
+                                          Q(order_status=8), order_country='BRL').order_by('order_time')
+            tw_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
+                                          Q(order_status=8), order_country='TWD').order_by('order_time')
 
             my_value_list = order_value_list(date_list, my_orders)
             ph_value_list = order_value_list(date_list, ph_orders)
             th_value_list = order_value_list(date_list, th_orders)
             id_value_list = order_value_list(date_list, id_orders)
+            sg_value_list = order_value_list(date_list, sg_orders)
+            br_value_list = order_value_list(date_list, br_orders)
+            tw_value_list = order_value_list(date_list, tw_orders)
 
         # 日期 去掉年份
         date_list = list(map(lambda x: x[2:], date_list))
@@ -270,6 +295,9 @@ class OrderChartsView(View):
             'ph_value_list': ph_value_list,
             'th_value_list': th_value_list,
             'id_value_list': id_value_list,
+            'sg_value_list': sg_value_list,
+            'br_value_list': br_value_list,
+            'tw_value_list': tw_value_list,
             'date_list': date_list
         }
 
@@ -582,6 +610,26 @@ class OrderSpiderView(View):
             return JsonResponse({'status': 0, 'msg': msg})
         else:
             return JsonResponse({'status': 3, 'msg': '订单号参数错误'})
+
+
+class CheckIncomeView(View):
+    """核对收款"""
+    def get(self, request):
+        return render(request, 'check_income.html')
+
+    def post(self, request):
+        request_dict = json.loads(request.POST.get('request_dict', ''))
+        # print(request_dict)
+        if not request_dict:
+            return JsonResponse({'status': 1, 'msg': '参数错误'})
+
+        if request_dict['shop_country'] in country_type_dict:
+            shopee = country_type_dict[request_dict['shop_country']]()
+        else:
+            return JsonResponse({'status': 2, 'msg': '国家类型参数错误'})
+
+        shopee.get_income_order(1, request_dict['date_min'], request_dict['date_max'])
+        return JsonResponse({'status': 0, 'msg': shopee.check_msg})
 
 
 def out_of_stock_good_list(orders_obj):

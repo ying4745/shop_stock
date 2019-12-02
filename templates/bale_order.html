@@ -8,16 +8,18 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
                     <h4 class="modal-title" id="myModalLabel"></h4>
                     {% csrf_token %}
                 </div>
                 <div class="modal-body">
-                ...
+                    ...
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
-                    <button id="confirm_btn" type="button" onclick="shipping_good(this)" class="btn btn-primary"></button>
+                    <button id="confirm_btn" type="button" onclick="shipping_good(this)"
+                            class="btn btn-primary"></button>
                 </div>
             </div>
         </div>
@@ -74,7 +76,7 @@
                                 <th>国家</th>
                                 <th>订单号</th>
                                 <th>客户名</th>
-                                <th>收件人</th>
+                                <th>客户留言</th>
                                 <th>客户信誉</th>
                                 <th>订单备注</th>
                                 <th>商品SKU</th>
@@ -106,34 +108,46 @@
                                             </td>
 
                                             <td data-search="{{ order.get_order_country_display }}"
-                                                {% if order.order_country == 'PHP' %}
+                                                    {% if order.order_country == 'PHP' %}
                                                 class="text-green text-bold division-line"
-                                                {% elif order.order_country == 'MYR' %}
+                                                    {% elif order.order_country == 'MYR' %}
                                                 class="text-blue text-bold division-line"
-                                                {% elif order.order_country == 'THB' %}
+                                                    {% elif order.order_country == 'THB' %}
                                                 class="text-purple text-bold division-line"
-                                                {% else %}
+                                                    {% elif order.order_country == 'IDR' %}
                                                 class="text-orange text-bold division-line"
-                                                {% endif %}
-                                                >{{ order.get_order_country_display }}
+                                                    {% elif order.order_country == 'SGD' %}
+                                                class="text-fuchsia text-bold division-line"
+                                                    {% elif order.order_country == 'BRL' %}
+                                                class="text-muted text-bold division-line"
+                                                    {% else %}
+                                                class="text-maroon text-bold division-line"
+                                                    {% endif %}
+                                            >{{ order.get_order_country_display }}
                                             </td>
 
                                             <td class="division-line" data-search="{{ order.order_id }}"
-                                                data-order="{{ order.order_time}}">{{ order.order_id }}</td>
+                                                data-order="{{ order.order_time }}">{{ order.order_id }}</td>
 
                                             <td class="division-line">{{ order.customer }}</td>
 
-                                            <td class="division-line">{{ order.receiver }}</td>
+                                            <td class="division-line" data-remark="{{ order.customer_remark }}">
+                                                {% if order.customer_remark %}
+                                                    <button class="btn btn-sm btn-vk pop-remark">留言</button>
+                                                {% else %}
+                                                    {{ order.customer_remark }}
+                                                {% endif %}
+                                            </td>
 
                                             <td class="division-line"><label
-                                                {% if order.customer_grade < 60 %}
-                                                    class="label label-danger"
-                                                {% elif order.customer_grade < 80 %}
-                                                    class="label label-warning"
-                                                {% else %}
-                                                    class="label label-default"
-                                                {% endif %}
-                                                >{{ order.customer_info }}</label>
+                                                    {% if order.customer_grade < 60 %}
+                                                        class="label label-danger"
+                                                    {% elif order.customer_grade < 80 %}
+                                                        class="label label-warning"
+                                                    {% else %}
+                                                        class="label label-default"
+                                                    {% endif %}
+                                            >{{ order.customer_info }}</label>
                                             </td>
 
                                             <td class="division-line edit-desc" data-order="{{ order.order_id }}">
@@ -152,7 +166,8 @@
                                                      src="{{ MEDIA_URL }}{{ order_good.sku_good.image }}">
                                             </td>
 
-                                            <td class="division-line" style="font-weight: bold;">{{ order_good.count }}</td>
+                                            <td class="division-line"
+                                                style="font-weight: bold;">{{ order_good.count }}</td>
                                             <td class="division-line">{{ order_good.price }}</td>
                                             <td class="division-line">{{ order_good.sku_good.stock }}</td>
 
@@ -160,8 +175,9 @@
                                             <td></td>
                                             <td></td>
                                             <td data-search="{{ order.get_order_country_display }}"></td>
-                                            <td data-search="{{ order.order_id }}" data-order="{{ order.order_time}}"></td>
-                                            <td ></td>
+                                            <td data-search="{{ order.order_id }}"
+                                                data-order="{{ order.order_time }}"></td>
+                                            <td></td>
                                             <td></td>
                                             <td></td>
                                             <td></td>
@@ -195,7 +211,7 @@
                                 <th>国家</th>
                                 <th>订单号</th>
                                 <th>客户名</th>
-                                <th>收件人</th>
+                                <th>客户留言</th>
                                 <th>客户信誉</th>
                                 <th>订单备注</th>
                                 <th>商品SKU</th>
@@ -225,11 +241,11 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0,1,5,6,7,10,11,12],
+                "targets": [0, 1, 5, 6, 7, 10, 11, 12],
                 "searchable": false
             },
             {
-                "targets": [0,1,2,4,5,6,7,8,9,10,11,12],
+                "targets": [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                 "orderable": false
             },
         ];
@@ -245,22 +261,22 @@
         // 添加下拉式筛选框
         function col_search() {
             var api = this.api();
-            api.columns([2,8]).indexes().flatten().each( function ( i ) {
-                var column = api.column( i );
+            api.columns([2, 8]).indexes().flatten().each(function (i) {
+                var column = api.column(i);
                 var select = $('<select><option value=""></option></select>')
-                    .appendTo( $(column.footer()).empty() )
-                    .on( 'change', function () {
+                    .appendTo($(column.footer()).empty())
+                    .on('change', function () {
                         var val = $.fn.dataTable.util.escapeRegex(
                             $(this).val()
                         );
                         column
-                            .search( val ? '^'+val+'$' : '', true, false )
+                            .search(val ? '^' + val + '$' : '', true, false)
                             .draw();
-                    } );
-                column.data().unique().sort().each( function ( d, j ) {
-                    select.append( '<option value="'+d+'">'+d+'</option>' )
-                } );
-            } );
+                    });
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
+                });
+            });
         }
 
         $(function () {
@@ -277,7 +293,7 @@
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
-                "dom": '<"pull-left"f><"pull-right"i>rtp',
+                "dom": '<"pull-left"f><"pull-right"p>irtp',
                 "createdRow": createdRow,
 
                 <!-- 指定列 添加下拉搜索框 -->
@@ -285,7 +301,7 @@
             });
 
             // 多选行，选中添加class
-            $('#order_table tbody').on('click', '.select-tr', function (){
+            $('#order_table tbody').on('click', '.select-tr', function () {
                 $(this).parent().toggleClass('selected');
             });
 
@@ -295,8 +311,8 @@
                     'sku_id': $.trim($(this).text()),
                     'search_type': 'all'
                 };
-                $.get("{% url 'goodsku_list' %}", params=data, function (e) {
-                    if (e.status){
+                $.get("{% url 'goodsku_list' %}", params = data, function (e) {
+                    if (e.status) {
                         showMessage(e.msg);
                     } else {
                         var html_str = '<table class="table table-striped table-bordered">' +
@@ -310,14 +326,14 @@
                             '                   </tr>' +
                             '               </thead>' +
                             '               <tbody>';
-                        for (i=0, len=e.msg.length; i<len; i++) {
+                        for (i = 0, len = e.msg.length; i < len; i++) {
                             html_str += '<tr>' +
-                            '                <td id="sku_list_id">'+ e.msg[i].sku_id +'</td>' +
-                            '                <td id="sku_list_desc">'+ e.msg[i].desc +'</td>' +
-                            '                <td style="padding: 0px 18px;" id="sku_list_sales">'+ e.msg[i].sales +'</td>' +
-                            '                <td id="sku_list_img"><img class="good_img" src="' + {{ MEDIA_URL }} +
-                                                 e.msg[i].image +'" width="35" height="35"></td>' +
-                            '                <td style="padding: 0px 18px;font-weight: bold;">'+ e.msg[i].stock +'</td></tr>';
+                                '                <td id="sku_list_id">' + e.msg[i].sku_id + '</td>' +
+                                '                <td id="sku_list_desc">' + e.msg[i].desc + '</td>' +
+                                '                <td style="padding: 0px 18px;" id="sku_list_sales">' + e.msg[i].sales + '</td>' +
+                                '                <td id="sku_list_img"><img class="good_img" src="' + {{ MEDIA_URL }} +
+                                    e.msg[i].image + '" width="35" height="35"></td>' +
+                                '                <td style="padding: 0px 18px;font-weight: bold;">' + e.msg[i].stock + '</td></tr>';
                         }
                         html_str += '</tbody></table>';
                         $('.goodsku-body').html(html_str);
@@ -335,7 +351,7 @@
                 var edit_html = '<div id="input-edit-desc">\n' +
                     '       <h5>订单备注<button id="close-edit-desc" class="close" style="margin-top: -4px;">×</button></h5>\n' +
                     '       <textarea type="text" rows="2" class="form-control" style="margin-bottom: 10px;width:230px;">' +
-                                old_text + '</textarea>\n' +
+                    old_text + '</textarea>\n' +
                     '       <button id="desc-sub" type="button" class="btn btn-success btn-block btn-sm">确认</button>\n' +
                     '       </div>';
                 $(this).append(edit_html);
@@ -349,10 +365,10 @@
             $('.edit-desc').on('click', '#desc-sub', function () {
                 var element = $(this).parents('.edit-desc');
                 var order_desc = $(this).prev().val();
-                if(!order_desc){
+                if (!order_desc) {
                     order_desc = '';
                 }
-                var data={
+                var data = {
                     'order_id': element.attr('data-order'),
                     'order_desc': order_desc
                 };
@@ -369,14 +385,29 @@
                         } else {
                             showMessage(e.msg, 'bg-success');
                             $('#input-edit-desc').remove();
-                            if(order_desc === ''){
+                            if (order_desc === '') {
                                 order_desc = '（空）';
-                                element.text(order_desc).css('color','#7d7d7d')
+                                element.text(order_desc).css('color', '#7d7d7d')
                             }
                             element.text(order_desc).css('color', '#f14548');
                         }
                     }
                 })
+            });
+
+            // 弹出客户留言
+            $('.pop-remark').click(function () {
+                var remark = $.trim($(this).parent().attr('data-remark'));
+                console.log(remark);
+                var edit_html = '<div id="customer-remark">\n' +
+                    '       <button id="close-remark" class="close" style="margin-top: -6px; margin-right: 1px;">×</button>' +
+                    '       <p id="customer-desc">' + remark + '</p>' + '</div>';
+                $(this).parent().addClass('remark-td');
+                $(this).parent().append(edit_html);
+            });
+            // 留言框 关闭按钮
+            $('.pop-remark').parent().on('click', '#close-remark', function () {
+                $('#customer-remark').remove();
             });
 
             // 选中打印运单号（平台订单ID）
@@ -385,16 +416,16 @@
                 var print_type = $(this).attr('data-type');
                 data_dict.print_type = print_type;
 
-                if (print_type === 'part'){
-                    if(!$('tr.selected').length) {
+                if (print_type === 'part') {
+                    if (!$('tr.selected').length) {
                         showMessage('先选中');
                         return
                     }
-                    table.rows('.selected').data().each( function (i) {
+                    table.rows('.selected').data().each(function (i) {
                         var order_country = i[1]['@data-search'];
                         var order_shopeeid = i[1]['@data-order'];
-                        if (order_country && order_shopeeid){
-                            if (order_country in data_dict){
+                        if (order_country && order_shopeeid) {
+                            if (order_country in data_dict) {
                                 data_dict[order_country].push(order_shopeeid)
                             } else {
                                 data_dict[order_country] = [order_shopeeid]

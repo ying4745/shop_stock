@@ -57,6 +57,7 @@
                                 <th>商品总件数</th>
                                 <th>订单收入</th>
                                 <th>订单利润</th>
+                                <th>打款时间</th>
                             </tr>
                             </thead>
 
@@ -71,6 +72,7 @@
                                 <th>商品总件数</th>
                                 <th>订单收入</th>
                                 <th>订单利润</th>
+                                <th>打款时间</th>
                             </tr>
                             </tfoot>
                         </table>
@@ -231,6 +233,12 @@
                                 td_obj.addClass('text-purple')
                             } else if (data === '印尼') {
                                 td_obj.addClass('text-orange')
+                            } else if (data === '新加坡') {
+                                td_obj.addClass('text-fuchsia')
+                            } else if (data === '巴西') {
+                                td_obj.addClass('text-muted')
+                            } else if (data === '台湾') {
+                                td_obj.addClass('text-maroon')
                             }
                             return data
                         }
@@ -246,6 +254,7 @@
                     {"data": 'order_g_num'},
                     {"data": 'order_income'},
                     {"data": 'order_profit'},
+                    {"data": 'order_pay_time'}
                 ]
             });
 
@@ -331,7 +340,7 @@
                         trigger: 'axis'
                     },
                     legend: {
-                        data: ['马来西亚', '菲律宾', '泰国', '印尼']
+                        data: ['马来西亚', '菲律宾', '泰国', '印尼', '新加坡', '巴西', '台湾']
                     },
                     grid: {
                         left: '3%',
@@ -377,6 +386,24 @@
                             type: 'line',
                             smooth: 0.35,
                             data: data.id_value_list
+                        },
+                        {
+                            name: '新加坡',
+                            type: 'line',
+                            smooth: 0.35,
+                            data: data.sg_value_list
+                        },
+                        {
+                            name: '巴西',
+                            type: 'line',
+                            smooth: 0.35,
+                            data: data.br_value_list
+                        },
+                        {
+                            name: '台湾',
+                            type: 'line',
+                            smooth: 0.35,
+                            data: data.tw_value_list
                         },
                     ],
                 })

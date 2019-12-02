@@ -156,6 +156,65 @@
                     </ul>
                 </div>
 
+                <div class="btn-group">
+                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        新加坡 <span class="badge bg-aqua">{{ sg_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="SGD">
+                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="SGD">
+                                <i class="fa fa-battery-full"></i> 运输中</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="SGD">
+                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        巴西 <span class="badge bg-aqua">{{ br_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="BRL">
+                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="BRL">
+                                <i class="fa fa-battery-full"></i> 运输中</a>
+                        </li>
+                    </ul>
+                </div>
+
+{#                <div class="btn-group">#}
+{#                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"#}
+{#                            aria-haspopup="true" aria-expanded="false">#}
+{#                        台湾 <span class="badge bg-aqua">{{ tw_orders }}</span> <span class="caret"></span>#}
+{#                    </button>#}
+{#                    <ul class="dropdown-menu">#}
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="TWD">#}
+{#                                <i class="fa fa-battery-empty"></i> 待出货</a>#}
+{#                        </li>#}
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="TWD">#}
+{#                                <i class="fa fa-battery-full"></i> 运输中</a>#}
+{#                        </li>#}
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="TWD">#}
+{#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
+{#                        </li>#}
+{#                    </ul>#}
+{#                </div>#}
+
                 <div class="col-xs-3">
                     <div class="input-group">
                         <input type="text" id="single_order_id" class="form-control" placeholder="订单编号">
@@ -172,6 +231,12 @@
                                     <i class="fa fa-university"></i> 泰国</a></li>
                                 <li><a href="javascript:;" class="single-order-btn" data-country="IDR">
                                     <i class="fa fa-university"></i> 印尼</a></li>
+                                <li><a href="javascript:;" class="single-order-btn" data-country="SGD">
+                                    <i class="fa fa-university"></i> 新加坡</a></li>
+                                <li><a href="javascript:;" class="single-order-btn" data-country="BRL">
+                                    <i class="fa fa-university"></i> 巴西</a></li>
+{#                                <li><a href="javascript:;" class="single-order-btn" data-country="TWD">#}
+{#                                    <i class="fa fa-university"></i> 台湾</a></li>#}
                             </ul>
                         </div>
                     </div>
@@ -201,7 +266,7 @@
                                 <th>国家</th>
                                 <th>订单号</th>
                                 <th>客户名</th>
-                                <th>收件人</th>
+                                <th>客户留言</th>
                                 <th>客户信誉</th>
                                 <th>订单备注</th>
                                 <th>商品SKU</th>
@@ -236,8 +301,14 @@
                                                 class="text-blue text-bold division-line"
                                                     {% elif order.order_country == 'THB' %}
                                                 class="text-purple text-bold division-line"
-                                                    {% else %}
+                                                    {% elif order.order_country == 'IDR' %}
                                                 class="text-orange text-bold division-line"
+                                                    {% elif order.order_country == 'SGD' %}
+                                                class="text-fuchsia text-bold division-line"
+                                                    {% elif order.order_country == 'BRL' %}
+                                                class="text-muted text-bold division-line"
+                                                    {% else %}
+                                                class="text-maroon text-bold division-line"
                                                     {% endif %}
                                             >{{ order.get_order_country_display }}
                                             </td>
@@ -247,7 +318,13 @@
 
                                             <td class="division-line">{{ order.customer }}</td>
 
-                                            <td class="division-line">{{ order.receiver }}</td>
+                                            <td class="division-line" data-remark="{{ order.customer_remark }}">
+                                                {% if order.customer_remark %}
+                                                    <button class="btn btn-sm btn-vk pop-remark">留言</button>
+                                                {% else %}
+                                                    {{ order.customer_remark }}
+                                                {% endif %}
+                                            </td>
 
                                             <td class="division-line"><label
                                                     {% if order.customer_grade < 60 %}
@@ -325,8 +402,14 @@
                                             class="text-blue text-bold division-line"
                                                 {% elif order.order_country == 'THB' %}
                                             class="text-purple text-bold division-line"
-                                                {% else %}
+                                                {% elif order.order_country == 'IDR' %}
                                             class="text-orange text-bold division-line"
+                                                {% elif order.order_country == 'SGD' %}
+                                            class="text-fuchsia text-bold division-line"
+                                                {% elif order.order_country == 'BRL' %}
+                                            class="text-muted text-bold division-line"
+                                                {% else %}
+                                            class="text-maroon text-bold division-line"
                                                 {% endif %}
                                         >{{ order.get_order_country_display }}
                                         </td>
@@ -336,7 +419,13 @@
 
                                         <td class="division-line">{{ order.customer }}</td>
 
-                                        <td class="division-line">{{ order.receiver }}</td>
+                                        <td class="division-line" data-remark="{{ order.customer_remark }}">
+                                            {% if order.customer_remark %}
+                                                <button class="btn btn-sm btn-vk pop-remark">留言</button>
+                                            {% else %}
+                                                {{ order.customer_remark }}
+                                            {% endif %}
+                                        </td>
 
                                         <td class="division-line"><label
                                             {% if order.customer_grade < 60 %}
@@ -379,7 +468,7 @@
                                 <th>国家</th>
                                 <th>订单号</th>
                                 <th>客户名</th>
-                                <th>收件人</th>
+                                <th>客户留言</th>
                                 <th>客户信誉</th>
                                 <th>订单备注</th>
                                 <th>商品SKU</th>
@@ -468,7 +557,7 @@
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
-                "dom": '<"pull-left"f><"pull-right"i>rtp',
+                "dom": '<"pull-left"f><"pull-right"p>irtp',
 
                 "createdRow": createdRow,
                 <!-- 指定列 添加下拉搜索框 -->
@@ -646,6 +735,21 @@
                         }
                     }
                 })
+            });
+
+            // 弹出客户留言
+            $('.pop-remark').click(function () {
+                var remark = $.trim($(this).parent().attr('data-remark'));
+                console.log(remark);
+                var edit_html = '<div id="customer-remark">\n' +
+                    '       <button id="close-remark" class="close" style="margin-top: -6px; margin-right: 1px;">×</button>' +
+                    '       <p id="customer-desc">' + remark + '</p>' + '</div>';
+                $(this).parent().addClass('remark-td');
+                $(this).parent().append(edit_html);
+            });
+            // 留言框 关闭按钮
+            $('.pop-remark').parent().on('click', '#close-remark', function () {
+                $('#customer-remark').remove();
             });
 
             // 点击订单号， 跳转到订单修改页
