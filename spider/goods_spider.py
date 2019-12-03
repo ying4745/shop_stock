@@ -84,7 +84,7 @@ class PhGoodsSpider():
         # 判断是否有cookies，没有则登录获取
         if not self.cookies:
             self.login()
-            print(self.cookies)
+            # print(self.cookies)
 
     def parse_url(self, url, data):
         """处理请求, 出错 记录错误 抛出异常"""
@@ -340,8 +340,12 @@ class PhGoodsSpider():
 
         # 判断是否是卖家的优惠卷
         voucher_price = order_info['voucher_price'] if order_info['voucher_absorbed_by_seller'] else '0.00'
-        # 实际运费 0.5向上进1
-        actual_shipping_fee = (Decimal(order_info['actual_shipping_fee']) + Decimal(0.5)).quantize(Decimal(0.0))
+
+        if order_info['currency'] == 'PHP':
+            # 菲律宾 实际运费 0.5向上进1
+            actual_shipping_fee = (Decimal(order_info['actual_shipping_fee']) + Decimal(0.5)).quantize(Decimal(0.0))
+        else:
+            actual_shipping_fee = Decimal(order_info['actual_shipping_fee'])
         # 买家支付运费
         shipping_fee = order_info['shipping_fee']
         # 平台运费回扣
@@ -926,7 +930,7 @@ class BrGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.MY_PRODUCT_URL
 
         self.order_url = sp_config.MY_ORDER_URL
-        self.order_detail_url = 'https://seller.my.shopee.cn/api/sip/orders/detail/'
+        self.order_detail_url = sp_config.BR_ORDER_DETAIL_URL
         self.one_order_url = 'https://seller.my.shopee.cn/api/v3/order/get_one_order'
 
         self.forderid_url = sp_config.MY_FORDERID_URL
@@ -979,17 +983,19 @@ class BrGoodsSpider(PhGoodsSpider):
         for order_info in order_data['data']['orders']:
 
             # 解析订单 用户数据  生成订单详情
-            is_create_status = self.parse_create_order(order_info)
+            order_obj = self.parse_create_order(order_info)
 
-            if not is_create_status:
+            if not order_obj:
                 continue
 
         if self.num > 0:
             data = {
-                'orderid_list': self.add_orderid_list,
+                'SPC_CDS': self.cookies['SPC_CDS'],
+                'SPC_CDS_VER': 2,
+                'orderid_list': str(self.add_orderid_list),
             }
             order_detail_list = self.parse_url(self.order_detail_url, data)
-            self.parse_ordergood(order_detail_list)
+            self.parse_ordergood(order_detail_list, order_obj)
 
     def get_order(self, type='toship', page=0, is_all=True):
         """获取订单信息 保存到数据库
@@ -1055,19 +1061,15 @@ class BrGoodsSpider(PhGoodsSpider):
             self.num += 1
             self.add_orderid_list.append(order_info['order_id'])
 
-        return '创建或更新'
+        return order_obj
 
-    def parse_ordergood(self, order_info):
+    def parse_ordergood(self, order_info, order_obj):
         """
         解析数据 创建订单商品
         """
 
         # 循环 每一个订单 根据shopid找到 订单
         for order_detail in order_info['data']['list']:
-            order_obj = OrderInfo.objects.filter(order_id=order_detail['orderid'])
-
-            if not order_obj:
-                continue
 
             order_cost = 0  # 订单成本(人民币）
             # 循环订单中的每一项商品，添加订单商品
@@ -1077,11 +1079,11 @@ class BrGoodsSpider(PhGoodsSpider):
                     good_obj = GoodsSKU.objects.get(sku_id=good_sku)
                 except Exception as e:
                     save_log(self.error_path, str(e.args))
-                    msg = '(' + order_obj[0].order_id + ') 缺失商品： ' + good_sku + '\t'
+                    msg = '(' + order_obj.order_id + ') 缺失商品： ' + good_sku + '\t'
                     save_log(self.order_path, msg, err_type='@订单商品错误：')
                     # 订单备注中 记录缺失的商品
-                    order_obj[0].order_desc = order_obj[0].order_desc + good_sku + ', '
-                    order_obj[0].save()
+                    order_obj.order_desc = order_obj.order_desc + good_sku + ', '
+                    order_obj.save()
                     # 跳过该商品， 记录下 手动修复
                     continue
 
@@ -1091,20 +1093,21 @@ class BrGoodsSpider(PhGoodsSpider):
                 }
                 try:
                     # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                    OrderGoods.objects.update_or_create(order=order_obj[0], sku_good=good_obj, defaults=g_data)
+                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
                 except Exception as e:
                     save_log(self.error_path, str(e.args))
 
                 # 商品的成本  每件商品进价上加一元国内运杂费
-                order_cost += (good_obj.sku_good.buy_price + Decimal(self.product_add_fee)) \
+                order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) \
                               * Decimal(order_item['quantity'])
 
-            order_profit = order_detail['net_settlement_amount'] * Decimal(self.exchange_rate) \
+            order_profit = Decimal(order_detail['net_settlement_amount']) * Decimal(self.exchange_rate) \
                            - Decimal(order_cost) - Decimal(self.order_add_fee)
 
-            order_obj.update(total_price=order_detail['settlement_amount'],
-                             order_income=order_detail['net_settlement_amount'],
-                             order_profit=order_profit)
+            order_obj.total_price=order_detail['settlement_amount']
+            order_obj.order_income=order_detail['net_settlement_amount']
+            order_obj.order_profit=order_profit
+            order_obj.save()
 
     # 单个订单
     def parse_single_order_url(self, order_id):
@@ -1125,16 +1128,18 @@ class BrGoodsSpider(PhGoodsSpider):
         self.is_cookies()
         order_data = self.parse_single_order_url(order_id)
         if order_data['data']:
-            is_create_status = self.parse_create_order(order_data['data'])
+            order_obj = self.parse_create_order(order_data['data'])
 
-            if not is_create_status:
+            if not order_obj:
                 return '订单已取消/已完成'
 
             data = {
-                'orderid_list': [order_id],
+                'SPC_CDS': self.cookies['SPC_CDS'],
+                'SPC_CDS_VER': 2,
+                'orderid_list': str([order_id]),
             }
             order_detail_list = self.parse_url(self.order_detail_url, data)
-            self.parse_ordergood(order_detail_list)
+            self.parse_ordergood(order_detail_list, order_obj)
 
             return '订单同步完成'
 
