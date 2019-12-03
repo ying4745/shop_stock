@@ -810,9 +810,6 @@ class IdGoodsSpider(PhGoodsSpider):
                         crop_pdf = OldCropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
                         crop_pdf.run()
 
-                        # os.remove(file_path)
-                        # print('打单成功')
-
                     return ''
 
                 print(response.status_code)  # 403
@@ -828,7 +825,7 @@ class IdGoodsSpider(PhGoodsSpider):
             return '发送请求出错'
 
 
-class SgGoodsSpider(PhGoodsSpider):
+class SgGoodsSpider(IdGoodsSpider):
 
     def __init__(self):
         self.name = sp_config.SG_USERNAME
@@ -870,52 +867,6 @@ class SgGoodsSpider(PhGoodsSpider):
                           'order_count': 0
                           }
 
-    def down_order_waybill(self, orderids):
-        """下载运单号
-        orderids: 订单号列表 ['2224060720','2221118585','2222123945']"""
-
-        # 订单号由字符串转成整数  列表转成字符串 如'[2349952432]'
-        orderids = str(list(map(lambda x: int(x), orderids)))
-        data = {
-            'orderids': orderids,
-        }
-
-        self.is_cookies()
-
-        try:
-            for i in range(2):
-                response = requests.get(self.waybill_url, params=data, cookies=self.cookies, headers=self.headers)
-
-                if response.status_code == 200:
-                    # 提取header中隐藏的文件名
-                    file_name = response.headers._store['content-disposition'][1][-20:-1]
-                    file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
-
-                    with open(file_path, 'wb') as f:
-                        f.write(response.content)
-
-                    if os.path.isfile(file_path):
-                        # 调用旧打印类 切割pdf 打印运单
-                        crop_pdf = OldCropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
-                        crop_pdf.run()
-
-                        # os.remove(file_path)
-                        # print('打单成功')
-
-                    return ''
-
-                print(response.status_code)  # 403
-                # 验证出错，重新登录，再请求
-                if i == 0:
-                    self.login()
-
-            save_log(self.error_path, '验证出错，超出请求次数')
-            return '验证出错：超出请求次数'
-
-        except Exception as e:
-            save_log(self.error_path, str(e.args))
-            return '发送请求出错'
-
 
 class BrGoodsSpider(PhGoodsSpider):
 
@@ -936,8 +887,8 @@ class BrGoodsSpider(PhGoodsSpider):
         self.forderid_url = sp_config.MY_FORDERID_URL
         self.check_income_url = sp_config.MY_CHECK_INCOME_URL
 
-        self.make_waybill_url = sp_config.MY_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.MY_WAYBILL_URL
+        self.make_waybill_url = 'https://seller.my.shopee.cn/api/v3/shipment/init_order/?sip_region=br&sip_shopid=191538284&SPC_CDS={}&SPC_CDS_VER=2'
+        self.waybill_url = 'https://seller.my.shopee.cn/api/v2/orders/waybill/'
 
         self.cookies_path = sp_config.MY_COOKIES_SAVE
         self.error_path = sp_config.MY_ERROR_LOG
@@ -952,7 +903,7 @@ class BrGoodsSpider(PhGoodsSpider):
         self.country = 'br'
 
         self.num = 0
-        self.add_orderid_list = []
+        self.add_orderid_dict = {}
         self.check_msg = {'shopee_order': 0,
                           'shopee_count': 0,
                           'shopee_pay_time': [],
@@ -989,13 +940,16 @@ class BrGoodsSpider(PhGoodsSpider):
                 continue
 
         if self.num > 0:
+            # add_orderid_dict 字典的键为orderid 值为order_obj对象
+            orderid_list = str(list(self.add_orderid_dict.keys()))
             data = {
-                'SPC_CDS': self.cookies['SPC_CDS'],
-                'SPC_CDS_VER': 2,
-                'orderid_list': str(self.add_orderid_list),
+                'orderid_list': orderid_list,
             }
             order_detail_list = self.parse_url(self.order_detail_url, data)
-            self.parse_ordergood(order_detail_list, order_obj)
+            # 循环 每一个订单 根据shopid找到 订单
+            for order_detail in order_detail_list['data']['list']:
+                order_obj = self.add_orderid_dict[order_detail['orderid']]
+                self.parse_ordergood(order_detail, order_obj)
 
     def get_order(self, type='toship', page=0, is_all=True):
         """获取订单信息 保存到数据库
@@ -1059,55 +1013,50 @@ class BrGoodsSpider(PhGoodsSpider):
 
         if is_c:
             self.num += 1
-            self.add_orderid_list.append(order_info['order_id'])
+            self.add_orderid_dict[order_info['order_id']] = order_obj
 
         return order_obj
 
-    def parse_ordergood(self, order_info, order_obj):
-        """
-        解析数据 创建订单商品
-        """
+    def parse_ordergood(self, order_detail, order_obj):
+        """解析数据 创建订单商品"""
 
-        # 循环 每一个订单 根据shopid找到 订单
-        for order_detail in order_info['data']['list']:
+        order_cost = 0  # 订单成本(人民币）
+        # 循环订单中的每一项商品，添加订单商品
+        for order_item in order_detail['order_items']:
+            good_sku = order_item['model_sku']
+            try:
+                good_obj = GoodsSKU.objects.get(sku_id=good_sku)
+            except Exception as e:
+                save_log(self.error_path, str(e.args))
+                msg = '(' + order_obj.order_id + ') 缺失商品： ' + good_sku + '\t'
+                save_log(self.order_path, msg, err_type='@订单商品错误：')
+                # 订单备注中 记录缺失的商品
+                order_obj.order_desc = order_obj.order_desc + good_sku + ', '
+                order_obj.save()
+                # 跳过该商品， 记录下 手动修复
+                continue
 
-            order_cost = 0  # 订单成本(人民币）
-            # 循环订单中的每一项商品，添加订单商品
-            for order_item in order_detail['order_items']:
-                good_sku = order_item['model_sku']
-                try:
-                    good_obj = GoodsSKU.objects.get(sku_id=good_sku)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
-                    msg = '(' + order_obj.order_id + ') 缺失商品： ' + good_sku + '\t'
-                    save_log(self.order_path, msg, err_type='@订单商品错误：')
-                    # 订单备注中 记录缺失的商品
-                    order_obj.order_desc = order_obj.order_desc + good_sku + ', '
-                    order_obj.save()
-                    # 跳过该商品， 记录下 手动修复
-                    continue
+            g_data = {
+                'count': order_item['quantity'],
+                'price': order_item['settlement_price'],
+            }
+            try:
+                # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
+            except Exception as e:
+                save_log(self.error_path, str(e.args))
 
-                g_data = {
-                    'count': order_item['quantity'],
-                    'price': order_item['settlement_price'],
-                }
-                try:
-                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
+            # 商品的成本  每件商品进价上加一元国内运杂费
+            order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) \
+                          * Decimal(order_item['quantity'])
 
-                # 商品的成本  每件商品进价上加一元国内运杂费
-                order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) \
-                              * Decimal(order_item['quantity'])
+        order_profit = Decimal(order_detail['net_settlement_amount']) * Decimal(self.exchange_rate) \
+                       - Decimal(order_cost) - Decimal(self.order_add_fee)
 
-            order_profit = Decimal(order_detail['net_settlement_amount']) * Decimal(self.exchange_rate) \
-                           - Decimal(order_cost) - Decimal(self.order_add_fee)
-
-            order_obj.total_price=order_detail['settlement_amount']
-            order_obj.order_income=order_detail['net_settlement_amount']
-            order_obj.order_profit=order_profit
-            order_obj.save()
+        order_obj.total_price=order_detail['settlement_amount']
+        order_obj.order_income=order_detail['net_settlement_amount']
+        order_obj.order_profit=order_profit
+        order_obj.save()
 
     # 单个订单
     def parse_single_order_url(self, order_id):
@@ -1134,12 +1083,10 @@ class BrGoodsSpider(PhGoodsSpider):
                 return '订单已取消/已完成'
 
             data = {
-                'SPC_CDS': self.cookies['SPC_CDS'],
-                'SPC_CDS_VER': 2,
                 'orderid_list': str([order_id]),
             }
             order_detail_list = self.parse_url(self.order_detail_url, data)
-            self.parse_ordergood(order_detail_list, order_obj)
+            self.parse_ordergood(order_detail_list['data']['list'][0], order_obj)
 
             return '订单同步完成'
 
@@ -1151,21 +1098,11 @@ class BrGoodsSpider(PhGoodsSpider):
         # 组成URL 平台订单号
         url = self.make_waybill_url.format(self.cookies['SPC_CDS'])
 
-        headers = {'content-type': 'application/json; charset=UTF-8'}
-        headers.update(self.headers)
-
-        # request payload 参数
-        # data = {"orderLogistic": {"userid": 0, "orderid": None, "type": 0, "status": 0, "channelid": 0,
-        #                           "channel_status": "", "consignment_no": "", "booking_no": "",
-        #                           "pickup_time": 0, "actual_pickup_time": 0, "deliver_time": 0,
-        #                           "actual_deliver_time": 0, "ctime": 0, "mtime": 0, "seller_realname": "",
-        #                           "branchid": 0, "slug": "", "shipping_carrier": "",
-        #                           "logistic_command": "generate_tracking_no", "extra_data": "{}"}}
-        data = {"channel_id": 28016, "order_id": int(orderid), "forder_id": orderid}
+        data = {"channel_id": 90001, "order_id": int(orderid)}
 
         try:
             for i in range(2):
-                response = requests.post(url, data=json.dumps(data), cookies=self.cookies, headers=headers)
+                response = requests.post(url, data=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
                     res_msg = json.loads(response.text)
@@ -1174,7 +1111,6 @@ class BrGoodsSpider(PhGoodsSpider):
                     else:
                         save_log(self.error_path, res_msg['user_message'])
                         return res_msg['user_message']
-                # print(response.status_code)
                 if i == 0:
                     self.login()
 
@@ -1185,54 +1121,37 @@ class BrGoodsSpider(PhGoodsSpider):
             save_log(self.error_path, str(e.args))
             return '发送请求出错'
 
-    # 获取订单forderid，下载运送单需要
-    def get_order_forderid(self, orderids):
-        orderids = ','.join(orderids)
-        data = {
-            'SPC_CDS': self.cookies['SPC_CDS'],
-            'SPC_CDS_VER': 2,
-            'order_ids': orderids
-        }
-
-        response = requests.get(self.forderid_url, params=data,
-                                cookies=self.cookies, headers=self.headers)
-        res_dict = json.loads(response.content.decode())
-
-        forder_map = {}
-        for ordermodel in res_dict['data']['list']:
-            forder_map[str(ordermodel['order_id'])] = {"forder_ids": [ordermodel['forders'][0]['forder_id']]}
-        return forder_map
-
     def down_order_waybill(self, orderids):
         """下载运单号
-        orderids: 订单号列表 ['2224060720','2221118585','2222123945']"""
-        forderid_dict = self.get_order_forderid(orderids)
+        orderids: 订单号列表 ['2224060720','2221118585','2222123945']
+        订单号由字符串转成整数  列表转成字符串 如'[2349952432]'
+        """
+
+        orderids = str(list(map(lambda x: int(x), orderids)))
         data = {
-            'order_ids': orderids,
-            'order_forder_map': forderid_dict
+            'sip_region': 'br',
+            'sip_shopid': 191538284,
+            'orderids': orderids,
         }
 
         self.is_cookies()
 
         try:
             for i in range(2):
-                response = requests.post(self.waybill_url, json=data, cookies=self.cookies, headers=self.headers)
+                response = requests.get(self.waybill_url, params=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
-                    # 文件名
-                    file_name = 'WorkPDF001.pdf'
+                    # 提取header中隐藏的文件名
+                    file_name = response.headers._store['content-disposition'][1][-20:-1]
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
                         f.write(response.content)
 
                     if os.path.isfile(file_path):
-                        # 调用打印类  打印运单号
-                        crop_pdf = CropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
+                        # 调用旧打印类 切割pdf 打印运单
+                        crop_pdf = OldCropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
                         crop_pdf.run()
-
-                        # os.remove(file_path)
-                        # print('打单成功')
 
                     return ''
 
@@ -1247,6 +1166,8 @@ class BrGoodsSpider(PhGoodsSpider):
         except Exception as e:
             save_log(self.error_path, str(e.args))
             return '发送请求出错'
+
+
 
     # 订单收入 核对（按打款日期周期 获取订单信息）
     def parse_check_income_url(self, page, start_date, end_date):
