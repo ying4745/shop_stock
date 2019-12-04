@@ -334,16 +334,16 @@ class PhGoodsSpider():
             customer_info = str(order_info['buyer_user']['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(
                 delivery_order)
         # 商品总价
-        total_price = order_info['buyer_paid_amount']
-        # for order_good_info in order_info['order_items']:
-        #     total_price += float(order_good_info['order_price']) * order_good_info['amount']
+        total_price = 0
+        for order_good_info in order_info['order_items']:
+            total_price += float(order_good_info['order_price']) * order_good_info['amount']
 
         # 判断是否是卖家的优惠卷
         voucher_price = order_info['voucher_price'] if order_info['voucher_absorbed_by_seller'] else '0.00'
 
         if order_info['currency'] == 'PHP':
             # 菲律宾 实际运费 0.5向上进1
-            actual_shipping_fee = (Decimal(order_info['actual_shipping_fee']) + Decimal(0.5)).quantize(Decimal(0.0))
+            actual_shipping_fee = Decimal(order_info['actual_shipping_fee']).quantize(Decimal(0.0))
         else:
             actual_shipping_fee = Decimal(order_info['actual_shipping_fee'])
         # 买家支付运费
@@ -881,14 +881,16 @@ class BrGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.MY_PRODUCT_URL
 
         self.order_url = sp_config.MY_ORDER_URL
+        # 巴西
         self.order_detail_url = sp_config.BR_ORDER_DETAIL_URL
         self.one_order_url = 'https://seller.my.shopee.cn/api/v3/order/get_one_order'
 
         self.forderid_url = sp_config.MY_FORDERID_URL
         self.check_income_url = sp_config.MY_CHECK_INCOME_URL
 
-        self.make_waybill_url = 'https://seller.my.shopee.cn/api/v3/shipment/init_order/?sip_region=br&sip_shopid=191538284&SPC_CDS={}&SPC_CDS_VER=2'
-        self.waybill_url = 'https://seller.my.shopee.cn/api/v2/orders/waybill/'
+        # 巴西
+        self.make_waybill_url = sp_config.BR_MAKE_WAYBILL_URL
+        self.waybill_url = sp_config.BR_WAYBILL_URL
 
         self.cookies_path = sp_config.MY_COOKIES_SAVE
         self.error_path = sp_config.MY_ERROR_LOG
