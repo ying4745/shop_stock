@@ -978,18 +978,18 @@ class BrGoodsSpider(PhGoodsSpider):
         # 已完成的订单，不再更新
         order_obj = OrderInfo.objects.filter(order_id=order_info['order_sn'])
         if order_obj:
-            # 订单状态 在运输中时，更新自己系统订单状态为 已完成
-            if order_info['list_type'] == 8:
-                order_obj.update(order_status=3)
-                self.num += 1
+            # 自己系统状态为完成时，不再同步信息
+            if order_obj[0].order_status == 3:
                 return None
             # 订单为取消状态时  删除订单
             if order_info['status'] == 5:
                 order_obj[0].delete()
                 return None
-            # 自己系统状态为完成时，不再同步信息
-            if order_obj[0].order_status == 3:
-                return None
+            # 订单状态 在运输中时，更新自己系统订单状态为 已完成
+            if order_info['list_type'] == 8:
+                order_obj.update(order_status=3)
+                self.num += 1
+                return None     
 
         # 订单用户收货率
         delivery_order = order_info['buyer_user']['delivery_order_count']
