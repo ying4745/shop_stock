@@ -13,7 +13,8 @@ class OrderInfo(BaseModel):
         (5, '已打单'),
         (6, '已拨款'),
         (7, '异常款'),
-        (8, '丢失件')
+        (8, '丢失件'),
+        (9, '待核对')
     )
     ORDER_COUNTRY_CHOICES = (
         ('MYR', '马来西亚'),

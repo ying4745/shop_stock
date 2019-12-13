@@ -517,15 +517,12 @@ class PhGoodsSpider():
         # 组成URL 平台订单号
         url = self.make_waybill_url.format(self.cookies['SPC_CDS'])
 
-        headers = {'content-type': 'application/json; charset=UTF-8'}
-        headers.update(self.headers)
-
         # request payload 参数
         data = {"channel_id": 28016, "order_id": int(orderid), "forder_id": orderid}
 
         try:
             for i in range(2):
-                response = requests.post(url, data=json.dumps(data), cookies=self.cookies, headers=headers)
+                response = requests.post(url, data=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
                     res_msg = json.loads(response.text)
@@ -885,7 +882,7 @@ class SgGoodsSpider(PhGoodsSpider):
 
         try:
             for i in range(2):
-                response = requests.post(url, data=json.dumps(data), cookies=self.cookies, headers=headers)
+                response = requests.post(url, data=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
                     res_msg = json.loads(response.text)

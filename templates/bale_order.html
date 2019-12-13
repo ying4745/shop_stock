@@ -397,8 +397,8 @@
 
             // 弹出客户留言
             $('.pop-remark').click(function () {
+                $('#customer-remark').remove();
                 var remark = $.trim($(this).parent().attr('data-remark'));
-                console.log(remark);
                 var edit_html = '<div id="customer-remark">\n' +
                     '       <button id="close-remark" class="close" style="margin-top: -6px; margin-right: 1px;">×</button>' +
                     '       <p id="customer-desc">' + remark + '</p>' + '</div>';

@@ -24,6 +24,7 @@ class IndexView(View):
 
         unfinished_orders = orders.count()
         bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).count()
+        no_check_orders = OrderInfo.objects.filter(Q(order_status=9)).count()
         finished_orders = OrderInfo.objects.filter(Q(order_status=3) | Q(order_status=6) |
                                                    Q(order_status=7) | Q(order_status=8)).count()
 
