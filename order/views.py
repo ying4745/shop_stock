@@ -92,7 +92,7 @@ class BaleOrderView(View):
 
     def get(self, request):
         """待打包列表"""
-        bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).order_by('-order_time')
+        bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).order_by('-order_id')
         bale_orders_count = bale_orders.count()
         return render(request, 'bale_order.html', {'orders': bale_orders,
                                                    'bale_orders_count': bale_orders_count})

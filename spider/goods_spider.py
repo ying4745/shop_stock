@@ -521,12 +521,6 @@ class PhGoodsSpider():
         headers.update(self.headers)
 
         # request payload 参数
-        # data = {"orderLogistic": {"userid": 0, "orderid": None, "type": 0, "status": 0, "channelid": 0,
-        #                           "channel_status": "", "consignment_no": "", "booking_no": "",
-        #                           "pickup_time": 0, "actual_pickup_time": 0, "deliver_time": 0,
-        #                           "actual_deliver_time": 0, "ctime": 0, "mtime": 0, "seller_realname": "",
-        #                           "branchid": 0, "slug": "", "shipping_carrier": "",
-        #                           "logistic_command": "generate_tracking_no", "extra_data": "{}"}}
         data = {"channel_id": 28016, "order_id": int(orderid), "forder_id": orderid}
 
         try:
@@ -838,7 +832,7 @@ class IdGoodsSpider(PhGoodsSpider):
             return '发送请求出错'
 
 
-class SgGoodsSpider(IdGoodsSpider):
+class SgGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
         self.name = sp_config.SG_USERNAME
@@ -879,6 +873,37 @@ class SgGoodsSpider(IdGoodsSpider):
                           'error_order_list': [],
                           'order_count': 0
                           }
+
+    # 生成运单号
+    def make_order_waybill(self, orderid):
+        self.is_cookies()
+        # 组成URL 平台订单号
+        url = self.make_waybill_url.format(self.cookies['SPC_CDS'])
+
+        # request payload 参数
+        data = {"channel_id": 18028, "order_id": int(orderid), "forder_id": orderid}
+
+        try:
+            for i in range(2):
+                response = requests.post(url, data=json.dumps(data), cookies=self.cookies, headers=headers)
+
+                if response.status_code == 200:
+                    res_msg = json.loads(response.text)
+                    if res_msg['code'] == 0:
+                        return ''
+                    else:
+                        save_log(self.error_path, res_msg['user_message'])
+                        return res_msg['user_message']
+                # print(response.status_code)
+                if i == 0:
+                    self.login()
+
+            save_log(self.error_path, '验证出错，超出请求次数')
+            return '验证出错：超出请求次数'
+
+        except Exception as e:
+            save_log(self.error_path, str(e.args))
+            return '发送请求出错'
 
 
 class BrGoodsSpider(PhGoodsSpider):
