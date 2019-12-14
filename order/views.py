@@ -142,6 +142,7 @@ class CheckOrderView(View):
         order_num = OrderInfo.objects.filter(order_status=9).update(order_status=3)
         return JsonResponse({'status': 0, 'msg': '{} 个订单确认'.format(order_num)})
 
+
 class OrderListView(View):
     """订单列表页"""
     COUNTRY = {

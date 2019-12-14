@@ -471,8 +471,13 @@ class PhGoodsSpider():
         order_cost = 0  # 订单成本(人民币）
 
         for good_obj in order_obj.ordergoods_set.all():
+            good_buy_price = good_obj.sku_good.buy_price
+            # 进价低于6元的商品  不附加国内运杂费
+            if good_buy_price < 6:
+                order_cost += good_buy_price * good_obj.count
             # 商品的成本  每件商品进价上加一元 国内运杂费
-            order_cost += (good_obj.sku_good.buy_price + Decimal(self.product_add_fee)) * good_obj.count
+            else:
+                order_cost += (good_buy_price + Decimal(self.product_add_fee)) * good_obj.count
 
         order_profit = order_obj.order_income * Decimal(self.exchange_rate) \
                        - Decimal(order_cost) - Decimal(self.order_add_fee)
@@ -1085,9 +1090,13 @@ class BrGoodsSpider(PhGoodsSpider):
             except Exception as e:
                 save_log(self.error_path, str(e.args))
 
-            # 商品的成本  每件商品进价上加一元国内运杂费
-            order_cost += (good_obj.buy_price + Decimal(self.product_add_fee)) \
-                          * Decimal(order_item['quantity'])
+            # 商品的成本  每件商品进价上加一元国内运杂费 进价低于6元不附加
+            good_buy_price = good_obj.buy_price
+            if good_buy_price < 6:
+                order_cost += good_buy_price * Decimal(order_item['quantity'])
+            else:
+                order_cost += (good_buy_price + Decimal(self.product_add_fee)) \
+                              * Decimal(order_item['quantity'])
 
         order_profit = Decimal(order_detail['net_settlement_amount']) * Decimal(self.exchange_rate) \
                        - Decimal(order_cost) - Decimal(self.order_add_fee)
