@@ -24,7 +24,7 @@ class IndexView(View):
 
         unfinished_orders = orders.count()
         bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).count()
-        no_check_orders = OrderInfo.objects.filter(Q(order_status=9)).count()
+        no_check_orders = OrderInfo.objects.filter(order_status=9).count()
         finished_orders = OrderInfo.objects.filter(Q(order_status=3) | Q(order_status=6) |
                                                    Q(order_status=7) | Q(order_status=8)).count()
 
@@ -127,6 +127,20 @@ class BaleOrderView(View):
 
         return JsonResponse({'status': 0, 'msg': '打单完成'})
 
+
+class CheckOrderView(View):
+    """每天送货订单 确认页"""
+
+    def get(self, request):
+        """待打包列表"""
+        check_orders = OrderInfo.objects.filter(order_status=9).order_by('-order_id')
+        check_orders_count = check_orders.count()
+        return render(request, 'check_order.html', {'orders': check_orders,
+                                                   'check_orders_count': check_orders_count})
+
+    def post(self, request):
+        order_num = OrderInfo.objects.filter(order_status=9).update(order_status=3)
+        return JsonResponse({'status': 0, 'msg': '{} 个订单确认'.format(order_num)})
 
 class OrderListView(View):
     """订单列表页"""

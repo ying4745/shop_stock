@@ -275,6 +275,7 @@ class PhGoodsSpider():
 
     def save_order_data(self, order_data):
         """解析订单信息 保存到数据库"""
+        ii = 0
         for order_info in order_data['data']['orders']:
             # 订单用户信息
             # user_info = self.list_filter_data(order_info['userid'], order_data['users'])
@@ -285,7 +286,8 @@ class PhGoodsSpider():
             if not order_obj:
                 # save_log(self.order_path, order_info['ordersn'], err_type='$已取消的订单：')
                 continue
-
+            ii += 1
+            print(ii)
             if order_obj.order_status == 5 and str(order_obj.order_income) != '0.00':
                 self.compute_order_profit(order_obj)
 
@@ -301,9 +303,9 @@ class PhGoodsSpider():
         order_data = self.parse_order_url(type, page)
         self.save_order_data(order_data)
 
-        total = order_data['data']['meta']['total']
-        total_page = total // 40
-        if total_page > 0 and is_all:
+        if is_all:
+            total = order_data['data']['meta']['total']
+            total_page = total // 40
             for i in range(1, total_page + 1):
                 self.get_order(type, page=i * 40, is_all=False)
 
@@ -316,13 +318,13 @@ class PhGoodsSpider():
 
         # 如果订单状态为取消，不创建，如已有订单 则删除
         # 订单状态：待出货和已运送 为1，已取消为5，已完成为4
-        # 已完成的订单，不再更新
         order_obj = OrderInfo.objects.filter(order_id=order_info['order_sn'])
         if order_obj:
             if order_info['status'] == 5:
                 order_obj[0].delete()
                 return None
-            if order_obj[0].order_status == 3:
+            # 已有订单 只有状态是已打单时 才更新订单
+            if order_obj[0].order_status != 5:
                 return None
 
         # 订单用户收货率
@@ -475,8 +477,8 @@ class PhGoodsSpider():
         order_profit = order_obj.order_income * Decimal(self.exchange_rate) \
                        - Decimal(order_cost) - Decimal(self.order_add_fee)
         order_obj.order_profit = order_profit
-        # 更新订单状态(已完成)
-        order_obj.order_status = 3
+        # 更新订单状态(待确认)
+        order_obj.order_status = 9
         order_obj.save()
 
     # 单个订单
@@ -1013,16 +1015,16 @@ class BrGoodsSpider(PhGoodsSpider):
         # 已完成的订单，不再更新
         order_obj = OrderInfo.objects.filter(order_id=order_info['order_sn'])
         if order_obj:
-            # 自己系统状态为完成时，不再同步信息
-            if order_obj[0].order_status == 3:
+            # 已有订单 状态不是已打单时，不再同步
+            if order_obj[0].order_status != 5:
                 return None
             # 订单为取消状态时  删除订单
             if order_info['status'] == 5:
                 order_obj[0].delete()
                 return None
-            # 订单状态 在运输中时，更新自己系统订单状态为 已完成
+            # 订单状态 在运输中时，更新自己系统订单状态为 待确认
             if order_info['list_type'] == 8:
-                order_obj.update(order_status=3)
+                order_obj.update(order_status=9)
                 self.num += 1
                 return None     
 

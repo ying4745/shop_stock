@@ -53,9 +53,9 @@
                     <i class="fa fa-truck"></i> 待打包订单
                     <span class="badge bg-yellow">{{ bale_orders }}</span>
                 </a>
-                <a class="btn bg-blue" href="{% url 'bale_order' %}">
-                    <i class="fa fa-user-secret"></i> 待核对订单
-                    <span class="badge bg-gray">{{ bale_orders }}</span>
+                <a class="btn bg-blue" href="{% url 'check_order' %}">
+                    <i class="fa fa-check"></i> 待确认订单
+                    <span class="badge bg-gray">{{ no_check_orders }}</span>
                 </a>
                 <a class="btn bg-blue" href="{% url 'order_list' %}">
                     <i class="fa fa-check-square"></i> 已完成订单
