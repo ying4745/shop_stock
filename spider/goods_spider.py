@@ -275,7 +275,6 @@ class PhGoodsSpider():
 
     def save_order_data(self, order_data):
         """解析订单信息 保存到数据库"""
-        ii = 0
         for order_info in order_data['data']['orders']:
             # 订单用户信息
             # user_info = self.list_filter_data(order_info['userid'], order_data['users'])
@@ -286,8 +285,7 @@ class PhGoodsSpider():
             if not order_obj:
                 # save_log(self.order_path, order_info['ordersn'], err_type='$已取消的订单：')
                 continue
-            ii += 1
-            print(ii)
+
             if order_obj.order_status == 5 and str(order_obj.order_income) != '0.00':
                 self.compute_order_profit(order_obj)
 

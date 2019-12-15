@@ -287,7 +287,7 @@
             });
 
             // 同spu商品列表信息 加载
-            $('.input-group-add').dblclick(function () {
+            $('#order_table tbody').on('dblclick', '.input-group-add', function () {
                 var data = {
                     'sku_id': $.trim($(this).text()),
                     'search_type': 'all'
@@ -324,7 +324,7 @@
             });
 
             // 备注 双击弹出 编辑框
-            $('.edit-desc').dblclick(function () {
+            $('#order_table tbody').on('dblclick', '.edit-desc', function () {
                 var old_text = $.trim($(this).text());
                 if (old_text === '（空）') {
                     old_text = ''
@@ -339,11 +339,11 @@
                 $(this).find('textarea').focus();
             });
             // 编辑框 关闭按钮
-            $('.edit-desc').on('click', '#close-edit-desc', function () {
+            $('#order_table tbody').on('click', '#close-edit-desc', function () {
                 $('#input-edit-desc').remove();
             });
             // 备注确认修改按钮
-            $('.edit-desc').on('click', '#desc-sub', function () {
+            $('#order_table tbody').on('click', '#desc-sub', function () {
                 var element = $(this).parents('.edit-desc');
                 var order_desc = $(this).prev().val();
                 if (!order_desc) {
@@ -369,15 +369,16 @@
                             if (order_desc === '') {
                                 order_desc = '（空）';
                                 element.text(order_desc).css('color', '#7d7d7d')
+                            } else {
+                                element.text(order_desc).css('color', '#f14548')
                             }
-                            element.text(order_desc).css('color', '#f14548');
                         }
                     }
                 })
             });
 
             // 弹出客户留言
-            $('.pop-remark').click(function () {
+            $('#order_table tbody').on('click', '.pop-remark', function () {
                 $('#customer-remark').remove();
                 var remark = $.trim($(this).parent().attr('data-remark'));
                 var edit_html = '<div id="customer-remark">\n' +
@@ -387,7 +388,7 @@
                 $(this).parent().append(edit_html);
             });
             // 留言框 关闭按钮
-            $('.pop-remark').parent().on('click', '#close-remark', function () {
+            $('#order_table tbody').on('click', '#close-remark', function () {
                 $('#customer-remark').remove();
             });
 
