@@ -71,7 +71,7 @@ class PhGoodsSpider():
         driver.find_element_by_xpath('//input[@type="password"]').send_keys(self.password)
         time.sleep(2)
         driver.find_element_by_xpath(
-            '//*[@id="app"]/div[2]/div/div[1]/div/div/div[3]/div/div/div/div[2]/button').click()
+            '//*[@id="app"]/div[2]/div/div[1]/div/div/div[3]/div/div/div/form/button').click()
         time.sleep(5)
         for cook in driver.get_cookies():
             self.cookies[cook['name']] = cook['value']
@@ -775,7 +775,7 @@ class IdGoodsSpider(PhGoodsSpider):
         self.forderid_url = sp_config.ID_FORDERID_URL
 
         self.make_waybill_url = sp_config.ID_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.ID_WAYBILL_URL
+        self.waybill_url = 'https://seller.id.shopee.cn/api/v3/logistics/get_waybill_list/'
 
         self.cookies_path = sp_config.ID_COOKIES_SAVE
         self.error_path = sp_config.ID_ERROR_LOG
@@ -803,21 +803,19 @@ class IdGoodsSpider(PhGoodsSpider):
         """下载运单号
         orderids: 订单号列表 ['2224060720','2221118585','2222123945']"""
 
-        # 订单号由字符串转成整数  列表转成字符串 如'[2349952432]'
-        orderids = str(list(map(lambda x: int(x), orderids)))
         data = {
-            'orderids': orderids,
+            'order_ids': orderids
         }
 
         self.is_cookies()
 
         try:
             for i in range(2):
-                response = requests.get(self.waybill_url, params=data, cookies=self.cookies, headers=self.headers)
+                response = requests.post(self.waybill_url, json=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
-                    # 提取header中隐藏的文件名
-                    file_name = response.headers._store['content-disposition'][1][-20:-1]
+                    # 文件名
+                    file_name = 'WorkPDF00ID.pdf'
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
@@ -825,7 +823,7 @@ class IdGoodsSpider(PhGoodsSpider):
 
                     if os.path.isfile(file_path):
                         # 调用旧打印类 切割pdf 打印运单
-                        crop_pdf = OldCropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
+                        crop_pdf = CropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
                         crop_pdf.run()
 
                     return ''
@@ -1002,11 +1000,12 @@ class BrGoodsSpider(PhGoodsSpider):
                 order_obj = self.add_orderid_dict[order_detail['orderid']]
                 self.parse_ordergood(order_detail, order_obj)
 
-    def get_order(self, type='toship', page=0, is_all=True):
+    def get_order(self, type='toship', page=0, is_all=False):
         """获取订单信息 保存到数据库
             :type   'toship'  待出货订单
                     'shipping' 运输中订单
                     'completed' 已完成订单
+                    'is_all' 为False 只找第一页数据
         """
         self.is_cookies()
         order_data = self.parse_order_url(type, page)
