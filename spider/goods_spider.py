@@ -6,6 +6,7 @@ import requests
 import datetime
 from decimal import Decimal
 
+from django.db.models import F
 from selenium import webdriver
 from django.db import transaction
 
@@ -291,7 +292,7 @@ class PhGoodsSpider():
 
                 self.num += 1
 
-    def get_order(self, type='toship', page=0, is_all=True):
+    def get_order(self, type='toship', page=0, is_all=False):
         """获取订单信息 保存到数据库
             :type   'toship'  待出货订单
                     'shipping' 运输中订单
@@ -415,15 +416,20 @@ class PhGoodsSpider():
                     # 跳过该商品， 记录下 手动修复
                     continue
 
-                g_data = {
-                    'count': order_item['amount'],
-                    'price': order_item['order_price'],
-                }
-                try:
-                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                    OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-                except Exception as e:
-                    save_log(self.error_path, str(e.args))
+                # 查找该订单中 商品是否存在
+                order_good = OrderGoods.objects.filter(order=order_obj, sku_good=good_obj)
+                # 如订单中已有该商品，则累加数量
+                if order_good:
+                    order_good.update(count=F('count') + order_item['amount'])
+                # 没有，则创建该订单商品
+                else:
+                    try:
+                        # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                        OrderGoods.objects.create(order=order_obj, sku_good=good_obj,
+                                                  count=order_item['amount'],
+                                                  price=order_item['order_price'])
+                    except Exception as e:
+                        save_log(self.error_path, str(e.args))
             else:
                 if order_item['bundle_deal_model']:
                     # 套装一共包含多少件商品
@@ -450,15 +456,18 @@ class PhGoodsSpider():
                                             order_item['item_list']))[0]['amount']
                         # 套装中每件商品的平均价格
                         price = Decimal(order_item['order_price']) / bundle_count
-                        g_data = {
-                            'count': count,
-                            'price': price,
-                        }
-                        try:
-                            # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                            OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-                        except Exception as e:
-                            save_log(self.error_path, str(e.args))
+
+                        order_good = OrderGoods.objects.filter(order=order_obj, sku_good=good_obj)
+                        # 如订单中已有该商品，则累加数量
+                        if order_good:
+                            order_good.update(count=F('count') + count)
+                        # 没有，则创建该订单商品
+                        else:
+                            try:
+                                # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                                OrderGoods.objects.create(order=order_obj, sku_good=good_obj, count=count, price=price)
+                            except Exception as e:
+                                save_log(self.error_path, str(e.args))
                 else:
                     # 订单备注中 记录错误
                     order_obj.order_desc = order_obj.order_desc + '（订单商品有错误！）'
