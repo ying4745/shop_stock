@@ -1,6 +1,7 @@
 import json
 import time
 
+
 from django.db.models import Q
 from django.db import transaction
 from django.shortcuts import render
@@ -12,6 +13,12 @@ from goods.models import GoodsSKU, Goods
 from action_logging.action_log import logger
 from spider.goods_spider import country_type_dict
 from spider.auto_follow.shopfuns import country_shop_dict
+
+# from order.models import OrderInfo
+# from spider.goods_spider import get_cookies_from_file
+# from spider import sp_config
+# from decimal import Decimal
+# import requests
 
 
 # from spider.import_excel import ImportExcel
@@ -298,7 +305,90 @@ class AutoFollowView(View):
 
 
 # class ImportExcelView(View):
+#     """手动更新利润"""
 #     def get(self, request):
-#         excel_obj = ImportExcel()
-#         excel_obj.save_data()
+#         all_order = OrderInfo.objects.filter(order_country='PHP', order_status=3, order_time__gt='191217')
+#         url = 'https://seller.ph.shopee.cn/api/v3/order/get_one_order/'
+#         headers = {'user-agent': sp_config.USER_AGENT}
+#         cookies = get_cookies_from_file(sp_config.PH_COOKIES_SAVE)
+#         req_data = {
+#             'SPC_CDS': cookies['SPC_CDS'],
+#             'SPC_CDS_VER': 2}
+#         num = 0
+#         for order_info in all_order:
+#             req_data['order_id'] = order_info.order_shopeeid
+#
+#             response = requests.get(url, params=req_data,
+#                                     cookies=cookies, headers=headers)
+#
+#             if response.status_code == 200:
+#                 one_order_data = json.loads(response.content.decode())
+#             else:
+#                 one_order_data = ''
+#                 print('*'*50, order_info.order_shopeeid)
+#                 continue
+#
+#             one_order_data = one_order_data['data']
+#
+#             # 商品总价
+#             total_price = 0
+#             for order_good_info in one_order_data['order_items']:
+#                 total_price += float(order_good_info['order_price']) * order_good_info['amount']
+#
+#             # 判断是否是卖家的优惠卷
+#             voucher_price = one_order_data['voucher_price'] if one_order_data['voucher_absorbed_by_seller'] else '0.00'
+#
+#             if one_order_data['currency'] == 'PHP':
+#                 # 菲律宾 实际运费 舍去0.5 小数
+#                 actual_shipping_fee = Decimal(one_order_data['actual_shipping_fee']).quantize(Decimal(0.0),
+#                                                                                               rounding='ROUND_DOWN')
+#
+#             else:
+#                 actual_shipping_fee = Decimal(one_order_data['actual_shipping_fee'])
+#             # 买家支付运费
+#             shipping_fee = one_order_data['shipping_fee']
+#             # 平台运费回扣
+#             shipping_rebate = one_order_data['shipping_rebate']
+#
+#             # 平台佣金
+#             comm_fee = one_order_data['comm_fee']
+#             # 平台服务费
+#             seller_service_fee = one_order_data['seller_service_fee']
+#             # 手续费
+#             card_txn_fee = one_order_data['card_txn_fee_info']['card_txn_fee']
+#
+#             # 买家或平台支付的运费
+#             our_shipping_fee = Decimal(shipping_rebate) + Decimal(shipping_fee)
+#             # 如果平台和买家都没有付运费 则判定 平台补贴默认的运费
+#             if shipping_fee == '0.00' and shipping_rebate == '0.00':
+#                 our_shipping_fee = Decimal(one_order_data['origin_shipping_fee'])
+#
+#             # 没出货，无实际运费时 不计算订单收入
+#             order_income = '0.00'
+#             if actual_shipping_fee != 0.00:
+#                 # 订单收入
+#                 order_income = Decimal(total_price) + our_shipping_fee \
+#                                - actual_shipping_fee - Decimal(card_txn_fee) - Decimal(voucher_price) \
+#                                - Decimal(comm_fee) - Decimal(seller_service_fee)
+#
+#             order_cost = 0  # 订单成本(人民币）
+#
+#             for good_obj in order_info.ordergoods_set.all():
+#                 good_buy_price = good_obj.sku_good.buy_price
+#                 # 进价低于6元的商品  不附加国内运杂费
+#                 if good_buy_price < 6:
+#                     order_cost += good_buy_price * good_obj.count
+#                 # 商品的成本  每件商品进价上加一元 国内运杂费
+#                 else:
+#                     order_cost += (good_buy_price + Decimal('1')) * good_obj.count
+#             # 汇率要变
+#             order_profit = Decimal(order_income) * Decimal('0.127') - Decimal(order_cost) - Decimal('1')
+#
+#             order_info.order_profit = order_profit
+#             order_info.order_income = order_income
+#             order_info.save()
+#
+#             num += 1
+#             print(num, order_info.order_shopeeid)
+#
 #         return JsonResponse({'msg': 'ok'})

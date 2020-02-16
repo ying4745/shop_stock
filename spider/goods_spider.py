@@ -11,7 +11,7 @@ from selenium import webdriver
 from django.db import transaction
 
 from spider import sp_config
-from spider.print_waybill import CropPDF, OldCropPDF
+from spider.print_waybill import print_PDF, OldCropPDF
 from goods.models import Goods, GoodsSKU
 from order.models import OrderInfo, OrderGoods
 
@@ -31,6 +31,8 @@ class PhGoodsSpider():
 
         self.order_url = sp_config.PH_ORDER_URL
         self.search_order_url = sp_config.PH_ORDER_SEARCH_URL
+        self.order_income_url = sp_config.PH_ORDER_INCOME_URL
+
         self.forderid_url = sp_config.PH_FORDERID_URL
         self.check_income_url = sp_config.PH_CHECK_INCOME_URL
 
@@ -66,12 +68,12 @@ class PhGoodsSpider():
         driver = webdriver.Chrome()
         driver.get(self.login_url)
         time.sleep(3)
-        driver.find_element_by_xpath('//input[@type="text"]').send_keys(self.name)
+        driver.find_element_by_xpath('/html/body/div[1]/div[2]/div/div[1]/div/div/div[3]/div/div/div/form/div[1]/div/div/div/input').send_keys(self.name)
         time.sleep(1)
-        driver.find_element_by_xpath('//input[@type="password"]').send_keys(self.password)
+        driver.find_element_by_xpath('/html/body/div[1]/div[2]/div/div[1]/div/div/div[3]/div/div/div/form/div[2]/div/div/div/input').send_keys(self.password)
         time.sleep(2)
         driver.find_element_by_xpath(
-            '//*[@id="app"]/div[2]/div/div[1]/div/div/div[3]/div/div/div/div[2]/button').click()
+            '//*[@id="app"]/div[2]/div/div[1]/div/div/div[3]/div/div/div/form/button').click()
         time.sleep(5)
         for cook in driver.get_cookies():
             self.cookies[cook['name']] = cook['value']
@@ -322,9 +324,70 @@ class PhGoodsSpider():
             if order_info['status'] == 5:
                 order_obj[0].delete()
                 return None
-            # 已有订单 只有状态是已打单时 才更新订单
+            # 已有订单 状态不是已打单时 不更新订单
             if order_obj[0].order_status != 5:
                 return None
+            else:
+                # 已打单 发货订单 单独请求这个订单数据 更新收入
+                req_data = {
+                    'SPC_CDS': self.cookies['SPC_CDS'],
+                    'SPC_CDS_VER': 2,
+                    'order_id': order_obj[0].order_shopeeid
+                    }
+                order_data = self.parse_url(self.order_income_url, req_data)
+                order_payment_info = order_data['data']['payment_info']
+
+                # 商品总价
+                total_price = order_payment_info['merchant_subtotal']['product_price']
+                # for order_good_info in one_order_data['order_items']:
+                #     total_price += float(order_good_info['order_price']) * order_good_info['amount']
+
+                # 判断是否是卖家的优惠卷
+                # voucher_price = one_order_data['voucher_price'] if one_order_data['voucher_absorbed_by_seller'] else '0.00'
+                voucher_price = order_payment_info['rebate_and_voucher']['voucher_code']
+
+                # if one_order_data['currency'] == 'PHP':
+                #     # 菲律宾 实际运费 舍去0.5 小数
+                #     actual_shipping_fee = Decimal(one_order_data['actual_shipping_fee']).quantize(Decimal(0.0), rounding='ROUND_DOWN')
+                #
+                # else:
+                #     actual_shipping_fee = Decimal(one_order_data['actual_shipping_fee'])
+                actual_shipping_fee = order_payment_info['shipping_subtotal']['shipping_fee_paid_by_shopee_on_your_behalf']
+
+                # 买家支付运费
+                shipping_fee = order_payment_info['shipping_subtotal']['shipping_fee_paid_by_buyer']
+                # 平台运费回扣
+                shipping_rebate = order_payment_info['rebate_and_voucher']['shipping_rebate_from_shopee']
+
+                # 商品折扣 shopee回扣     ？不清楚是什么回扣
+                product_rebate = order_payment_info['rebate_and_voucher']['product_discount_rebate_from_shopee']
+
+                # 平台佣金
+                comm_fee = order_payment_info['fees_and_charges']['commission_fee']
+                # 平台服务费
+                seller_service_fee = order_payment_info['fees_and_charges']['service_fee']
+                # 手续费
+                card_txn_fee = order_payment_info['fees_and_charges']['transaction_fee']
+                # 税收
+                tax_fee = order_payment_info['buyer_paid_tax_amount']
+
+                # 没出货，无实际运费时 不计算订单收入
+                if actual_shipping_fee != 0.00:
+                    # 订单收入 float 先转成str 因为float本身就有误差
+                    order_income = Decimal(str(total_price)) + Decimal(str(voucher_price)) \
+                                   + Decimal(str(shipping_fee)) + Decimal(str(shipping_rebate)) \
+                                   + Decimal(str(actual_shipping_fee)) + Decimal(str(card_txn_fee)) \
+                                   + Decimal(str(comm_fee)) + Decimal(str(seller_service_fee)) \
+                                   + Decimal(str(tax_fee)) + Decimal(str(product_rebate))
+
+                    if order_income != Decimal(str(order_data['data']['amount'])):
+                        order_obj.update(order_desc='收入异常', order_income=order_income)
+                    else:
+                        if order_obj[0].order_country == 'PHP':
+                            order_income = order_income.quantize(Decimal(0.0), rounding='ROUND_UP')
+                        order_obj.update(order_income=order_income, total_price=total_price)
+
+                return order_obj[0]
 
         # 订单用户收货率
         delivery_order = order_info['buyer_user']['delivery_order_count']
@@ -336,41 +399,8 @@ class PhGoodsSpider():
                 delivery_order)
         # 商品总价
         total_price = 0
-        for order_good_info in order_info['order_items']:
-            total_price += float(order_good_info['order_price']) * order_good_info['amount']
-
-        # 判断是否是卖家的优惠卷
-        voucher_price = order_info['voucher_price'] if order_info['voucher_absorbed_by_seller'] else '0.00'
-
-        if order_info['currency'] == 'PHP':
-            # 菲律宾 实际运费 0.5向上进1
-            actual_shipping_fee = Decimal(order_info['actual_shipping_fee']).quantize(Decimal(0.0))
-        else:
-            actual_shipping_fee = Decimal(order_info['actual_shipping_fee'])
-        # 买家支付运费
-        shipping_fee = order_info['shipping_fee']
-        # 平台运费回扣
-        shipping_rebate = order_info['shipping_rebate']
-
-        # 平台佣金
-        comm_fee = order_info['comm_fee']
-        # 平台服务费
-        seller_service_fee = order_info['seller_service_fee']
-        # 手续费
-        card_txn_fee = order_info['card_txn_fee_info']['card_txn_fee']
-
-        # 买家或平台支付的运费
-        our_shipping_fee = Decimal(shipping_rebate) + Decimal(shipping_fee)
-        if shipping_fee == '0.00' and shipping_rebate == '0.00':
-            our_shipping_fee = Decimal(order_info['origin_shipping_fee'])
-
-        # 没出货，无实际运费时 不计算订单收入
-        order_income = '0.00'
-        if actual_shipping_fee != 0.00:
-            # 订单收入
-            order_income = Decimal(total_price) + our_shipping_fee \
-                           - actual_shipping_fee - Decimal(card_txn_fee) - Decimal(voucher_price) \
-                           - Decimal(comm_fee) - Decimal(seller_service_fee)
+        # for order_good_info in order_info['order_items']:
+        #     total_price += float(order_good_info['order_price']) * order_good_info['amount']
 
         o_data = {
             'order_time': order_info['order_sn'][:6],
@@ -380,7 +410,6 @@ class PhGoodsSpider():
             'receiver': order_info['buyer_address_name'],
             'customer_info': customer_info,
             'total_price': total_price,
-            'order_income': order_income,
             'order_country': order_info['currency']
         }
         order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_info['order_sn'], defaults=o_data)
@@ -432,10 +461,7 @@ class PhGoodsSpider():
                         save_log(self.error_path, str(e.args))
             else:
                 if order_item['bundle_deal_model']:
-                    # 套装一共包含多少件商品
-                    bundle_count = 0
-                    for item in order_item['item_list']:
-                        bundle_count += int(item['amount'])
+                    # 套装可以为 不同商品 但是同种折扣
                     # 循环每个套装中的商品
                     for order_bundle_item in order_item['bundle_deal_model']:
                         sku = order_bundle_item['sku']
@@ -455,7 +481,7 @@ class PhGoodsSpider():
                         count = list(filter(lambda x: x['model_id'] == order_bundle_item['model_id'],
                                             order_item['item_list']))[0]['amount']
                         # 套装中每件商品的平均价格
-                        price = Decimal(order_item['order_price']) / bundle_count
+                        price = order_bundle_item['price']
 
                         order_good = OrderGoods.objects.filter(order=order_obj, sku_good=good_obj)
                         # 如订单中已有该商品，则累加数量
@@ -599,8 +625,7 @@ class PhGoodsSpider():
 
                     if os.path.isfile(file_path):
                         # 调用打印类  打印运单号
-                        crop_pdf = CropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
-                        crop_pdf.run()
+                        print_PDF(file_name)
 
                         # os.remove(file_path)
                         # print('打单成功')
@@ -685,6 +710,8 @@ class MYGoodsSpider(PhGoodsSpider):
 
         self.order_url = sp_config.MY_ORDER_URL
         self.search_order_url = sp_config.MY_ORDER_SEARCH_URL
+        self.order_income_url = sp_config.MY_ORDER_INCOME_URL
+
         self.forderid_url = sp_config.MY_FORDERID_URL
         self.check_income_url = sp_config.MY_CHECK_INCOME_URL
 
@@ -728,6 +755,8 @@ class ThGoodsSpider(PhGoodsSpider):
 
         self.order_url = sp_config.TH_ORDER_URL
         self.search_order_url = sp_config.TH_ORDER_SEARCH_URL
+        self.order_income_url = sp_config.TH_ORDER_INCOME_URL
+
         self.check_income_url = sp_config.TH_CHECK_INCOME_URL
         self.forderid_url = sp_config.TH_FORDERID_URL
 
@@ -771,6 +800,8 @@ class IdGoodsSpider(PhGoodsSpider):
 
         self.order_url = sp_config.ID_ORDER_URL
         self.search_order_url = sp_config.ID_ORDER_SEARCH_URL
+        self.order_income_url = sp_config.ID_ORDER_INCOME_URL
+
         self.check_income_url = sp_config.ID_CHECK_INCOME_URL
         self.forderid_url = sp_config.ID_FORDERID_URL
 
@@ -803,21 +834,19 @@ class IdGoodsSpider(PhGoodsSpider):
         """下载运单号
         orderids: 订单号列表 ['2224060720','2221118585','2222123945']"""
 
-        # 订单号由字符串转成整数  列表转成字符串 如'[2349952432]'
-        orderids = str(list(map(lambda x: int(x), orderids)))
         data = {
-            'orderids': orderids,
+            'order_ids': orderids,
         }
 
         self.is_cookies()
 
         try:
             for i in range(2):
-                response = requests.get(self.waybill_url, params=data, cookies=self.cookies, headers=self.headers)
+                response = requests.post(self.waybill_url, json=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
                     # 提取header中隐藏的文件名
-                    file_name = response.headers._store['content-disposition'][1][-20:-1]
+                    file_name = 'WorkPDF00ID.pdf'
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
@@ -825,8 +854,7 @@ class IdGoodsSpider(PhGoodsSpider):
 
                     if os.path.isfile(file_path):
                         # 调用旧打印类 切割pdf 打印运单
-                        crop_pdf = OldCropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
-                        crop_pdf.run()
+                        print_PDF(file_name=file_name)
 
                     return ''
 
@@ -857,6 +885,8 @@ class SgGoodsSpider(PhGoodsSpider):
 
         self.order_url = sp_config.SG_ORDER_URL
         self.search_order_url = sp_config.SG_ORDER_SEARCH_URL
+        self.order_income_url = sp_config.SG_ORDER_INCOME_URL
+
         self.check_income_url = sp_config.SG_CHECK_INCOME_URL
         self.forderid_url = sp_config.SG_FORDERID_URL
 
@@ -932,7 +962,7 @@ class BrGoodsSpider(PhGoodsSpider):
         self.order_url = sp_config.MY_ORDER_URL
         # 巴西
         self.order_detail_url = sp_config.BR_ORDER_DETAIL_URL
-        self.one_order_url = 'https://seller.my.shopee.cn/api/v3/order/get_one_order'
+        self.get_one_order_url = 'https://seller.my.shopee.cn/api/v3/order/get_one_order'
 
         self.forderid_url = sp_config.MY_FORDERID_URL
         self.check_income_url = sp_config.MY_CHECK_INCOME_URL
@@ -994,7 +1024,10 @@ class BrGoodsSpider(PhGoodsSpider):
             # add_orderid_dict 字典的键为orderid 值为order_obj对象
             orderid_list = str(list(self.add_orderid_dict.keys()))
             data = {
+                'SPC_CDS': self.cookies['SPC_CDS'],
+                'SPC_CDS_VER': 2,
                 'orderid_list': orderid_list,
+                'affi_shopid': 191538284
             }
             order_detail_list = self.parse_url(self.order_detail_url, data)
             # 循环 每一个订单 根据shopid找到 订单
@@ -1002,7 +1035,7 @@ class BrGoodsSpider(PhGoodsSpider):
                 order_obj = self.add_orderid_dict[order_detail['orderid']]
                 self.parse_ordergood(order_detail, order_obj)
 
-    def get_order(self, type='toship', page=0, is_all=True):
+    def get_order(self, type='toship', page=0, is_all=False):
         """获取订单信息 保存到数据库
             :type   'toship'  待出货订单
                     'shipping' 运输中订单
@@ -1091,11 +1124,20 @@ class BrGoodsSpider(PhGoodsSpider):
                 'count': order_item['quantity'],
                 'price': order_item['settlement_price'],
             }
-            try:
-                # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-                OrderGoods.objects.update_or_create(order=order_obj, sku_good=good_obj, defaults=g_data)
-            except Exception as e:
-                save_log(self.error_path, str(e.args))
+            # 查找该订单中 商品是否存在
+            order_good = OrderGoods.objects.filter(order=order_obj, sku_good=good_obj)
+            # 如订单中已有该商品，则累加数量
+            if order_good:
+                order_good.update(count=F('count') + order_item['quantity'])
+            # 没有，则创建该订单商品
+            else:
+                try:
+                    # 同一个订单 同种商品 记录只能有一条 唯一确认标志
+                    OrderGoods.objects.create(order=order_obj, sku_good=good_obj,
+                                              count=order_item['quantity'],
+                                              price=order_item['settlement_price'])
+                except Exception as e:
+                    save_log(self.error_path, str(e.args))
 
             # 商品的成本  每件商品进价上加一元国内运杂费 进价低于6元不附加
             good_buy_price = good_obj.buy_price
@@ -1125,7 +1167,7 @@ class BrGoodsSpider(PhGoodsSpider):
             'sip_shopid': 191538284,
             'order_id': order_id
         }
-        return self.parse_url(self.one_order_url, data)
+        return self.parse_url(self.get_one_order_url, data)
 
     def get_single_order(self, order_id):
         order_id = int(order_id)
@@ -1197,7 +1239,8 @@ class BrGoodsSpider(PhGoodsSpider):
 
                 if response.status_code == 200:
                     # 提取header中隐藏的文件名
-                    file_name = response.headers._store['content-disposition'][1][-20:-1]
+                    print(response.headers._store['content-disposition'][1])
+                    file_name = re.search(r'\"(.*)\"', response.headers._store['content-disposition'][1]).group(1)
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
@@ -1221,8 +1264,6 @@ class BrGoodsSpider(PhGoodsSpider):
         except Exception as e:
             save_log(self.error_path, str(e.args))
             return '发送请求出错'
-
-
 
     # 订单收入 核对（按打款日期周期 获取订单信息）
     def parse_check_income_url(self, page, start_date, end_date):
@@ -1289,6 +1330,8 @@ class TwGoodsSpider(PhGoodsSpider):
 
         self.order_url = sp_config.TW_ORDER_URL
         self.search_order_url = sp_config.TW_ORDER_SEARCH_URL
+        self.order_income_url = sp_config.TW_ORDER_INCOME_URL
+
         self.check_income_url = sp_config.TW_CHECK_INCOME_URL
         self.forderid_url = sp_config.TW_FORDERID_URL
 
