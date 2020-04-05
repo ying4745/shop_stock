@@ -68,12 +68,12 @@ class PhGoodsSpider():
         driver = webdriver.Chrome()
         driver.get(self.login_url)
         time.sleep(3)
-        driver.find_element_by_xpath('/html/body/div[1]/div[2]/div/div[1]/div/div/div[3]/div/div/div/form/div[1]/div/div/div/input').send_keys(self.name)
+        driver.find_element_by_xpath('/html/body/div[1]/div[2]/div/div/div/div/div[3]/div/div/div/form/div[1]/div/div/div/div/input').send_keys(self.name)
         time.sleep(1)
-        driver.find_element_by_xpath('/html/body/div[1]/div[2]/div/div[1]/div/div/div[3]/div/div/div/form/div[2]/div/div/div/input').send_keys(self.password)
+        driver.find_element_by_xpath('/html/body/div[1]/div[2]/div/div/div/div/div[3]/div/div/div/form/div[2]/div/div/div/div/input').send_keys(self.password)
         time.sleep(2)
         driver.find_element_by_xpath(
-            '//*[@id="app"]/div[2]/div/div[1]/div/div/div[3]/div/div/div/form/button').click()
+            '/html/body/div[1]/div[2]/div/div/div/div/div[3]/div/div/div/form/button').click()
         time.sleep(5)
         for cook in driver.get_cookies():
             self.cookies[cook['name']] = cook['value']
