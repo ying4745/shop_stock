@@ -67,7 +67,8 @@
                 <div class="btn-group">
                     <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
-                        马来西亚 <span class="badge bg-aqua">{{ my_orders }}</span> <span class="caret"></span>
+                        马来西亚 <span class="badge bg-aqua">{{ my_orders }}</span>
+                        <span class="badge bg-gray">{{ dw_my_orders }}</span> <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
@@ -92,7 +93,8 @@
                 <div class="btn-group">
                     <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
-                        菲律宾 <span class="badge bg-aqua">{{ ph_orders }}</span> <span class="caret"></span>
+                        菲律宾 <span class="badge bg-aqua">{{ ph_orders }}</span>
+                        <span class="badge bg-gray">{{ dw_ph_orders }}</span> <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
@@ -117,7 +119,8 @@
                 <div class="btn-group">
                     <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
-                        泰国 <span class="badge bg-aqua">{{ th_orders }}</span> <span class="caret"></span>
+                        泰国 <span class="badge bg-aqua">{{ th_orders }}</span>
+                        <span class="badge bg-gray">{{ dw_th_orders }}</span> <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
@@ -142,7 +145,8 @@
                 <div class="btn-group">
                     <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
-                        印尼 <span class="badge bg-aqua">{{ id_orders }}</span> <span class="caret"></span>
+                        印尼 <span class="badge bg-aqua">{{ id_orders }}</span>
+                        <span class="badge bg-gray">{{ dw_id_orders }}</span> <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
@@ -163,7 +167,8 @@
                 <div class="btn-group">
                     <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
-                        新加坡 <span class="badge bg-aqua">{{ sg_orders }}</span> <span class="caret"></span>
+                        新加坡 <span class="badge bg-aqua">{{ sg_orders }}</span>
+                        <span class="badge bg-gray">{{ dw_sg_orders }}</span> <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
@@ -184,7 +189,8 @@
                 <div class="btn-group">
                     <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
-                        巴西 <span class="badge bg-aqua">{{ br_orders }}</span> <span class="caret"></span>
+                        巴西 <span class="badge bg-aqua">{{ br_orders }}</span>
+                        <span class="badge bg-gray">{{ dw_br_orders }}</span> <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
@@ -201,7 +207,8 @@
 {#                <div class="btn-group">#}
 {#                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"#}
 {#                            aria-haspopup="true" aria-expanded="false">#}
-{#                        台湾 <span class="badge bg-aqua">{{ tw_orders }}</span> <span class="caret"></span>#}
+{#                       台湾 <span class="badge bg-aqua">{{ tw_orders }}</span>#}
+                {#              <span class="badge bg-gray">{{ dw_tw_orders }}</span> <span class="caret"></span>#}
 {#                    </button>#}
 {#                    <ul class="dropdown-menu">#}
 {#                        <li>#}
@@ -530,10 +537,10 @@
         // 添加下拉式筛选框
         function col_search() {
             var api = this.api();
-            api.columns([2, 3, 8]).indexes().flatten().each(function (i) {
+            api.columns([2]).indexes().flatten().each(function (i) {
                 var column = api.column(i);
                 var select = $('<select><option value=""></option></select>')
-                    .appendTo($(column.footer()).empty())
+                    .appendTo($(column.header()).empty())
                     .on('change', function () {
                         var val = $.fn.dataTable.util.escapeRegex(
                             $(this).val()

@@ -28,13 +28,26 @@ class IndexView(View):
         finished_orders = OrderInfo.objects.filter(Q(order_status=3) | Q(order_status=6) |
                                                    Q(order_status=7) | Q(order_status=8)).count()
 
-        my_orders = orders.filter(order_country='MYR').count()
-        ph_orders = orders.filter(order_country='PHP').count()
-        th_orders = orders.filter(order_country='THB').count()
-        id_orders = orders.filter(order_country='IDR').count()
-        sg_orders = orders.filter(order_country='SGD').count()
-        br_orders = orders.filter(order_country='BRL').count()
-        tw_orders = orders.filter(order_country='TWD').count()
+        my_order = orders.filter(order_country='MYR')
+        my_orders, dw_my_orders = orders_num_or_dealwith(my_order)
+
+        ph_order = orders.filter(order_country='PHP')
+        ph_orders, dw_ph_orders = orders_num_or_dealwith(ph_order)
+
+        th_order = orders.filter(order_country='THB')
+        th_orders, dw_th_orders = orders_num_or_dealwith(th_order)
+
+        id_order = orders.filter(order_country='IDR')
+        id_orders, dw_id_orders = orders_num_or_dealwith(id_order)
+
+        sg_order = orders.filter(order_country='SGD')
+        sg_orders, dw_sg_orders = orders_num_or_dealwith(sg_order)
+
+        br_order = orders.filter(order_country='BRL')
+        br_orders, dw_br_orders = orders_num_or_dealwith(br_order)
+
+        tw_order = orders.filter(order_country='TWD')
+        tw_orders, dw_tw_orders = orders_num_or_dealwith(tw_order)
 
         out_of_stock, orders_goods = out_of_stock_good_list(orders)
 
@@ -102,7 +115,7 @@ class BaleOrderView(View):
         """处理下载、打印请求"""
         orders_dict = json.loads(request.POST.get('data_dict', ''))
         # print(orders_dict)
-        if not orders_dict or 'print_type' not in orders_dict:
+        if 'print_type' not in orders_dict or len(orders_dict) <= 1:
             return JsonResponse({'status': 3, 'msg': '参数错误'})
 
         if orders_dict['print_type'] == 'all':
@@ -113,17 +126,23 @@ class BaleOrderView(View):
         else:
             return JsonResponse({'status': 3, 'msg': '参数错误'})
 
-        # print("结束", orders_dict) down_order_waybill
+        # print("结束", orders_dict)
+        # 结果消息
+        result_msg = ''
         for k in orders_dict.keys():
             shopee = country_type_dict[k]()
             # order_list_str = list(map(lambda x: int(x), orders_dict[k]))
             msg = shopee.down_order_waybill(orders_dict[k])
             if msg:
-                return JsonResponse({'status': 2, 'msg': msg})
+                result_msg += k + ' >> ' + msg + '<br>'
+                continue
+                # return JsonResponse({'status': 2, 'msg': msg})
 
             OrderInfo.objects.filter(order_country=k,
                                      order_shopeeid__in=orders_dict[k],
                                      order_status=2).update(order_status=5)
+        if result_msg:
+            return JsonResponse({'status': 0, 'msg': result_msg})
 
         return JsonResponse({'status': 0, 'msg': '打单完成'})
 
@@ -733,3 +752,10 @@ def make_waybill(orders_dict):
                                  order_shopeeid__in=orders_dict[k],
                                  order_status=1).update(order_status=4)
     return ''
+
+
+def orders_num_or_dealwith(order_obj):
+    """返回订单数 和其中已处理的订单数"""
+    order_num = order_obj.count()
+    dw_order_num = order_obj.filter(order_status=4).count()
+    return order_num, dw_order_num

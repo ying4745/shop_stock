@@ -616,12 +616,15 @@ class PhGoodsSpider():
                 response = requests.post(self.waybill_url, json=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
+                    pdf_data = response.content
+                    if not pdf_data.startswith(b'%PDF-1.'):
+                        return '下载的PDF格式错误, 打单失败！'
                     # 文件名
                     file_name = 'WorkPDF001.pdf'
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
-                        f.write(response.content)
+                        f.write(pdf_data)
 
                     if os.path.isfile(file_path):
                         # 调用打印类  打印运单号
@@ -632,7 +635,7 @@ class PhGoodsSpider():
 
                     return ''
 
-                print(response.status_code)  # 403
+                # print(response.status_code)  # 403
                 # 验证出错，重新登录，再请求
                 if i == 0:
                     self.login()

@@ -428,7 +428,8 @@
                         } else {
                             showMessage(e.msg, 'bg-success');
                             window.setTimeout(function () {
-                                location.reload()
+                                //location.reload()
+                                table.draw(false)
                             }, 2100);
                         }
                     }
