@@ -30,7 +30,7 @@ class PhGoodsSpider():
         self.product_url = sp_config.PH_PRODUCT_URL
 
         self.order_url = sp_config.PH_ORDER_URL
-        self.search_order_url = sp_config.PH_ORDER_SEARCH_URL
+        self.one_order_url = sp_config.PH_ORDER_SEARCH_URL
         self.order_income_url = sp_config.PH_ORDER_INCOME_URL
 
         self.forderid_url = sp_config.PH_FORDERID_URL
@@ -51,7 +51,7 @@ class PhGoodsSpider():
         # 每件商品附加费用
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
         # 国家标示
-        self.country = 'ph'
+        self.country = 'PHP'
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -171,11 +171,11 @@ class PhGoodsSpider():
                 defaults['desc'] = good['name']
 
             # 判断国家  添加到不同价格
-            if self.country == 'ph':
+            if self.country == 'PHP':
                 defaults['ph_sale_price'] = good['price']
-            elif self.country == 'my':
+            elif self.country == 'MYR':
                 defaults['my_sale_price'] = good['price']
-            elif self.country == 'th':
+            elif self.country == 'THB':
                 defaults['th_sale_price'] = good['price']
 
             # 抓取的商品sku 添加到列表
@@ -283,9 +283,9 @@ class PhGoodsSpider():
             # user_info = self.list_filter_data(order_info['userid'], order_data['users'])
 
             # 解析订单 用户数据  生成订单详情
-            order_obj = self.parse_create_order(order_info)
+            order_status_num, order_obj = self.parse_create_order(order_info)
 
-            if not order_obj:
+            if order_status_num:
                 # save_log(self.order_path, order_info['ordersn'], err_type='$已取消的订单：')
                 continue
 
@@ -323,10 +323,10 @@ class PhGoodsSpider():
         if order_obj:
             if order_info['status'] == 5:
                 order_obj[0].delete()
-                return None
+                return 1, 1
             # 已有订单 状态不是已打单时 不更新订单
             if order_obj[0].order_status != 5:
-                return None
+                return 2, 2
             else:
                 # 已打单 发货订单 单独请求这个订单数据 更新收入
                 req_data = {
@@ -339,8 +339,6 @@ class PhGoodsSpider():
 
                 # 商品总价
                 total_price = order_payment_info['merchant_subtotal']['product_price']
-                # for order_good_info in one_order_data['order_items']:
-                #     total_price += float(order_good_info['order_price']) * order_good_info['amount']
 
                 # 判断是否是卖家的优惠卷
                 # voucher_price = one_order_data['voucher_price'] if one_order_data['voucher_absorbed_by_seller'] else '0.00'
@@ -387,7 +385,7 @@ class PhGoodsSpider():
                             order_income = order_income.quantize(Decimal(0.0), rounding='ROUND_UP')
                         order_obj.update(order_income=order_income, total_price=total_price)
 
-                return order_obj[0]
+                return 0, order_obj[0]
 
         # 订单用户收货率
         delivery_order = order_info['buyer_user']['delivery_order_count']
@@ -410,7 +408,7 @@ class PhGoodsSpider():
             'receiver': order_info['buyer_address_name'],
             'customer_info': customer_info,
             'total_price': total_price,
-            'order_country': order_info['currency']
+            'order_country': self.country
         }
         order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_info['order_sn'], defaults=o_data)
 
@@ -418,7 +416,7 @@ class PhGoodsSpider():
             self.parse_create_ordergood(order_obj, order_info)
             self.num += 1
 
-        return order_obj
+        return 0, order_obj
 
     def parse_create_ordergood(self, order_obj, order_info):
         """
@@ -480,7 +478,7 @@ class PhGoodsSpider():
                         # 套装中该商品的数量
                         count = list(filter(lambda x: x['model_id'] == order_bundle_item['model_id'],
                                             order_item['item_list']))[0]['amount']
-                        # 套装中每件商品的平均价格
+                        # 套装中价格 暂时记录为原价
                         price = order_bundle_item['price']
 
                         order_good = OrderGoods.objects.filter(order=order_obj, sku_good=good_obj)
@@ -525,26 +523,31 @@ class PhGoodsSpider():
             'SPC_CDS': self.cookies['SPC_CDS'],
             'SPC_CDS_VER': 2,
             'keyword': order_id,
-            'query': order_id,
+            'query': order_id
         }
-        return self.parse_url(self.search_order_url, data)
+        return self.parse_url(self.one_order_url, data)
 
     def save_single_order(self, order_data):
-        if order_data['data']['orders']:
-            # order = order_data['orders'][0]
-            # user_info = order_data['users'][0]
+        # 判断返回是个字典， 且字典里有data
+        try:
+            single_order_data = order_data['data']['orders'][0]
+        except:
+            return '返回数据错误'
+        if single_order_data:
+            order_status_num, order_obj = self.parse_create_order(single_order_data)
 
-            order_obj = self.parse_create_order(order_data['data']['orders'][0])
+            if order_status_num == 1:
+                return '订单已取消'
 
-            if not order_obj:
-                return '订单已取消/已完成'
+            if order_status_num == 2:
+                return '订单已存在，且不是发出打单状态'
 
+            # 订单为已打单，且有订单收入 计算利润
             if order_obj.order_status == 5 and str(order_obj.order_income) != '0.00':
                 self.compute_order_profit(order_obj)
+                return '订单收入，利润计算完成'
 
             return '订单同步完成'
-
-        return '没找到订单'
 
     def get_single_order(self, order_id):
         self.is_cookies()
@@ -628,7 +631,7 @@ class PhGoodsSpider():
 
                     if os.path.isfile(file_path):
                         # 调用打印类  打印运单号
-                        print_PDF(file_name)
+                        print_PDF(file_path)
 
                         # os.remove(file_path)
                         # print('打单成功')
@@ -712,7 +715,7 @@ class MYGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.MY_PRODUCT_URL
 
         self.order_url = sp_config.MY_ORDER_URL
-        self.search_order_url = sp_config.MY_ORDER_SEARCH_URL
+        self.one_order_url = sp_config.MY_ORDER_SEARCH_URL
         self.order_income_url = sp_config.MY_ORDER_INCOME_URL
 
         self.forderid_url = sp_config.MY_FORDERID_URL
@@ -731,7 +734,7 @@ class MYGoodsSpider(PhGoodsSpider):
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
-        self.country = 'my'
+        self.country = 'MYR'
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -757,7 +760,7 @@ class ThGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.TH_PRODUCT_URL
 
         self.order_url = sp_config.TH_ORDER_URL
-        self.search_order_url = sp_config.TH_ORDER_SEARCH_URL
+        self.one_order_url = sp_config.TH_ORDER_SEARCH_URL
         self.order_income_url = sp_config.TH_ORDER_INCOME_URL
 
         self.check_income_url = sp_config.TH_CHECK_INCOME_URL
@@ -776,7 +779,7 @@ class ThGoodsSpider(PhGoodsSpider):
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
-        self.country = 'th'
+        self.country = 'THB'
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -802,7 +805,7 @@ class IdGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.ID_PRODUCT_URL
 
         self.order_url = sp_config.ID_ORDER_URL
-        self.search_order_url = sp_config.ID_ORDER_SEARCH_URL
+        self.one_order_url = sp_config.ID_ORDER_SEARCH_URL
         self.order_income_url = sp_config.ID_ORDER_INCOME_URL
 
         self.check_income_url = sp_config.ID_CHECK_INCOME_URL
@@ -821,7 +824,7 @@ class IdGoodsSpider(PhGoodsSpider):
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
-        self.country = 'id'
+        self.country = 'IDR'
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -848,20 +851,23 @@ class IdGoodsSpider(PhGoodsSpider):
                 response = requests.post(self.waybill_url, json=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
-                    # 提取header中隐藏的文件名
+                    pdf_data = response.content
+                    if not pdf_data.startswith(b'%PDF-1.'):
+                        return '下载的PDF格式错误, 打单失败！'
+                    # 文件名
                     file_name = 'WorkPDF00ID.pdf'
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
-                        f.write(response.content)
+                        f.write(pdf_data)
 
                     if os.path.isfile(file_path):
                         # 调用旧打印类 切割pdf 打印运单
-                        print_PDF(file_name=file_name)
+                        print_PDF(file_path)
 
                     return ''
 
-                print(response.status_code)  # 403
+                # print(response.status_code)  # 403
                 # 验证出错，重新登录，再请求
                 if i == 0:
                     self.login()
@@ -887,7 +893,7 @@ class SgGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.SG_PRODUCT_URL
 
         self.order_url = sp_config.SG_ORDER_URL
-        self.search_order_url = sp_config.SG_ORDER_SEARCH_URL
+        self.one_order_url = sp_config.SG_ORDER_SEARCH_URL
         self.order_income_url = sp_config.SG_ORDER_INCOME_URL
 
         self.check_income_url = sp_config.SG_CHECK_INCOME_URL
@@ -906,7 +912,7 @@ class SgGoodsSpider(PhGoodsSpider):
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
-        self.country = 'sg'
+        self.country = 'SGD'
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -965,7 +971,7 @@ class BrGoodsSpider(PhGoodsSpider):
         self.order_url = sp_config.MY_ORDER_URL
         # 巴西
         self.order_detail_url = sp_config.BR_ORDER_DETAIL_URL
-        self.get_one_order_url = 'https://seller.my.shopee.cn/api/v3/order/get_one_order'
+        self.one_order_url = sp_config.BR_ONE_ORDER_URL
 
         self.forderid_url = sp_config.MY_FORDERID_URL
         self.check_income_url = sp_config.MY_CHECK_INCOME_URL
@@ -984,7 +990,7 @@ class BrGoodsSpider(PhGoodsSpider):
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
-        self.country = 'br'
+        self.country = 'BRL'
 
         self.num = 0
         self.add_orderid_dict = {}
@@ -1170,7 +1176,7 @@ class BrGoodsSpider(PhGoodsSpider):
             'sip_shopid': 191538284,
             'order_id': order_id
         }
-        return self.parse_url(self.get_one_order_url, data)
+        return self.parse_url(self.one_order_url, data)
 
     def get_single_order(self, order_id):
         order_id = int(order_id)
@@ -1241,13 +1247,17 @@ class BrGoodsSpider(PhGoodsSpider):
                 response = requests.get(self.waybill_url, params=data, cookies=self.cookies, headers=self.headers)
 
                 if response.status_code == 200:
+                    pdf_data = response.content
+                    if not pdf_data.startswith(b'%PDF-1.'):
+                        return '下载的PDF格式错误, 打单失败！'
+
                     # 提取header中隐藏的文件名
-                    print(response.headers._store['content-disposition'][1])
+                    # print(response.headers._store['content-disposition'][1])
                     file_name = re.search(r'\"(.*)\"', response.headers._store['content-disposition'][1]).group(1)
                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
-                        f.write(response.content)
+                        f.write(pdf_data)
 
                     if os.path.isfile(file_path):
                         # 调用旧打印类 切割pdf 打印运单
@@ -1256,7 +1266,7 @@ class BrGoodsSpider(PhGoodsSpider):
 
                     return ''
 
-                print(response.status_code)  # 403
+                # print(response.status_code)  # 403
                 # 验证出错，重新登录，再请求
                 if i == 0:
                     self.login()
@@ -1319,6 +1329,7 @@ class BrGoodsSpider(PhGoodsSpider):
             for i in range(2, total_page + 2):
                 self.get_income_order(i, start_date, end_date, is_all=False)
 
+
 class TwGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
@@ -1332,7 +1343,7 @@ class TwGoodsSpider(PhGoodsSpider):
         self.product_url = sp_config.TW_PRODUCT_URL
 
         self.order_url = sp_config.TW_ORDER_URL
-        self.search_order_url = sp_config.TW_ORDER_SEARCH_URL
+        self.one_order_url = sp_config.TW_ORDER_SEARCH_URL
         self.order_income_url = sp_config.TW_ORDER_INCOME_URL
 
         self.check_income_url = sp_config.TW_CHECK_INCOME_URL
@@ -1351,7 +1362,7 @@ class TwGoodsSpider(PhGoodsSpider):
         # 每个订单附加费用
         self.order_add_fee = sp_config.ORDER_ADD_FEE
         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
-        self.country = 'tw'
+        self.country = 'TWD'
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
