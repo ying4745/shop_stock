@@ -1,4 +1,5 @@
 {% load static %}
+{% load static my_filter %}
 
 <div class="modal-header" style="text-align: center">
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
@@ -19,6 +20,7 @@
                     <th>销量</th>
                     <th>图片</th>
                     <th>库存</th>
+                    <th>订单需求</th>
                     <th>采购数量</th>
                     <th>列表</th>
                     <th>删除</th>
@@ -39,6 +41,8 @@
                                  width="35" height="35">
                         </td>
                         <td id="stock-td" style="padding: 0 18px;font-weight: bold;">{{ pur_good.sku_good.stock }}</td>
+                        <td id="need-td" style="padding: 0 18px;color: #ff0000;">
+                            {{ pur_goods_dict | search_dict:pur_good.sku_good.sku_id }}</td>
                         <td style="width:75px">
                             {% if pur_good.status %}
                                 <input id="good_count" type="text" readonly="readonly"
@@ -71,7 +75,7 @@
         {% else %}
             <p>无此订单信息</p>
         {% endif %}
-        <button class="btn btn-default btn-block" onclick="add_good_html('', '', 0, 0, null)"
+        <button class="btn btn-default btn-block" onclick="add_good_html('', '', 0, 0, null, 0)"
                 style="margin-bottom: 8px">新增商品</button>
 
         <div class="form-group">
@@ -90,15 +94,27 @@
 
 
 <script>
+    // 订单中缺货商品 所需要的数量  sku_id:数量
+    var pur_goods = {{ pur_goods_dict | safe }};
+
+    function good_need_num(sku_id) {
+        // 判断是否在缺货商品里 并显示需要的数量
+        if (pur_goods[sku_id] !== undefined){
+            return pur_goods[sku_id]
+        } else {
+            return 0
+        }
+    }
 
     // 新增商品 html
-    function add_good_html(goodsku_id, goodsku_desc, goodsku_sales, goodsku_stock, img_path) {
+    function add_good_html(goodsku_id, goodsku_desc, goodsku_sales, goodsku_stock, img_path, order_need) {
         var good_html = '<tr>' +
                         '   <td id="id-td"><input type="text" class="form-control input-col1" value="'+ goodsku_id +'"></td>' +
                         '   <td>'+ goodsku_desc +'</td>' +
                         '   <td id="sales-td" style="padding: 0 18px">'+ goodsku_sales +'</td>' +
                         '   <td id="img-td"><img class="good_img" src="'+ img_path +'" width="35" height="35"></td>' +
                         '   <td id="stock-td" style="padding: 0 18px;font-weight: bold;">'+ goodsku_stock +'</td>' +
+                        '   <td id="need-td" style="padding: 0 18px;color: #ff0000;">' + order_need +'</td>' +
                         '   <td style="width:75px"><input id="good_count" type="text"' +
                         '       style="width: 40px;float:left;" class="form-control" value="1">' +
                         '       <div class="input-group-btn-vertical">' +
@@ -123,11 +139,12 @@
         }
         $.get("{% url 'goodsku_list' %}", params ={'sku_id': sku_id}, function (e) {
             if (!e.status) {
-                console.log(e.msg);
+                //console.log(e.msg);
                 var good = e.msg[0];
                 this_obj.next().text(good.desc);
                 this_obj.nextAll('#sales-td').text(good.sales);
                 this_obj.nextAll('#stock-td').text(good.stock);
+                this_obj.nextAll('#need-td').text(good_need_num(sku_id));
                 this_obj.nextAll('#img-td').children().attr('src', {{ MEDIA_URL }} + good.image);
             } else {
                 showMessage(e.msg);
@@ -201,6 +218,7 @@
 
     // 点击 添加商品到采购单
     $('.goodsku-body').on('click', '.purchase-good-add', function () {
+
         var plus_fac = $(this).children();
         if (plus_fac.hasClass('fa-plus-square-o')) {
             var sku_id = $.trim($(this).prevAll('#sku_list_id').text());
@@ -208,8 +226,9 @@
             var sku_desc = $.trim($(this).prevAll('#sku_list_desc').text());
             var sku_sales = $.trim($(this).prevAll('#sku_list_sales').text());
             var sku_stock = $.trim($(this).prev().text());
+            order_need = good_need_num(sku_id);
 
-            add_good_html(sku_id, sku_desc, sku_sales, sku_stock, sku_image);
+            add_good_html(sku_id, sku_desc, sku_sales, sku_stock, sku_image, order_need);
             plus_fac.removeClass('fa-plus-square-o').addClass('fa-plus-square');
         }
 

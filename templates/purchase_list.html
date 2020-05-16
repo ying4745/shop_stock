@@ -17,7 +17,7 @@
 
     <!-- 同种商品sku选择列表 模态框 -->
     <div class="modal fade" id="skulist-Modal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog"> role="document">
+        <div class="modal-dialog" role="document">
             <div class="modal-content good-img-parent">
                 <div class="modal-header">
                     <button type="button" class="close" onclick="off_modal()" aria-label="Close">
@@ -94,6 +94,7 @@
                                 <th>商品进价</th>
                                 <th>订单所需</th>
                                 <th>商品库存</th>
+                                <th>商品销量</th>
                                 <th>入库操作</th>
                             </tr>
                             </thead>
@@ -138,6 +139,7 @@
                                                 {{ orders_goods | search_dict:pur_good.sku_good.sku_id }}
                                             </td>
                                             <td class="division-line" id="pur-good-stock">{{ pur_good.sku_good.stock }}</td>
+                                            <td class="division-line" style="color: #8c868d;">{{ pur_good.sku_good.sales }}</td>
 
                                             <td class="division-line"></td>
                                         {% else %}
@@ -172,6 +174,7 @@
                                                 {{ orders_goods | search_dict:pur_good.sku_good.sku_id }}
                                             </td>
                                             <td id="pur-good-stock">{{ pur_good.sku_good.stock }}</td>
+                                            <td style="color: #8c868d;">{{ pur_good.sku_good.sales }}</td>
 
                                             <td></td>
                                         {% endif %}
@@ -200,6 +203,7 @@
                                 <th>商品进价</th>
                                 <th>订单所需</th>
                                 <th>商品库存</th>
+                                <th>商品销量</th>
                                 <th>入库操作</th>
                             </tr>
                             </tfoot>
@@ -264,6 +268,9 @@
     <script src="{% static 'JS/base.js' %}"></script>
 
     <script>
+        // 订单中缺货商品 所需要的数量  sku_id:数量
+        var pur_goods_dict = {{ orders_goods | safe }};
+
         var columnDefs = [
             {
                 "targets": [0, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13],
@@ -294,7 +301,7 @@
             },
             // 入库按钮
             {
-                "targets": [13],
+                "targets": [14],
                 "data": null,
                 "width": '60px',
                 "render": function (data, type, row) {
@@ -429,7 +436,8 @@
                 url: "{% url 'modify_purchase' %}",
                 type: 'get',
                 data: {
-                    'pur_id': pur_id
+                    'pur_id': pur_id,
+                    'pur_goods_dict': JSON.stringify(pur_goods_dict)
                 },
                 success: function (data) {
                     $('.purchase-modal').html(data);

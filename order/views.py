@@ -392,13 +392,15 @@ class ModifyPurchaseView(View):
     def get(self, request):
         """渲染模态框中 修改页面"""
         purchase_id = request.GET.get('pur_id', '')
+        pur_goods_dict = json.loads(request.GET.get('pur_goods_dict', {}))
 
         pur_obj = PurchaseOrder.objects.filter(purchase_id=purchase_id)
 
         if pur_obj:
             pur_obj = pur_obj[0]
 
-        return render(request, 'purchase_form.html', {'pur_obj': pur_obj})
+        return render(request, 'purchase_form.html', {'pur_obj': pur_obj,
+                                                      'pur_goods_dict': pur_goods_dict})
 
     @transaction.atomic
     def post(self, request):
