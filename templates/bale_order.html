@@ -23,7 +23,7 @@
 
     <section class="content">
         <div class="row">
-            <div class="update_div">
+            <div class="update_div" style="margin-top: 10px;">
                 <a class="btn bg-blue" href="/"><i class="fa fa-clone"></i> 待出货订单</a>
                 <a class="btn bg-blue-active"><i class="fa fa-truck"></i> 待打包订单
                     <span class="badge bg-yellow">{{ bale_orders_count }}</span>
@@ -44,8 +44,37 @@
                             <small>待打包</small>
                         </h3>
                         <div class="ship_btn">
-                            <button class="btn btn-primary part_waybill" data-type="all">所有未打印</button>
+                            <button class="btn btn-primary part_waybill" data-type="all">打印选中分类</button>
                             <button class="btn btn-primary part_waybill" data-type="part">选中打单</button>
+                        </div>
+                        <div class="order_type_btn">
+                            <button class="btn btn-primary order_sort" data-type="">全部订单
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort" data-type="马来西亚">马来西亚
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort" data-type="菲律宾">菲律宾
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort" data-type="泰国">泰国
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort" data-type="印尼">印尼
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort" data-type="新加坡">新加坡
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort" data-type="巴西">巴西
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort" data-type="台湾">台湾
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort" data-type="not_printed" style="margin-left: 80px">未打印订单
+                                <span class="badge bg-aqua"></span>
+                            </button>
                         </div>
                     </div>
                     <div class="box-body">
@@ -78,13 +107,11 @@
                                             <td class="division-line">{{ forloop.parentloop.counter }}</td>
 
 
-                                            <td data-order="{{ order.order_shopeeid }}"
-                                                data-search="{{ order.order_country }}"
-                                                class="division-line">
+                                            <td class="division-line"
                                                 {% if order.order_status == 2 %}
-                                                    <i class="fa fa-sticky-note-o"></i>
+                                                    data-search="0"><i class="fa fa-sticky-note-o"></i>
                                                 {% else %}
-                                                    <i class="fa fa-sticky-note"></i>
+                                                    data-search="1"><i class="fa fa-sticky-note"></i>
                                                 {% endif %}
                                             </td>
 
@@ -110,7 +137,8 @@
                                             <td class="division-line" data-search="{{ order.order_id }}"
                                                 data-order="{{ order.order_id }}">{{ order.order_id }}</td>
 
-                                            <td class="division-line">{{ order.customer }}</td>
+                                            <td class="division-line" data-order="{{ order.order_shopeeid }}"
+                                                data-search="{{ order.order_country }}">{{ order.customer }}</td>
 
                                             <td class="division-line" data-remark="{{ order.customer_remark }}">
                                                 {% if order.customer_remark %}
@@ -154,7 +182,12 @@
 
                                         {% else %}
                                             <td></td>
-                                            <td></td>
+                                            <td {% if order.order_status == 2 %}
+                                                    data-search="0">
+                                                {% else %}
+                                                    data-search="1">
+                                                {% endif %}
+                                            </td>
                                             <td data-search="{{ order.get_order_country_display }}"></td>
                                             <td data-search="{{ order.order_id }}"
                                                 data-order="{{ order.order_id }}"></td>
@@ -222,7 +255,7 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0, 1, 5, 6, 7, 10, 11, 12],
+                "targets": [0, 5, 6, 7, 10, 11, 12],
                 "searchable": false
             },
             {
@@ -239,25 +272,31 @@
             }
         }
 
-        // 添加下拉式筛选框
-        function col_search() {
-            var api = this.api();
-            api.columns([2, 8]).indexes().flatten().each(function (i) {
-                var column = api.column(i);
-                var select = $('<select><option value=""></option></select>')
-                    .appendTo($(column.footer()).empty())
-                    .on('change', function () {
-                        var val = $.fn.dataTable.util.escapeRegex(
-                            $(this).val()
-                        );
-                        column
-                            .search(val ? '^' + val + '$' : '', true, false)
-                            .draw();
-                    });
-                column.data().unique().sort().each(function (d, j) {
-                    select.append('<option value="' + d + '">' + d + '</option>')
-                });
-            });
+        // 根据国家 查询订单数
+        function search_order_count(api, country_type) {
+            return api.column(2, {search:'applied'})
+                .search(country_type).data().filter(function (val, index) {return val}).length;
+        }
+
+        // 加载完页面 显示订单分类数量
+        function orderTypeNum(api) {
+            var all_orders_num = api.column(0).data().filter(function (val, index) {return val}).length;
+            api.column(0).search('');
+            var parent_ele = $('.order_type_btn').children('button');
+            parent_ele.eq(0).children('span').text(all_orders_num);
+            parent_ele.eq(1).children('span').text(search_order_count(api, '马来西亚'));
+            parent_ele.eq(2).children('span').text(search_order_count(api, '菲律宾'));
+            parent_ele.eq(3).children('span').text(search_order_count(api, '泰国'));
+            parent_ele.eq(4).children('span').text(search_order_count(api, '印尼'));
+            parent_ele.eq(5).children('span').text(search_order_count(api, '新加坡'));
+            parent_ele.eq(6).children('span').text(search_order_count(api, '巴西'));
+            parent_ele.eq(7).children('span').text(search_order_count(api, '台湾'));
+            // 查询完  数据恢复  TODO: 有问题
+            api.column(2).search('');
+            var un_print_num = api.column(1, {search:'applied'})
+                .search('0').data().filter(function (val, index) {return val}).length;
+            parent_ele.eq(8).children('span').text(un_print_num);
+            api.column(1).search('');
         }
 
         $(function () {
@@ -278,7 +317,7 @@
                 "createdRow": createdRow,
 
                 <!-- 指定列 添加下拉搜索框 -->
-                initComplete: col_search,
+                {#initComplete: col_search,#}
             });
 
             // 多选行，选中添加class
@@ -396,7 +435,6 @@
             $('.part_waybill').click(function () {
                 var data_dict = {};
                 var print_type = $(this).attr('data-type');
-                data_dict.print_type = print_type;
 
                 if (print_type === 'part') {
                     if (!$('tr.selected').length) {
@@ -404,8 +442,8 @@
                         return
                     }
                     table.rows('.selected').data().each(function (i) {
-                        var order_country = i[1]['@data-search'];
-                        var order_shopeeid = i[1]['@data-order'];
+                        var order_country = i[4]['@data-search'];
+                        var order_shopeeid = i[4]['@data-order'];
                         if (order_country && order_shopeeid) {
                             if (order_country in data_dict) {
                                 data_dict[order_country].push(order_shopeeid)
@@ -414,6 +452,27 @@
                             }
                         }
                     });
+                } else {
+                    // search 筛选器 applied 表示应用当前搜索匹配的行
+                    table.rows({search:'applied'}).data().each(function (i) {
+                        if (i[4]['display']) {
+                            var order_country = i[4]['@data-search'];
+                            var order_shopeeid = i[4]['@data-order'];
+                            if (order_country && order_shopeeid) {
+                                if (order_country in data_dict) {
+                                    data_dict[order_country].push(order_shopeeid)
+                                } else {
+                                    data_dict[order_country] = [order_shopeeid]
+                                }
+                            }
+                        }
+                    });
+                }
+                //console.log(data_dict);
+                // js对象转为json字符串 来判断是否为空
+                if (JSON.stringify(data_dict) === "{}") {
+                    showMessage('没有打印订单ID信息');
+                    return
                 }
                 $.ajax({
                     url: "{% url 'bale_order' %}",
@@ -428,13 +487,30 @@
                         } else {
                             showMessage(e.msg, 'bg-success');
                             window.setTimeout(function () {
-                                //location.reload()
-                                table.draw()
+                                location.reload()
+                                //table.draw(false)
                             }, 2100);
                         }
                     }
                 })
             });
+
+            //订单分类
+            $('.order_sort').click(function () {
+                var country = $(this).attr('data-type');
+                //console.log(country);
+                if (country === 'not_printed') {
+                    // 先选择所有订单 再找未打印的
+                    table.column(2).search('');
+                    table.column(1).search('0').draw();
+                } else {
+                    // 先选择所有打印和未打印的，再选择国家
+                    table.column(1).search('');
+                    table.column(2).search(country).draw();
+                }
+            });
+
+            orderTypeNum(table)
 
         });
 

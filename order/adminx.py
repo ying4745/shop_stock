@@ -8,8 +8,29 @@ class OrderGoodsInline():
     extra = 0
     style = 'table'
 
+# 自定义Action
+from xadmin.plugins.actions import BaseActionView
+
+class MyAction(BaseActionView):
+
+     # 这里需要填写三个属性
+     # 1. 相当于这个 Action 的唯一标示, 尽量用比较针对性的名字
+     action_name = "修改状态"
+     # 2. 描述, 出现在 Action 菜单中,
+     description = ('更改状态为已打单')
+     # 3. 该 Action 所需权限
+     model_perm = 'change'
+
+     # 而后实现 do_action 方法
+     def do_action(self, queryset):
+         # queryset 是包含了已经选择的数据的 queryset
+         queryset.update(order_status=5)
+         return
 
 class OrderInfoXadmin(object):
+    # 制定action
+    actions = [MyAction, ]
+
     list_display = ['order_id', 'customer', 'customer_info',
                     'receiver', 'order_income', 'order_profit',
                     'order_status', 'order_country', 'create_time']

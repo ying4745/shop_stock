@@ -114,17 +114,12 @@ class BaleOrderView(View):
     def post(self, request):
         """处理下载、打印请求"""
         orders_dict = json.loads(request.POST.get('data_dict', ''))
-        # print(orders_dict)
-        if 'print_type' not in orders_dict or len(orders_dict) <= 1:
-            return JsonResponse({'status': 3, 'msg': '参数错误'})
+        if not orders_dict:
+            return JsonResponse({'status': 1, 'msg': '参数错误'})
 
-        if orders_dict['print_type'] == 'all':
-            bale_orders = OrderInfo.objects.filter(order_status=2)
-            orders_dict = waybill_order_dict(bale_orders)
-        elif orders_dict['print_type'] == 'part':
-            del orders_dict['print_type']
-        else:
-            return JsonResponse({'status': 3, 'msg': '参数错误'})
+        # 参数里 国家没在这些国家里 则提示出错
+        if not set(orders_dict.keys()).issubset({'MYR','PHP','THB','IDR','SGD','BRL','TWD'}):
+            return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
         # print("结束", orders_dict)
         # 结果消息
@@ -632,12 +627,22 @@ class OrderSpiderView(View):
             return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
         if order_type == 'many':
-            if data_type in ['toship', 'shipping', 'completed', 'cancelled']:
-                shopee.get_order(data_type)
-                if shopee.num == 0:
-                    return JsonResponse({'status': 0, 'msg': '没有新订单'})
+            # ['toship', 'shipping', 'completed', 'cancelled']
+            if data_type == 'toship':
+                # 请求处理中的列表 获取新的订单
+                status_num, msg = shopee.get_order(data_type)
+                if status_num:
+                    return JsonResponse({'status': 5, 'msg': msg})
                 else:
-                    return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条订单更新'})
+                    return JsonResponse({'status': 0, 'msg': msg})
+            elif data_type == 'shipping':
+                # 根据shopid 请求订单收入信息 更新订单 根据有无实际运费判断
+                if country_type == 'BRL':
+                    # 巴西 特殊处理  待修改
+                    status_num, msg = shopee.get_order(data_type)
+                else:
+                    status_num, msg = shopee.update_order()
+                return JsonResponse({'status': 0, 'msg': msg})
             else:
                 return JsonResponse({'status': 4, 'msg': '订单状态参数错误'})
         elif order_type == 'single' and order_id:

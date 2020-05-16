@@ -85,9 +85,9 @@
                                 <th>采购单号</th>
                                 <th>采购总额</th>
                                 <th>备注</th>
+                                <th>商品链接</th>
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
-                                <th>商品链接</th>
                                 <th>商品图片</th>
                                 <th>采购数量</th>
                                 <th>清点入库</th>
@@ -113,10 +113,10 @@
                                             <td class="division-line">{{ purchase.total_price }}</td>
                                             <td class="division-line">{{ purchase.desc }}</td>
 
+                                            <td class="division-line">{{ pur_good.sku_good.goods.g_url }}</td>
+
                                             <td class="pur-good-id division-line">{{ pur_good.sku_good.sku_id }}</td>
                                             <td class="division-line">{{ pur_good.sku_good.desc }}</td>
-
-                                            <td class="division-line">{{ pur_good.sku_good.goods.g_url }}</td>
 
                                             <td class="division-line">
                                                 <img class="good_img" width="60" height="60"
@@ -147,10 +147,10 @@
                                             <td></td>
                                             <td></td>
 
+                                            <td>{{ pur_good.sku_good.goods.g_url }}</td>
+
                                             <td class="pur-good-id">{{ pur_good.sku_good.sku_id }}</td>
                                             <td>{{ pur_good.sku_good.desc }}</td>
-
-                                            <td>{{ pur_good.sku_good.goods.g_url }}</td>
 
                                             <td>
                                                 <img class="good_img" width="60" height="60"
@@ -191,9 +191,9 @@
                                 <th>采购单号</th>
                                 <th>采购总额</th>
                                 <th>备注</th>
+                                <th>商品链接</th>
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
-                                <th>商品链接</th>
                                 <th>商品图片</th>
                                 <th>采购数量</th>
                                 <th>清点入库</th>
@@ -266,7 +266,7 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+                "targets": [0, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13],
                 "searchable": false
             },
             {
@@ -274,7 +274,7 @@
                 "orderable": false
             },
             {
-                "targets": [6],
+                "targets": [4],
                 // 列渲染 以';;'分割url 分别生成超链接
                 "render": function (data, type, row) {
                     var data_html = '';
@@ -312,7 +312,7 @@
         // 添加下拉式筛选框 (非服务器模式使用）
         function col_search() {
             var api = this.api();
-            api.columns([4]).indexes().flatten().each(function (i) {
+            api.columns([5]).indexes().flatten().each(function (i) {
                 var column = api.column(i);
                 var select = $('<select><option value=""></option></select>')
                     .appendTo($(column.footer()).empty())

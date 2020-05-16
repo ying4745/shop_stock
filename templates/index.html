@@ -83,10 +83,10 @@
 {#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="MYR">#}
 {#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
 {#                        </li>#}
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="MYR">
-                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
-                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="MYR">#}
+{#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
+{#                        </li>#}
                     </ul>
                 </div>
 
@@ -109,10 +109,10 @@
                         {#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="PHP">#}
                         {#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
                         {#                        </li>#}
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="PHP">
-                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
-                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="PHP">#}
+{#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
+{#                        </li>#}
                     </ul>
                 </div>
 
@@ -135,10 +135,10 @@
                         {#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="THB">#}
                         {#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
                         {#                        </li>#}
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="THB">
-                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
-                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="THB">#}
+{#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
+{#                        </li>#}
                     </ul>
                 </div>
 
@@ -157,10 +157,10 @@
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="IDR">
                                 <i class="fa fa-battery-full"></i> 运输中</a>
                         </li>
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="IDR">
-                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
-                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="IDR">#}
+{#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
+{#                        </li>#}
                     </ul>
                 </div>
 
@@ -179,10 +179,10 @@
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="SGD">
                                 <i class="fa fa-battery-full"></i> 运输中</a>
                         </li>
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="SGD">
-                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>
-                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="SGD">#}
+{#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
+{#                        </li>#}
                     </ul>
                 </div>
 
@@ -843,7 +843,7 @@
             $.get("{% url 'get_order' %}", params = data, function (e) {
                 if (!e.status) {
                     showMessage(e.msg, 'bg-success');
-                    if (e.msg !== '没有新订单') {
+                    if (e.msg !== '没有订单更新') {
                         window.setTimeout(function () {
                             location.reload()
                         }, 2100);
