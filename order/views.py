@@ -24,6 +24,7 @@ class IndexView(View):
 
         unfinished_orders = orders.count()
         bale_orders = OrderInfo.objects.filter(Q(order_status=2) | Q(order_status=5)).count()
+        shipping_orders = OrderInfo.objects.filter(order_status=10).count()
         no_check_orders = OrderInfo.objects.filter(order_status=9).count()
         finished_orders = OrderInfo.objects.filter(Q(order_status=3) | Q(order_status=6) |
                                                    Q(order_status=7) | Q(order_status=8)).count()
@@ -49,6 +50,9 @@ class IndexView(View):
         tw_order = orders.filter(order_country='TWD')
         tw_orders, dw_tw_orders = orders_num_or_dealwith(tw_order)
 
+        vn_order = orders.filter(order_country='VND')
+        vn_orders, dw_vn_orders = orders_num_or_dealwith(vn_order)
+
         out_of_stock, orders_goods = out_of_stock_good_list(orders)
 
         return render(request, 'index.html', locals())
@@ -62,9 +66,13 @@ class IndexView(View):
         if not orders_list:
             return JsonResponse({'status': 3, 'msg': '无订单参数'})
 
-        # 根据订单 计算是否有缺货商品
         orders_obj = OrderInfo.objects.filter(order_id__in=orders_list)
 
+        # 判断要发货订单  是否已发货   检测订单状态是否为待打包
+        if orders_obj.filter(order_status=2).exists():
+            return JsonResponse({'status': 4, 'msg': '有订单已发货，请稍后查看'})
+
+        # 根据订单 计算是否有缺货商品
         out_of_stock, orders_goods = out_of_stock_good_list(orders_obj)
         out_of_num = len(out_of_stock)
         if out_of_num > 0:
@@ -118,7 +126,7 @@ class BaleOrderView(View):
             return JsonResponse({'status': 1, 'msg': '参数错误'})
 
         # 参数里 国家没在这些国家里 则提示出错
-        if not set(orders_dict.keys()).issubset({'MYR','PHP','THB','IDR','SGD','BRL','TWD'}):
+        if not set(orders_dict.keys()).issubset({'MYR','PHP','THB','IDR','SGD','BRL','TWD','VND'}):
             return JsonResponse({'status': 2, 'msg': '国家参数错误'})
 
         # print("结束", orders_dict)
@@ -142,11 +150,21 @@ class BaleOrderView(View):
         return JsonResponse({'status': 0, 'msg': '打单完成'})
 
 
+class ShippingOrderView(View):
+    """已被快递揽收订单"""
+
+    def get(self, request):
+        """快递揽收订单列表"""
+        shipping_orders = OrderInfo.objects.filter(order_status=10).order_by('-order_id')
+        shipping_orders_count = shipping_orders.count()
+        return render(request, 'shipping_order.html', {'orders': shipping_orders,
+                                                   'shipping_orders_count': shipping_orders_count})
+
 class CheckOrderView(View):
     """每天送货订单 确认页"""
 
     def get(self, request):
-        """待打包列表"""
+        """待确认列表"""
         check_orders = OrderInfo.objects.filter(order_status=9).order_by('-order_id')
         check_orders_count = check_orders.count()
         return render(request, 'check_order.html', {'orders': check_orders,
@@ -166,7 +184,8 @@ class OrderListView(View):
         '印尼': 'IDR',
         '新加坡': 'SGD',
         '巴西': 'BRL',
-        '台湾': 'TWD'
+        '台湾': 'TWD',
+        '越南': 'VND'
     }
 
     def get(self, request):
@@ -293,6 +312,7 @@ class OrderChartsView(View):
         sg_value_list = []
         br_value_list = []
         tw_value_list = []
+        vn_value_list = []
         if all_orders:
             my_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
                                           Q(order_status=8), order_country='MYR').order_by('order_time')
@@ -308,6 +328,8 @@ class OrderChartsView(View):
                                           Q(order_status=8), order_country='BRL').order_by('order_time')
             tw_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
                                           Q(order_status=8), order_country='TWD').order_by('order_time')
+            vn_orders = all_orders.filter(Q(order_status=3) | Q(order_status=6) | Q(order_status=7) |
+                                          Q(order_status=8), order_country='VND').order_by('order_time')
 
             my_value_list = order_value_list(date_list, my_orders)
             ph_value_list = order_value_list(date_list, ph_orders)
@@ -316,6 +338,7 @@ class OrderChartsView(View):
             sg_value_list = order_value_list(date_list, sg_orders)
             br_value_list = order_value_list(date_list, br_orders)
             tw_value_list = order_value_list(date_list, tw_orders)
+            vn_value_list = order_value_list(date_list, vn_orders)
 
         # 日期 去掉年份
         date_list = list(map(lambda x: x[2:], date_list))
@@ -328,6 +351,7 @@ class OrderChartsView(View):
             'sg_value_list': sg_value_list,
             'br_value_list': br_value_list,
             'tw_value_list': tw_value_list,
+            'vn_value_list': vn_value_list,
             'date_list': date_list
         }
 
@@ -392,15 +416,17 @@ class ModifyPurchaseView(View):
     def get(self, request):
         """渲染模态框中 修改页面"""
         purchase_id = request.GET.get('pur_id', '')
-        pur_goods_dict = json.loads(request.GET.get('pur_goods_dict', {}))
 
         pur_obj = PurchaseOrder.objects.filter(purchase_id=purchase_id)
 
         if pur_obj:
             pur_obj = pur_obj[0]
 
+        orders = OrderInfo.objects.filter(Q(order_status=1) | Q(order_status=4))
+        out_of_stock, orders_goods = out_of_stock_good_list(orders)
+
         return render(request, 'purchase_form.html', {'pur_obj': pur_obj,
-                                                      'pur_goods_dict': pur_goods_dict})
+                                                      'pur_goods_dict': orders_goods})
 
     @transaction.atomic
     def post(self, request):
@@ -587,6 +613,9 @@ class StockListView(View):
                     pur_good_dict['row_id'] = pur_good_index[pur_good_dict['purchase']]
                 page_data.append(pur_good_dict)
 
+            for single_data in page_data:
+                single_data['order_good_count'] = pur_good_index[single_data['purchase']]
+
         result = {
             'draw': draw,
             'recordsTotal': recordsTotal,
@@ -630,7 +659,8 @@ class OrderSpiderView(View):
 
         if order_type == 'many':
             # ['toship', 'shipping', 'completed', 'cancelled']
-            if data_type == 'toship':
+            # 新物流 URL  类型为to_process
+            if data_type in ['toship','to_process']:
                 # 请求处理中的列表 获取新的订单
                 status_num, msg = shopee.get_order(data_type)
                 if status_num:
@@ -639,11 +669,10 @@ class OrderSpiderView(View):
                     return JsonResponse({'status': 0, 'msg': msg})
             elif data_type == 'shipping':
                 # 根据shopid 请求订单收入信息 更新订单 根据有无实际运费判断
-                if country_type == 'BRL':
-                    # 巴西 特殊处理  待修改
-                    status_num, msg = shopee.get_order(data_type)
-                else:
-                    status_num, msg = shopee.update_order()
+                status_num, msg = shopee.update_order()
+                return JsonResponse({'status': 0, 'msg': msg})
+            elif data_type == 'check':
+                status_num, msg = shopee.check_order_status()
                 return JsonResponse({'status': 0, 'msg': msg})
             else:
                 return JsonResponse({'status': 4, 'msg': '订单状态参数错误'})

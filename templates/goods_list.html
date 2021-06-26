@@ -59,7 +59,7 @@
                         </li>
                     </ul>
                 </div>
-                <div class="col-xs-3">
+                <div style="width: 310px; margin-bottom: 10px;">
                     <div class="input-group">
                         <input type="text" id="single_goodsku" class="form-control" placeholder="商品SPU号">
                         <div class="input-group-btn">
@@ -104,6 +104,7 @@
                         {% csrf_token %}
                     </div>
                     <div class="box-body">
+                        <div class="table-responsive">
                         <table id="order_table" class="table table-bordered table-striped good-img-parent">
                             <thead>
                             <tr>
@@ -146,6 +147,7 @@
                             </tr>
                             </tfoot>
                         </table>
+                        </div>
                     </div> <!-- /.box-body -->
                 </div> <!-- /.box -->
             </div> <!-- /.col -->

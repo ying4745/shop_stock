@@ -268,8 +268,6 @@
     <script src="{% static 'JS/base.js' %}"></script>
 
     <script>
-        // 订单中缺货商品 所需要的数量  sku_id:数量
-        var pur_goods_dict = {{ orders_goods | safe }};
 
         var columnDefs = [
             {
@@ -375,7 +373,7 @@
                 "info": true,         <!-- 显示信息 -->
                 "pageLength": 50,    <!-- 每页显示 -->
                 "autoWidth": false,  <!-- 自动宽度 -->
-                "scrollX": false,  <!-- 水平滚动 -->
+                "scrollX": true,  <!-- 水平滚动 -->
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
@@ -386,6 +384,10 @@
                 <!-- 下表头创建回调 统计订单利润 -->
                 "footerCallback": total_profit
             });
+
+            if ($(window).width() < 500) {
+                table.columns([2, 3, 4, 9, 10, 11, 12, 13]).visible(false);
+            }
 
         });
 
@@ -437,7 +439,6 @@
                 type: 'get',
                 data: {
                     'pur_id': pur_id,
-                    'pur_goods_dict': JSON.stringify(pur_goods_dict)
                 },
                 success: function (data) {
                     $('.purchase-modal').html(data);

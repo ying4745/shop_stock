@@ -14,7 +14,8 @@ class OrderInfo(BaseModel):
         (6, '已拨款'),
         (7, '异常款'),
         (8, '丢失件'),
-        (9, '待核对')
+        (9, '待核对'),
+        (10, '已发货')
     )
     ORDER_COUNTRY_CHOICES = (
         ('MYR', '马来西亚'),
@@ -24,6 +25,7 @@ class OrderInfo(BaseModel):
         ('SGD', '新加坡'),
         ('BRL', '巴西'),
         ('TWD', '台湾'),
+        ('VND', '越南'),
     )
 
     order_id = models.CharField(max_length=16, unique=True, verbose_name='订单编号')
@@ -138,7 +140,7 @@ class PurchaseGoods(BaseModel):
 
     def stock_dict(self):
         stock_data = {
-            'order_good_count': self.purchase.purchasegoods_set.count(),
+            # 'order_good_count': self.purchase.purchasegoods_set.count(),
             'purchase': self.purchase.purchase_id,
             'total_price': self.purchase.total_price,
             'desc': self.purchase.desc,

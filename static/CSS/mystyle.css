@@ -183,3 +183,50 @@
     padding: 5px 10px;
     border-radius: 5px;
 }
+
+/* 请求按钮 遮盖 */
+.cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:rgba(0,0,0,0.4);
+    display: none;
+    z-index: 10000;
+}
+/* 遮盖中间 提示信息 没调整好 */
+.cover-box {
+    position: absolute;
+    top: 300px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: 400px;
+    height: 140px;
+    text-align: center;
+    line-height: 140px;
+    border-radius: 10px;
+    background: #d21313;
+    font-size: 26px;
+}
+
+/* 响应式布局 */
+@media screen and (max-device-width: 500px) {
+    .content {
+        padding: 2px;
+    }
+    .hidden-btn {
+        display: none;
+    }
+    /* 表格分页导航栏 适应手机微调 */
+    .paging_simple_numbers {
+        position: absolute;
+        right: 20px;
+        top: 2px;
+    }
+    /* 表格信息 不换行 */
+    div.dataTables_wrapper div.dataTables_info {
+        white-space: normal;
+    }
+}

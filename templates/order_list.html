@@ -26,6 +26,10 @@
                 <a class="btn bg-blue" href="{% url 'bale_order' %}">
                     <i class="fa fa-truck"></i> 待打包订单</a>
 
+                <a class="btn bg-blue" href="{% url 'shipping_order' %}">
+                    <i class="fa fa-truck"></i> 快递中订单
+                </a>
+
                 <a class="btn bg-blue" href="{% url 'check_order' %}">
                     <i class="fa fa-check"></i> 待确认订单</a>
 
@@ -241,6 +245,8 @@
                             } else if (data === '巴西') {
                                 td_obj.addClass('text-muted')
                             } else if (data === '台湾') {
+                                td_obj.addClass('text-red')
+                            } else if (data === '越南') {
                                 td_obj.addClass('text-maroon')
                             }
                             return data

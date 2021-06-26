@@ -2,6 +2,10 @@
 {% load static %}
 {% block title %}订单管理{% endblock %}
 
+{#{% block css %}#}
+{#    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.5/css/responsive.dataTables.min.css">#}
+{#{% endblock %}#}
+
 {% block content %}
     <!-- 同种商品sku选择列表 模态框 -->
     <div class="modal fade" id="skulist-Modal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -28,6 +32,9 @@
                 <a class="btn bg-blue-active"><i class="fa fa-truck"></i> 待打包订单
                     <span class="badge bg-yellow">{{ bale_orders_count }}</span>
                 </a>
+                <a class="btn bg-blue" href="{% url 'shipping_order' %}">
+                    <i class="fa fa-truck"></i> 快递中订单
+                </a>
                 <a class="btn bg-blue" href="{% url 'check_order' %}">
                     <i class="fa fa-check"></i> 待确认订单
                 </a>
@@ -43,7 +50,7 @@
                         <h3 class="box-title">待打包订单
                             <small>待打包</small>
                         </h3>
-                        <div class="ship_btn">
+                        <div class="ship_btn hidden-btn">
                             <button class="btn btn-primary part_waybill" data-type="all">打印选中分类</button>
                             <button class="btn btn-primary part_waybill" data-type="part">选中打单</button>
                         </div>
@@ -51,25 +58,28 @@
                             <button class="btn btn-primary order_sort" data-type="">全部订单
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort" data-type="马来西亚">马来西亚
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="马来西亚">马来西亚
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort" data-type="菲律宾">菲律宾
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="菲律宾">菲律宾
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort" data-type="泰国">泰国
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="泰国">泰国
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort" data-type="印尼">印尼
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="印尼">印尼
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort" data-type="新加坡">新加坡
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="新加坡">新加坡
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort" data-type="巴西">巴西
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="巴西">巴西
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort" data-type="台湾">台湾
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="台湾">台湾
+                                <span class="badge bg-aqua"></span>
+                            </button>
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="越南">越南
                                 <span class="badge bg-aqua"></span>
                             </button>
                             <button class="btn btn-primary order_sort" data-type="not_printed" style="margin-left: 80px">未打印订单
@@ -128,8 +138,12 @@
                                                 class="text-fuchsia text-bold division-line"
                                                     {% elif order.order_country == 'BRL' %}
                                                 class="text-muted text-bold division-line"
-                                                    {% else %}
+                                                    {% elif order.order_country == 'TWD' %}
+                                                class="text-red text-bold division-line"
+                                                    {% elif order.order_country == 'VND' %}
                                                 class="text-maroon text-bold division-line"
+                                                    {% else %}
+                                                class="text-gray text-bold division-line"
                                                     {% endif %}
                                             >{{ order.get_order_country_display }}
                                             </td>
@@ -249,6 +263,7 @@
 
     <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+{#    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.5/js/dataTables.responsive.min.js"></script>#}
     <script src="{% static 'JS/jquery.cookie.js' %}"></script>
     <script src="{% static 'JS/base.js' %}"></script>
 
@@ -291,11 +306,12 @@
             parent_ele.eq(5).children('span').text(search_order_count(api, '新加坡'));
             parent_ele.eq(6).children('span').text(search_order_count(api, '巴西'));
             parent_ele.eq(7).children('span').text(search_order_count(api, '台湾'));
+            parent_ele.eq(8).children('span').text(search_order_count(api, '越南'));
             // 查询完  数据恢复  TODO: 有问题
             api.column(2).search('');
             var un_print_num = api.column(1, {search:'applied'})
                 .search('0').data().filter(function (val, index) {return val}).length;
-            parent_ele.eq(8).children('span').text(un_print_num);
+            parent_ele.eq(9).children('span').text(un_print_num);
             api.column(1).search('');
         }
 
@@ -309,17 +325,20 @@
                 "info": true,         <!-- 显示信息 -->
                 "pageLength": 50,    <!-- 每页显示 -->
                 "autoWidth": true,  <!-- 自动宽度 -->
-                "scrollX": false,  <!-- 水平滚动 -->
+                "scrollX": true,  <!-- 水平滚动 -->
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
-                "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
-                "dom": '<"pull-left"f><"pull-right"p>irtp',
+                "columnDefs": columnDefs,  <!-- 指定列 定义属性 <"pull-right"p> -->
+                "dom": '<"pull-left"f>irtp',
                 "createdRow": createdRow,
 
                 <!-- 指定列 添加下拉搜索框 -->
                 {#initComplete: col_search,#}
             });
 
+            if ($(window).width() < 500) {
+                table.columns( [4,5,6,8,12] ).visible( false );
+            }
             // 多选行，选中添加class
             $('#order_table tbody').on('click', '.select-tr', function () {
                 $(this).parent().toggleClass('selected');

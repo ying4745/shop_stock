@@ -43,6 +43,10 @@
     </div>
     <!-- 模态框 结束 -->
 
+    <!-- 请求按钮 遮盖 -->
+    <div class="cover">
+    </div>
+
     <section class="content">
         <div class="row">
             <div class="update_div">
@@ -53,13 +57,18 @@
                     <i class="fa fa-truck"></i> 待打包订单
                     <span class="badge bg-yellow">{{ bale_orders }}</span>
                 </a>
+                <a class="btn bg-blue" href="{% url 'shipping_order' %}">
+                    <i class="fa fa-truck"></i> 快递中订单
+                    <span class="badge bg-green">{{ shipping_orders }}</span>
+                </a>
                 <a class="btn bg-blue" href="{% url 'check_order' %}">
                     <i class="fa fa-check"></i> 待确认订单
                     <span class="badge bg-gray">{{ no_check_orders }}</span>
                 </a>
                 <a class="btn bg-blue" href="{% url 'order_list' %}">
                     <i class="fa fa-check-square"></i> 已完成订单
-                    <span class="badge bg-olive">{{ finished_orders }}</span>
+                    <span class="badge bg-olive"></span>
+                    <!-- {{ finished_orders }} -->
                 </a>
             </div>
             <p class="update_div text-blue">获取订单信息</p>
@@ -72,17 +81,18 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="MYR">
-                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                            <a href="javascript:;" class="order_btn" data-value="to_process" data-country="MYR">
+                                <i class="fa fa-battery-empty"></i> 待处理</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="check" data-country="MYR">
+                                <i class="fa fa-check"></i> 快递揽收</a>
                         </li>
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="MYR">
-                                <i class="fa fa-battery-full"></i> 运输中</a>
+                                <i class="fa fa-battery-full"></i> 仓库扫描</a>
                         </li>
-{#                        <li>#}
-{#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="MYR">#}
-{#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
-{#                        </li>#}
+
 {#                        <li>#}
 {#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="MYR">#}
 {#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
@@ -98,17 +108,17 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="PHP">
-                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                            <a href="javascript:;" class="order_btn" data-value="to_process" data-country="PHP">
+                                <i class="fa fa-battery-empty"></i> 待处理</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="check" data-country="PHP">
+                                <i class="fa fa-check"></i> 快递揽收</a>
                         </li>
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="PHP">
-                                <i class="fa fa-battery-full"></i> 运输中</a>
+                                <i class="fa fa-battery-full"></i> 仓库扫描</a>
                         </li>
-                        {#                        <li>#}
-                        {#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="PHP">#}
-                        {#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
-                        {#                        </li>#}
 {#                        <li>#}
 {#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="PHP">#}
 {#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
@@ -124,41 +134,19 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="THB">
-                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                            <a href="javascript:;" class="order_btn" data-value="to_process" data-country="THB">
+                                <i class="fa fa-battery-empty"></i> 待处理</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="check" data-country="THB">
+                                <i class="fa fa-check"></i> 快递揽收</a>
                         </li>
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="THB">
-                                <i class="fa fa-battery-full"></i> 运输中</a>
+                                <i class="fa fa-battery-full"></i> 仓库扫描</a>
                         </li>
-                        {#                        <li>#}
-                        {#                            <a href="javascript:;" class="order_btn" data-value="completed" data-country="THB">#}
-                        {#                                <i class="fa fa-check"></i>&nbsp;&nbsp;已完成</a>#}
-                        {#                        </li>#}
 {#                        <li>#}
 {#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="THB">#}
-{#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
-{#                        </li>#}
-                    </ul>
-                </div>
-
-                <div class="btn-group">
-                    <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        印尼 <span class="badge bg-aqua">{{ id_orders }}</span>
-                        <span class="badge bg-gray">{{ dw_id_orders }}</span> <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="IDR">
-                                <i class="fa fa-battery-empty"></i> 待出货</a>
-                        </li>
-                        <li>
-                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="IDR">
-                                <i class="fa fa-battery-full"></i> 运输中</a>
-                        </li>
-{#                        <li>#}
-{#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="IDR">#}
 {#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
 {#                        </li>#}
                     </ul>
@@ -172,12 +160,16 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="SGD">
-                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                            <a href="javascript:;" class="order_btn" data-value="to_process" data-country="SGD">
+                                <i class="fa fa-battery-empty"></i> 待处理</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="check" data-country="SGD">
+                                <i class="fa fa-check"></i> 快递揽收</a>
                         </li>
                         <li>
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="SGD">
-                                <i class="fa fa-battery-full"></i> 运输中</a>
+                                <i class="fa fa-battery-full"></i> 仓库扫描</a>
                         </li>
 {#                        <li>#}
 {#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="SGD">#}
@@ -189,44 +181,100 @@
                 <div class="btn-group">
                     <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
+                        越南 <span class="badge bg-aqua">{{ vn_orders }}</span>
+                        <span class="badge bg-gray">{{ dw_vn_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="to_process" data-country="VND">
+                                <i class="fa fa-battery-empty"></i> 待处理</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="check" data-country="VND">
+                                <i class="fa fa-check"></i> 快递揽收</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="VND">
+                                <i class="fa fa-battery-full"></i> 仓库扫描</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
                         巴西 <span class="badge bg-aqua">{{ br_orders }}</span>
                         <span class="badge bg-gray">{{ dw_br_orders }}</span> <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="BRL">
+                            <a href="javascript:;" class="order_btn" data-value="to_process" data-country="BRL">
                                 <i class="fa fa-battery-empty"></i> 待出货</a>
                         </li>
                         <li>
+                            <a href="javascript:;" class="order_btn" data-value="check" data-country="BRL">
+                                <i class="fa fa-check"></i> 快递揽收</a>
+                        </li>
+                        <li>
                             <a href="javascript:;" class="order_btn" data-value="shipping" data-country="BRL">
-                                <i class="fa fa-battery-full"></i> 运输中</a>
+                                <i class="fa fa-battery-full"></i> 仓库扫描</a>
                         </li>
                     </ul>
                 </div>
 
-{#                <div class="btn-group">#}
-{#                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"#}
-{#                            aria-haspopup="true" aria-expanded="false">#}
-{#                       台湾 <span class="badge bg-aqua">{{ tw_orders }}</span>#}
-                {#              <span class="badge bg-gray">{{ dw_tw_orders }}</span> <span class="caret"></span>#}
-{#                    </button>#}
-{#                    <ul class="dropdown-menu">#}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        印尼 <span class="badge bg-aqua">{{ id_orders }}</span>
+                        <span class="badge bg-gray">{{ dw_id_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="to_process" data-country="IDR">
+                                <i class="fa fa-battery-empty"></i> 待处理</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="check" data-country="IDR">
+                                <i class="fa fa-check"></i> 快递揽收</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="IDR">
+                                <i class="fa fa-battery-full"></i> 仓库扫描</a>
+                        </li>
 {#                        <li>#}
-{#                            <a href="javascript:;" class="order_btn" data-value="toship" data-country="TWD">#}
-{#                                <i class="fa fa-battery-empty"></i> 待出货</a>#}
+{#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="IDR">#}
+{#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
 {#                        </li>#}
-{#                        <li>#}
-{#                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="TWD">#}
-{#                                <i class="fa fa-battery-full"></i> 运输中</a>#}
-{#                        </li>#}
+                    </ul>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                       台湾 <span class="badge bg-aqua">{{ tw_orders }}</span>
+                              <span class="badge bg-gray">{{ dw_tw_orders }}</span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="to_process" data-country="TWD">
+                                <i class="fa fa-battery-empty"></i> 待出货</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="check" data-country="TWD">
+                                <i class="fa fa-check"></i> 快递揽收</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="order_btn" data-value="shipping" data-country="TWD">
+                                <i class="fa fa-battery-full"></i> 仓库扫描</a>
+                        </li>
 {#                        <li>#}
 {#                            <a href="javascript:;" class="order_btn" data-value="cancelled" data-country="TWD">#}
 {#                                <i class="fa fa-close"></i>&nbsp;&nbsp;&nbsp;已取消</a>#}
 {#                        </li>#}
-{#                    </ul>#}
-{#                </div>#}
+                    </ul>
+                </div>
 
-                <div class="col-xs-3">
+                <div style="width: 310px; margin-bottom: 10px;">
                     <div class="input-group">
                         <input type="text" id="single_order_id" class="form-control" placeholder="订单编号">
                         <div class="input-group-btn">
@@ -246,6 +294,8 @@
                                     <i class="fa fa-university"></i> 新加坡</a></li>
                                 <li><a href="javascript:;" class="single-order-btn" data-country="BRL">
                                     <i class="fa fa-university"></i> 巴西</a></li>
+                                <li><a href="javascript:;" class="single-order-btn" data-country="VND">
+                                    <i class="fa fa-university"></i> 越南</a></li>
 {#                                <li><a href="javascript:;" class="single-order-btn" data-country="TWD">#}
 {#                                    <i class="fa fa-university"></i> 台湾</a></li>#}
                             </ul>
@@ -270,6 +320,7 @@
                         </div>
                     </div>
                     <div class="box-body">
+                    <div class="table-responsive">
                         <table id="order_table" class="table table-bordered table-striped good-img-parent">
                             <thead>
                             <tr>
@@ -298,13 +349,13 @@
                                         {% if forloop.first %}
                                             <td class="division-line">{{ forloop.parentloop.counter }}</td>
 
+                                            <td data-order="{{ order.order_shopeeid }}" data-search="{{ order.order_country }}" class="division-line">
                                             {% if order.order_status == 1 %}
-                                                <td data-order="{{ order.order_shopeeid }}"
-                                                    data-search="{{ order.order_country }}" class="division-line">
-                                                    <i class="fa fa-square-o"></i></td>
+                                                <i class="fa fa-square-o"></i>
                                             {% else %}
-                                                <td class="division-line"><i class="fa fa-square"></i></td>
+                                                <i class="fa fa-square"></i>
                                             {% endif %}
+                                            </td>
 
                                             <td data-search="{{ order.get_order_country_display }}"
                                                     {% if order.order_country == 'PHP' %}
@@ -319,8 +370,12 @@
                                                 class="text-fuchsia text-bold division-line"
                                                     {% elif order.order_country == 'BRL' %}
                                                 class="text-muted text-bold division-line"
-                                                    {% else %}
+                                                    {% elif order.order_country == 'TWD' %}
+                                                class="text-red text-bold division-line"
+                                                    {% elif order.order_country == 'VND' %}
                                                 class="text-maroon text-bold division-line"
+                                                    {% else %}
+                                                class="text-gray text-bold division-line"
                                                     {% endif %}
                                             >{{ order.get_order_country_display }}
                                             </td>
@@ -399,13 +454,13 @@
                                     <tr>
                                         <td class="division-line">{{ forloop.counter }}</td>
 
-                                        {% if order.order_status == 1 %}
-                                            <td data-order="{{ order.order_shopeeid }}"
-                                                data-search="{{ order.order_country }}" class="division-line">
-                                                <i class="fa fa-square-o"></i></td>
-                                        {% else %}
-                                            <td class="division-line"><i class="fa fa-square"></i></td>
-                                        {% endif %}
+                                        <td data-order="{{ order.order_shopeeid }}" data-search="{{ order.order_country }}" class="division-line">
+                                            {% if order.order_status == 1 %}
+                                                <i class="fa fa-square-o"></i>
+                                            {% else %}
+                                                <i class="fa fa-square"></i>
+                                            {% endif %}
+                                        </td>
 
                                         <td data-search="{{ order.get_order_country_display }}"
                                                 {% if order.order_country == 'PHP' %}
@@ -420,8 +475,12 @@
                                             class="text-fuchsia text-bold division-line"
                                                 {% elif order.order_country == 'BRL' %}
                                             class="text-muted text-bold division-line"
-                                                {% else %}
+                                                {% elif order.order_country == 'TWD' %}
+                                            class="text-muted text-bold division-line"
+                                                {% elif order.order_country == 'VND' %}
                                             class="text-maroon text-bold division-line"
+                                                {% else %}
+                                            class="text-gray text-bold division-line"
                                                 {% endif %}
                                         >{{ order.get_order_country_display }}
                                         </td>
@@ -493,6 +552,7 @@
                             </tfoot>
                         </table>
 
+                    </div>
                     </div> <!-- /.box-body -->
                 </div> <!-- /.box -->
             </div> <!-- /.col -->
@@ -631,6 +691,7 @@
                 var order_num = 0;
                 var ship_html = '<ul class="list-group text-center">';
                 table.rows('.selected').data().each(function (i) {
+                    console.log(i);
                     if (i[1]['@data-order'] && i[1]['@data-search']) {
                         ship_html = ship_html + '<li class="list-group-item" data-country=' + i[1]['@data-search']
                             + '>' + i[1]['@data-order'] + '</li>';
@@ -765,8 +826,8 @@
                 $('#customer-remark').remove();
             });
 
-            // 点击订单号， 跳转到订单修改页
-            $('#order_table tbody').on('click', '.order-update', function () {
+            // 双击订单号， 跳转到订单修改页
+            $('#order_table tbody').on('dblclick', '.order-update', function () {
                 var order_id = $(this).attr('data-id');
                 var url = '/xadmin/order/orderinfo/'+ order_id +'/update/';
                 window.open(url)
@@ -804,6 +865,7 @@
                 showMessage('参数错误');
                 return
             }
+            $(".cover").show();
             $.ajax({
                 url: url,
                 type: 'post',
@@ -814,6 +876,7 @@
                 success: function (e) {
                     if (e.status) {
                         $('#myModal').modal('hide');
+                        $(".cover").hide();
                         showMessage(e.msg);
                     } else {
                         $('#myModal').modal('hide');

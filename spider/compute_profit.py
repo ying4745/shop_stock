@@ -21,7 +21,7 @@ from decimal import Decimal
 
 # 手动计算 马来 利润
 def compute_profit():
-    all_order = OrderInfo.objects.filter(order_country='MYR', order_time__gt='190615')
+    all_order = OrderInfo.objects.filter(order_country='MYR', order_time__gt='190703')
     for order_info in all_order:
         if str(order_info.order_income) != '0.00':
             order_cost = 0  # 订单成本(人民币）

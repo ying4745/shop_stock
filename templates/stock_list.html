@@ -32,12 +32,8 @@
                             <thead>
                             <tr>
                                 <th>采购单号</th>
-                                <th>采购总额</th>
-                                <th>备注</th>
-                                <th>序号</th>
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
-                                <th>商品链接</th>
                                 <th>商品图片</th>
                                 <th>商品数量</th>
                                 <th>商品进价</th>
@@ -47,12 +43,8 @@
                             <tfoot>
                             <tr>
                                 <th>采购单号</th>
-                                <th>采购总额</th>
-                                <th>备注</th>
-                                <th>序号</th>
                                 <th>商品SKU</th>
                                 <th>商品规格</th>
-                                <th>商品链接</th>
                                 <th>商品图片</th>
                                 <th>商品数量</th>
                                 <th>商品进价</th>
@@ -77,11 +69,11 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0, 1, 2, 3, 5, 6, 7, 8, 9],
+                "targets": [2, 3, 4, 5],
                 "searchable": false
             },
             {
-                "targets": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                "targets": [1, 2, 3, 4, 5],
                 "orderable": false
             },
         ];
@@ -92,7 +84,7 @@
             var intVal = function (i) {
                 return i * 100
             };
-            api.columns([1,8]).indexes().flatten().each(function (i) {
+            api.columns([4]).indexes().flatten().each(function (i) {
                 // 当前页数据统计
                 pageTotal = api.column(i, {page: 'current'})
                     .data().reduce(function (a, b) {
@@ -117,12 +109,12 @@
                     $(this).addClass('division-line')
                 });
                 $(row).find("td").eq(0).attr('rowspan', data.order_good_count);
-                $(row).find("td").eq(1).attr('rowspan', data.order_good_count);
-                $(row).find("td").eq(2).attr('rowspan', data.order_good_count);
+                {#$(row).find("td").eq(1).attr('rowspan', data.order_good_count);#}
+                {#$(row).find("td").eq(2).attr('rowspan', data.order_good_count);#}
             } else {
                 $(row).find("td").eq(0).remove();
-                $(row).find("td").eq(0).remove();
-                $(row).find("td").eq(0).remove();
+                {#$(row).find("td").eq(0).remove();#}
+                {#$(row).find("td").eq(0).remove();#}
             }
         }
 
@@ -134,7 +126,7 @@
                 "info": true,         <!-- 显示信息 -->
                 "pageLength": 50,    <!-- 每页显示 -->
                 "autoWidth": false,  <!-- 自动宽度 -->
-                "scrollX": false,  <!-- 水平滚动 -->
+                "scrollX": true,  <!-- 水平滚动 -->
                 "language": language,  <!-- 语言 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
                 "dom": '<"table_top"fi>prtp',
@@ -160,34 +152,8 @@
                 <!-- 自定义每一列属性 -->
                 "columns": [
                     {"data": "purchase"},
-                    {"data": "total_price"},
-                    {"data": "desc"},
-                    {
-                        "data": null,
-                        "render": function (data, type, row, meta) {
-                            return meta.row + 1
-                        }
-                    },
                     {"data": "sku_good"},
                     {"data": "sku_desc"},
-                    {
-                        "data": "sku_url",
-                        // 列渲染 以';;'分割url 分别生成超链接
-                        "render": function (data, type, row, meta) {
-                            var data_html = '';
-                            data = data.split(';;');
-                            if (data == false) {
-                                return ''
-                            } else {
-                                $.each(data, function (i, v) {
-                                    if (v) {
-                                        data_html += '<a target="_blank" href="' + v + '">链接' + (i + 1) + '</a></br>'
-                                    }
-                                });
-                                return data_html;
-                            }
-                        },
-                    },
                     {
                         "data": "sku_img",
                         "render": function (data, type, row, meta) {

@@ -23,7 +23,7 @@ from goods.views import AutoFollowView
 from goods.views import GoodsListView, GoodsSpiderView, ModifyGoodsView, SingleGoodsListView
 from order.views import OrderListView, IndexView, OrderSpiderView, BuyGoodsView, ModifyPurchaseView
 from order.views import StockView, StockListView, OrderChartsView, OrderInfoView, OrderWaybillView
-from order.views import BaleOrderView, CheckIncomeView, CheckOrderView
+from order.views import BaleOrderView, CheckIncomeView, CheckOrderView, ShippingOrderView
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
@@ -50,6 +50,7 @@ urlpatterns = [
 
     path('bale/order/', BaleOrderView.as_view(), name='bale_order'),                # 打包订单 打印运单号
     path('check/order/', CheckOrderView.as_view(), name='check_order'),             # 每天送货订单确认
+    path('shipping/order/', ShippingOrderView.as_view(), name='shipping_order'),    # 快递发往仓库中订单列表
 
     path('check/income/', CheckIncomeView.as_view(), name='check_income'),          # 核对收款
 
