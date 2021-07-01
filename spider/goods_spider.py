@@ -14,7 +14,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from django.db import transaction
 
-from spider import sp_config
+from spider import sp_config, add_config
 from spider.print_waybill import print_PDF, OldCropPDF
 from goods.models import Goods, GoodsSKU
 from order.models import OrderInfo, OrderGoods
@@ -24,8 +24,8 @@ class PhGoodsSpider():
 
     def __init__(self):
 
-        self.name = sp_config.PH_USERNAME
-        self.password = sp_config.PH_PASSWORD
+        self.name = add_config.PH_USERNAME
+        self.password = add_config.PH_PASSWORD
 
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.PH_COOKIES_SAVE)
@@ -51,14 +51,14 @@ class PhGoodsSpider():
         self.order_path = sp_config.PH_ORDER_LOG
 
         # 兑换汇率
-        self.exchange_rate = sp_config.PHP_CONVERT_RMB
+        self.exchange_rate = add_config.PHP_CONVERT_RMB
         # 每个订单附加费用
-        self.order_add_fee = sp_config.ORDER_ADD_FEE
+        self.order_add_fee = add_config.ORDER_ADD_FEE
         # 每件商品附加费用
-        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.product_add_fee = add_config.PRODUCT_ADD_FEE
         # 国家标示
         self.country = 'PHP'
-        self.shop_id = sp_config.PH_SHOP_ID
+        self.shop_id = add_config.PH_SHOP_ID
 
         self.get_shipID = sp_config.PH_SHIP_ID
 
@@ -744,7 +744,7 @@ class PhGoodsSpider():
                             return '下载的PDF格式错误, 打单失败！'
                         # 文件名
                         file_name = self.country + '-0-(' +str(i) +').pdf'
-                        file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
+                        file_path = os.path.join(add_config.PRINT_WAYBILL_PATH, file_name)
 
                         with open(file_path, 'wb') as f:
                             f.write(pdf_data)
@@ -850,8 +850,8 @@ class PhGoodsSpider():
 class MYGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
-        self.name = sp_config.MY_USERNAME
-        self.password = sp_config.MY_PASSWORD
+        self.name = add_config.MY_USERNAME
+        self.password = add_config.MY_PASSWORD
 
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.MY_COOKIES_SAVE)
@@ -877,13 +877,13 @@ class MYGoodsSpider(PhGoodsSpider):
         self.order_path = sp_config.MY_ORDER_LOG
 
         # 兑换汇率
-        self.exchange_rate = sp_config.MYR_CONVERT_RMB
+        self.exchange_rate = add_config.MYR_CONVERT_RMB
         # 每个订单附加费用
-        self.order_add_fee = sp_config.ORDER_ADD_FEE
-        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.order_add_fee = add_config.ORDER_ADD_FEE
+        self.product_add_fee = add_config.PRODUCT_ADD_FEE
 
         self.country = 'MYR'
-        self.shop_id = sp_config.MY_SHOP_ID
+        self.shop_id = add_config.MY_SHOP_ID
 
         self.get_shipID = sp_config.MY_SHIP_ID
 
@@ -901,8 +901,8 @@ class MYGoodsSpider(PhGoodsSpider):
 class ThGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
-        self.name = sp_config.TH_USERNAME
-        self.password = sp_config.TH_PASSWORD
+        self.name = add_config.TH_USERNAME
+        self.password = add_config.TH_PASSWORD
 
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.TH_COOKIES_SAVE)
@@ -928,13 +928,13 @@ class ThGoodsSpider(PhGoodsSpider):
         self.order_path = sp_config.TH_ORDER_LOG
 
         # 兑换汇率
-        self.exchange_rate = sp_config.THB_CONVERT_RMB
+        self.exchange_rate = add_config.THB_CONVERT_RMB
         # 每个订单附加费用
-        self.order_add_fee = sp_config.ORDER_ADD_FEE
-        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.order_add_fee = add_config.ORDER_ADD_FEE
+        self.product_add_fee = add_config.PRODUCT_ADD_FEE
 
         self.country = 'THB'
-        self.shop_id = sp_config.TH_SHOP_ID
+        self.shop_id = add_config.TH_SHOP_ID
 
         self.get_shipID = sp_config.TH_SHIP_ID
 
@@ -952,8 +952,8 @@ class ThGoodsSpider(PhGoodsSpider):
 class IdGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
-        self.name = sp_config.ID_USERNAME
-        self.password = sp_config.ID_PASSWORD
+        self.name = add_config.ID_USERNAME
+        self.password = add_config.ID_PASSWORD
 
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.ID_COOKIES_SAVE)
@@ -979,13 +979,13 @@ class IdGoodsSpider(PhGoodsSpider):
         self.order_path = sp_config.ID_ORDER_LOG
 
         # 兑换汇率
-        self.exchange_rate = sp_config.IDR_CONVERT_RMB
+        self.exchange_rate = add_config.IDR_CONVERT_RMB
         # 每个订单附加费用
-        self.order_add_fee = sp_config.ORDER_ADD_FEE
-        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.order_add_fee = add_config.ORDER_ADD_FEE
+        self.product_add_fee = add_config.PRODUCT_ADD_FEE
 
         self.country = 'IDR'
-        self.shop_id = sp_config.ID_SHOP_ID
+        self.shop_id = add_config.ID_SHOP_ID
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -1017,7 +1017,7 @@ class IdGoodsSpider(PhGoodsSpider):
                         return '下载的PDF格式错误, 打单失败！'
                     # 文件名
                     file_name = 'WorkPDF00ID.pdf'
-                    file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
+                    file_path = os.path.join(add_config.PRINT_WAYBILL_PATH, file_name)
 
                     with open(file_path, 'wb') as f:
                         f.write(pdf_data)
@@ -1044,8 +1044,8 @@ class IdGoodsSpider(PhGoodsSpider):
 class SgGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
-        self.name = sp_config.SG_USERNAME
-        self.password = sp_config.SG_PASSWORD
+        self.name = add_config.SG_USERNAME
+        self.password = add_config.SG_PASSWORD
 
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.SG_COOKIES_SAVE)
@@ -1071,13 +1071,13 @@ class SgGoodsSpider(PhGoodsSpider):
         self.order_path = sp_config.SG_ORDER_LOG
 
         # 兑换汇率
-        self.exchange_rate = sp_config.SGD_CONVERT_RMB
+        self.exchange_rate = add_config.SGD_CONVERT_RMB
         # 每个订单附加费用
-        self.order_add_fee = sp_config.ORDER_ADD_FEE
-        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.order_add_fee = add_config.ORDER_ADD_FEE
+        self.product_add_fee = add_config.PRODUCT_ADD_FEE
 
         self.country = 'SGD'
-        self.shop_id = sp_config.SG_SHOP_ID
+        self.shop_id = add_config.SG_SHOP_ID
 
         self.get_shipID = sp_config.SG_SHIP_ID
 
@@ -1126,8 +1126,8 @@ class SgGoodsSpider(PhGoodsSpider):
 class TwGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
-        self.name = sp_config.TW_USERNAME
-        self.password = sp_config.TW_PASSWORD
+        self.name = add_config.TW_USERNAME
+        self.password = add_config.TW_PASSWORD
 
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.TW_COOKIES_SAVE)
@@ -1153,10 +1153,10 @@ class TwGoodsSpider(PhGoodsSpider):
         self.order_path = sp_config.TW_ORDER_LOG
 
         # 兑换汇率
-        self.exchange_rate = sp_config.TWD_CONVERT_RMB
+        self.exchange_rate = add_config.TWD_CONVERT_RMB
         # 每个订单附加费用
-        self.order_add_fee = sp_config.ORDER_ADD_FEE
-        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.order_add_fee = add_config.ORDER_ADD_FEE
+        self.product_add_fee = add_config.PRODUCT_ADD_FEE
 
         self.country = 'TWD'
         self.shop_id = sp_config.TW_SHOP_ID
@@ -1175,8 +1175,8 @@ class TwGoodsSpider(PhGoodsSpider):
 class VnGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
-        self.name = sp_config.VN_USERNAME
-        self.password = sp_config.VN_PASSWORD
+        self.name = add_config.VN_USERNAME
+        self.password = add_config.VN_PASSWORD
 
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.VN_COOKIES_SAVE)
@@ -1202,13 +1202,13 @@ class VnGoodsSpider(PhGoodsSpider):
         self.order_path = sp_config.VN_ORDER_LOG
 
         # 兑换汇率
-        self.exchange_rate = sp_config.VND_CONVERT_RMB
+        self.exchange_rate = add_config.VND_CONVERT_RMB
         # 每个订单附加费用
-        self.order_add_fee = sp_config.ORDER_ADD_FEE
-        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.order_add_fee = add_config.ORDER_ADD_FEE
+        self.product_add_fee = add_config.PRODUCT_ADD_FEE
 
         self.country = 'VND'
-        self.shop_id = sp_config.VN_SHOP_ID
+        self.shop_id = add_config.VN_SHOP_ID
 
         self.get_shipID = sp_config.VN_SHIP_ID
 
@@ -1226,8 +1226,8 @@ class VnGoodsSpider(PhGoodsSpider):
 class BrGoodsSpider(PhGoodsSpider):
 
     def __init__(self):
-        self.name = sp_config.BR_USERNAME
-        self.password = sp_config.BR_PASSWORD
+        self.name = add_config.BR_USERNAME
+        self.password = add_config.BR_PASSWORD
 
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.BR_COOKIES_SAVE)
@@ -1253,13 +1253,13 @@ class BrGoodsSpider(PhGoodsSpider):
         self.order_path = sp_config.BR_ORDER_LOG
 
         # 兑换汇率
-        self.exchange_rate = sp_config.BRL_CONVERT_RMB
+        self.exchange_rate = add_config.BRL_CONVERT_RMB
         # 每个订单附加费用
-        self.order_add_fee = sp_config.ORDER_ADD_FEE
-        self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+        self.order_add_fee = add_config.ORDER_ADD_FEE
+        self.product_add_fee = add_config.PRODUCT_ADD_FEE
 
         self.country = 'BRL'
-        self.shop_id = sp_config.BR_SHOP_ID
+        self.shop_id = add_config.BR_SHOP_ID
 
         self.get_shipID = sp_config.BR_SHIP_ID
 
@@ -1312,8 +1312,8 @@ class BrGoodsSpider(PhGoodsSpider):
 #         # 兑换汇率
 #         self.exchange_rate = sp_config.MYR_CONVERT_RMB
 #         # 每个订单附加费用
-#         self.order_add_fee = sp_config.ORDER_ADD_FEE
-#         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
+#         self.order_add_fee = add_config.ORDER_ADD_FEE
+#         self.product_add_fee = add_config.PRODUCT_ADD_FEE
 #         self.country = 'BRL'
 #
 #         self.num = 0
@@ -1648,7 +1648,7 @@ class BrGoodsSpider(PhGoodsSpider):
 #                             return '下载的PDF格式错误, 打单失败！'
 #                         # 文件名
 #                         file_name = self.country + '--(' + str(i) + ').pdf'
-#                         file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
+#                         file_path = os.path.join(add_config.PRINT_WAYBILL_PATH, file_name)
 #
 #                         with open(file_path, 'wb') as f:
 #                             f.write(pdf_data)
@@ -1676,392 +1676,6 @@ class BrGoodsSpider(PhGoodsSpider):
 #                 return '发送请求出错'
 #
 #         return ''
-#
-#     # 订单收入 核对（按打款日期周期 获取订单信息）
-#     def parse_check_income_url(self, page, start_date, end_date):
-#         data = {
-#             'SPC_CDS': self.cookies['SPC_CDS'],
-#             'SPC_CDS_VER': 2,
-#             'start_date': start_date,
-#             'end_date': end_date,
-#             'tran_type': 0,
-#             'page_number': page,
-#             'page_size': 50
-#         }
-#         return self.parse_url(self.check_income_url, data)
-#
-#     def check_order_income(self, order_data):
-#         for order_info in order_data['data']['list']:
-#             # 平台订单收入保留两位小数 累加
-#             shopee_order_income = Decimal(order_info['amount']).quantize(Decimal('0.00'))
-#             self.check_msg['shopee_count'] += shopee_order_income
-#             self.check_msg['shopee_order'] += 1
-#             if order_info['release_time_str'] not in self.check_msg['shopee_pay_time']:
-#                 self.check_msg['shopee_pay_time'].append(order_info['release_time_str'])
-#
-#             order_obj = OrderInfo.objects.filter(order_shopeeid=order_info['order_id'])
-#             if not order_obj:
-#                 self.check_msg['not_found_order_list'].append(order_info['order_id'])
-#                 continue
-#
-#             order_income = order_obj[0].order_income
-#
-#             # 如果平台收入 等于 则更新订单状态、打款时间
-#             if order_income == shopee_order_income:
-#                 order_obj.update(order_status=6, order_pay_time=order_info['release_time_str'])
-#                 self.check_msg['order_count'] += order_income
-#                 self.check_msg['success_order'] += 1
-#             # 不等于 则订单状态为异常，打款时间 记录平台收入
-#             else:
-#                 order_obj.update(order_status=7, order_pay_time=shopee_order_income)
-#                 self.check_msg['error_order_list'].append(order_info['order_id'])
-#
-#     def get_income_order(self, page, start_date, end_date, is_all=True):
-#         """根据打款时间 获取订单打款信息"""
-#         self.is_cookies()
-#         msg_num, order_data = self.parse_check_income_url(page, start_date, end_date)
-#         # TODO: 错误消息传出7
-#         self.check_order_income(order_data)
-#
-#         if is_all:
-#             total = order_data['data']['page_info']['total']
-#             pages = (total + 49) // 50
-#             for i in range(page + 1, pages + 1):
-#                 self.get_income_order(i, start_date, end_date, is_all=False)
-#
-
-# 旧巴西 class类
-# class BrGoodsSpider(PhGoodsSpider):
-#
-#     def __init__(self):
-#         self.name = sp_config.MY_USERNAME
-#         self.password = sp_config.MY_PASSWORD
-#
-#         self.headers = {'user-agent': sp_config.USER_AGENT}
-#         self.cookies = get_cookies_from_file(sp_config.MY_COOKIES_SAVE)
-#
-#         self.login_url = sp_config.MY_LOGIN_URL
-#         self.product_url = sp_config.MY_PRODUCT_URL
-#
-#         self.order_url = sp_config.BR_ORDER_URL
-#         # 巴西
-#         self.order_detail_url = sp_config.BR_ORDER_DETAIL_URL
-#         self.one_order_url = sp_config.BR_ONE_ORDER_URL
-#
-#         self.forderid_url = sp_config.MY_FORDERID_URL
-#         self.check_income_url = sp_config.MY_CHECK_INCOME_URL
-#
-#         # 巴西
-#         self.make_waybill_url = sp_config.BR_MAKE_WAYBILL_URL
-#         self.waybill_url = sp_config.BR_WAYBILL_URL
-#
-#         self.cookies_path = sp_config.MY_COOKIES_SAVE
-#         self.error_path = sp_config.MY_ERROR_LOG
-#         self.update_path = sp_config.MY_UPDATE_LOG
-#         self.order_path = sp_config.MY_ORDER_LOG
-#
-#         # 兑换汇率
-#         self.exchange_rate = sp_config.MYR_CONVERT_RMB
-#         # 每个订单附加费用
-#         self.order_add_fee = sp_config.ORDER_ADD_FEE
-#         self.product_add_fee = sp_config.PRODUCT_ADD_FEE
-#         self.country = 'BRL'
-#
-#         self.num = 0
-#         self.add_orderid_dict = {}
-#         self.check_msg = {'shopee_order': 0,
-#                           'shopee_count': 0,
-#                           'shopee_pay_time': [],
-#                           'success_order': 0,
-#                           'not_found_order_list': [],
-#                           'error_order_list': [],
-#                           'order_count': 0
-#                           }
-#
-#     # 订单抓取
-#     def parse_order_url(self, type, page):
-#         """发送请求，获取订单数据字典"""
-#         data = {
-#             'SPC_CDS': self.cookies['SPC_CDS'],
-#             'SPC_CDS_VER': 2,
-#             'is_massship': 'false',
-#             'offset': page,
-#             'limit': 40,
-#             'list_type': type,
-#             'order_by_create_date': 'desc',
-#             'sip_shopid': 191538284,
-#             'sip_region': 'br'
-#         }
-#         return self.parse_url(self.order_url, data)
-#
-#     def save_order_data(self, order_data):
-#         """解析订单信息 保存到数据库"""
-#         for order_info in order_data['data']['orders']:
-#
-#             # 解析订单 用户数据  生成订单详情
-#             order_obj = self.parse_create_order(order_info)
-#
-#             if not order_obj:
-#                 continue
-#
-#         if self.num > 0:
-#             # add_orderid_dict 字典的键为orderid 值为order_obj对象
-#             orderid_list = str(list(self.add_orderid_dict.keys()))
-#             data = {
-#                 'SPC_CDS': self.cookies['SPC_CDS'],
-#                 'SPC_CDS_VER': 2,
-#                 'orderid_list': orderid_list,
-#                 'affi_shopid': 191538284
-#             }
-#             msg_num, order_detail_list = self.parse_url(self.order_detail_url, data)
-#             # TODO: 错误消息传出8
-#             # 循环 每一个订单 根据shopid找到 订单
-#             for order_detail in order_detail_list['data']['list']:
-#                 order_obj = self.add_orderid_dict[order_detail['orderid']]
-#                 self.parse_ordergood(order_detail, order_obj)
-#
-#     def get_order(self, type='toship', page=0, is_all=False):
-#         """获取订单信息 保存到数据库
-#             :type   'toship'  待出货订单
-#                     'shipping' 运输中订单
-#                     'completed' 已完成订单
-#         """
-#         self.is_cookies()
-#         msg_num, order_data = self.parse_order_url(type, page)
-#         # TODO: 错误消息传出4
-#         self.save_order_data(order_data)
-#
-#         if is_all:
-#             try:
-#                 total = order_data['data']['meta']['total']
-#             except:
-#                 return 6, '返回数据错误'
-#
-#             pages = (total + 39) // 40
-#             for i in range(page + 1, pages + 1):
-#                 self.get_order(type, page=i * 40, is_all=False)
-#
-#         if self.num == 0:
-#             return 0, '没有订单更新'
-#         else:
-#             return 0, str(self.num) + ' 条订单更新'
-#
-#     def parse_create_order(self, order_info):
-#         """解析创建订单，创建订单同时创建订单商品，更新订单不更新订单商品"""
-#
-#         # 如果订单状态为取消，不创建，如已有订单 则删除
-#         # 订单状态：待出货和已运送为 2，已取消为5，已完成为4
-#         # 订单类型：待出货 7；已运送 8；已完成 3；已取消 4
-#         # 已完成的订单，不再更新
-#         order_obj = OrderInfo.objects.filter(order_id=order_info['order_sn'])
-#         if order_obj:
-#             # 已有订单 状态不是已打单时，不再同步
-#             if order_obj[0].order_status != 5:
-#                 return None
-#             # 订单为取消状态时  删除订单
-#             if order_info['status'] == 5:
-#                 order_obj[0].delete()
-#                 return None
-#             # 订单状态 在运输中时，更新自己系统订单状态为 待确认
-#             if order_info['list_type'] == 8:
-#                 order_obj.update(order_status=9)
-#                 self.num += 1
-#                 return None
-#
-#         # 订单用户收货率
-#         delivery_order = order_info['buyer_user']['delivery_order_count']
-#         # 考虑订单用户第一次购物
-#         if delivery_order == 0:
-#             customer_info = '100%&0'
-#         else:
-#             customer_info = str(order_info['buyer_user']['delivery_succ_count'] * 100 // delivery_order) + '%&' + str(
-#                 delivery_order)
-#         # 商品总价
-#         total_price = 0
-#
-#         o_data = {
-#             'order_time': order_info['order_sn'][:6],
-#             'order_shopeeid': order_info['order_id'],
-#             'customer': order_info['buyer_user']['user_name'],
-#             'customer_remark': order_info['remark'],
-#             'customer_info': customer_info,
-#             'total_price': total_price,
-#             'order_country': order_info['currency']
-#         }
-#         order_obj, is_c = OrderInfo.objects.update_or_create(order_id=order_info['order_sn'], defaults=o_data)
-#
-#         if is_c:
-#             self.num += 1
-#             self.add_orderid_dict[order_info['order_id']] = order_obj
-#
-#         return order_obj
-#
-#     def parse_ordergood(self, order_detail, order_obj):
-#         """解析数据 创建订单商品"""
-#
-#         order_cost = 0  # 订单成本(人民币）
-#         # 循环订单中的每一项商品，添加订单商品
-#         for order_item in order_detail['order_items']:
-#             good_sku = order_item['model_sku']
-#             try:
-#                 good_obj = GoodsSKU.objects.get(sku_id=good_sku)
-#             except Exception as e:
-#                 save_log(self.error_path, str(e.args))
-#                 msg = '(' + order_obj.order_id + ') 缺失商品： ' + good_sku + '\t'
-#                 save_log(self.order_path, msg, err_type='@订单商品错误：')
-#                 # 订单备注中 记录缺失的商品
-#                 order_obj.order_desc = order_obj.order_desc + good_sku + ', '
-#                 order_obj.save()
-#                 # 跳过该商品， 记录下 手动修复
-#                 continue
-#
-#             # 查找该订单中 商品是否存在
-#             order_good = OrderGoods.objects.filter(order=order_obj, sku_good=good_obj)
-#             # 如订单中已有该商品，则累加数量
-#             if order_good:
-#                 order_good.update(count=F('count') + order_item['quantity'])
-#             # 没有，则创建该订单商品
-#             else:
-#                 try:
-#                     # 同一个订单 同种商品 记录只能有一条 唯一确认标志
-#                     OrderGoods.objects.create(order=order_obj, sku_good=good_obj,
-#                                               count=order_item['quantity'],
-#                                               price=order_item['settlement_price'])
-#                 except Exception as e:
-#                     # TODO: 报错未处理
-#                     save_log(self.error_path, str(e.args))
-#
-#             # 商品的成本  每件商品进价上加一元国内运杂费 进价低于6元不附加
-#             good_buy_price = good_obj.buy_price
-#             if good_buy_price < 6:
-#                 order_cost += good_buy_price * Decimal(order_item['quantity'])
-#             else:
-#                 order_cost += (good_buy_price + Decimal(self.product_add_fee)) \
-#                               * Decimal(order_item['quantity'])
-#
-#         order_profit = Decimal(order_detail['net_settlement_amount']) * Decimal(self.exchange_rate) \
-#                        - Decimal(order_cost) - Decimal(self.order_add_fee)
-#
-#         order_obj.total_price=order_detail['settlement_amount']
-#         order_obj.order_income=order_detail['net_settlement_amount']
-#         order_obj.order_profit=order_profit
-#         order_obj.save()
-#
-#     # 单个订单
-#     def parse_single_order_url(self, order_id):
-#         """
-#         :param order_id: shopee平台 订单号
-#         """
-#         data = {
-#             'SPC_CDS': self.cookies['SPC_CDS'],
-#             'SPC_CDS_VER': 2,
-#             'sip_region': 'br',
-#             'sip_shopid': 191538284,
-#             'order_id': order_id
-#         }
-#         return self.parse_url(self.one_order_url, data)
-#
-#     def get_single_order(self, order_id):
-#         order_id = int(order_id)
-#         self.is_cookies()
-#         msg_num, order_data = self.parse_single_order_url(order_id)
-#         # TODO: 错误消息传出5
-#         if order_data['data']:
-#             order_obj = self.parse_create_order(order_data['data'])
-#
-#             if not order_obj:
-#                 return '订单已取消/已完成'
-#
-#             data = {
-#                 'orderid_list': str([order_id]),
-#             }
-#             msg_num, order_detail_list = self.parse_url(self.order_detail_url, data)
-#             # TODO: 错误消息传出6
-#             self.parse_ordergood(order_detail_list['data']['list'][0], order_obj)
-#
-#             return '订单同步完成'
-#
-#         return '没找到订单'
-#
-#     # 生成运单号
-#     def make_order_waybill(self, orderid):
-#         self.is_cookies()
-#         # 组成URL 平台订单号
-#         url = self.make_waybill_url.format(self.cookies['SPC_CDS'])
-#
-#         data = {"channel_id": 90001, "order_id": int(orderid)}
-#
-#         try:
-#             for i in range(2):
-#                 response = requests.post(url, data=data, cookies=self.cookies, headers=self.headers)
-#
-#                 if response.status_code == 200:
-#                     res_msg = json.loads(response.text)
-#                     if res_msg['code'] == 0:
-#                         return ''
-#                     else:
-#                         save_log(self.error_path, res_msg['user_message'])
-#                         return res_msg['user_message']
-#                 if i == 0:
-#                     self.login()
-#
-#             save_log(self.error_path, '验证出错，超出请求次数')
-#             return '验证出错：超出请求次数'
-#
-#         except Exception as e:
-#             save_log(self.error_path, str(e.args))
-#             return '发送请求出错'
-#
-#     def down_order_waybill(self, orderids):
-#         """下载运单号
-#         orderids: 订单号列表 ['2224060720','2221118585','2222123945']
-#         订单号由字符串转成整数  列表转成字符串 如'[2349952432]'
-#         """
-#
-#         orderids = str(list(map(lambda x: int(x), orderids)))
-#         data = {
-#             'sip_region': 'br',
-#             'sip_shopid': 191538284,
-#             'orderids': orderids,
-#         }
-#
-#         self.is_cookies()
-#
-#         try:
-#             for i in range(2):
-#                 response = requests.get(self.waybill_url, params=data, cookies=self.cookies, headers=self.headers)
-#
-#                 if response.status_code == 200:
-#                     pdf_data = response.content
-#                     if not pdf_data.startswith(b'%PDF-1.'):
-#                         return '下载的PDF格式错误, 打单失败！'
-#
-#                     # 提取header中隐藏的文件名
-#                     # print(response.headers._store['content-disposition'][1])
-#                     file_name = re.search(r'\"(.*)\"', response.headers._store['content-disposition'][1]).group(1)
-#                     file_path = os.path.join(sp_config.PRINT_WAYBILL_PATH, file_name)
-#
-#                     with open(file_path, 'wb') as f:
-#                         f.write(pdf_data)
-#
-#                     if os.path.isfile(file_path):
-#                         # 调用旧打印类 切割pdf 打印运单
-#                         crop_pdf = OldCropPDF(file_dir=sp_config.PRINT_WAYBILL_PATH)
-#                         crop_pdf.run()
-#
-#                     return ''
-#
-#                 # print(response.status_code)  # 403
-#                 # 验证出错，重新登录，再请求
-#                 if i == 0:
-#                     self.login()
-#
-#             save_log(self.error_path, '验证出错，超出请求次数')
-#             return '验证出错：超出请求次数'
-#
-#         except Exception as e:
-#             save_log(self.error_path, str(e.args))
-#             return '发送请求出错'
 #
 #     # 订单收入 核对（按打款日期周期 获取订单信息）
 #     def parse_check_income_url(self, page, start_date, end_date):

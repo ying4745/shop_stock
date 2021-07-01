@@ -64,13 +64,13 @@
                             <button class="btn btn-primary order_sort hidden-btn" data-type="菲律宾">菲律宾
                                 <span class="badge bg-aqua"></span>
                             </button>
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="新加坡">新加坡
+                                <span class="badge bg-aqua"></span>
+                            </button>
                             <button class="btn btn-primary order_sort hidden-btn" data-type="泰国">泰国
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="印尼">印尼
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="新加坡">新加坡
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="越南">越南
                                 <span class="badge bg-aqua"></span>
                             </button>
                             <button class="btn btn-primary order_sort hidden-btn" data-type="巴西">巴西
@@ -79,7 +79,7 @@
                             <button class="btn btn-primary order_sort hidden-btn" data-type="台湾">台湾
                                 <span class="badge bg-aqua"></span>
                             </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="越南">越南
+                            <button class="btn btn-primary order_sort hidden-btn" data-type="印尼">印尼
                                 <span class="badge bg-aqua"></span>
                             </button>
                             <button class="btn btn-primary order_sort" data-type="not_printed" style="margin-left: 80px">未打印订单
@@ -301,12 +301,12 @@
             parent_ele.eq(0).children('span').text(all_orders_num);
             parent_ele.eq(1).children('span').text(search_order_count(api, '马来西亚'));
             parent_ele.eq(2).children('span').text(search_order_count(api, '菲律宾'));
-            parent_ele.eq(3).children('span').text(search_order_count(api, '泰国'));
-            parent_ele.eq(4).children('span').text(search_order_count(api, '印尼'));
-            parent_ele.eq(5).children('span').text(search_order_count(api, '新加坡'));
+            parent_ele.eq(3).children('span').text(search_order_count(api, '新加坡'));
+            parent_ele.eq(4).children('span').text(search_order_count(api, '泰国'));
+            parent_ele.eq(5).children('span').text(search_order_count(api, '越南'));
             parent_ele.eq(6).children('span').text(search_order_count(api, '巴西'));
             parent_ele.eq(7).children('span').text(search_order_count(api, '台湾'));
-            parent_ele.eq(8).children('span').text(search_order_count(api, '越南'));
+            parent_ele.eq(8).children('span').text(search_order_count(api, '印尼'));
             // 查询完  数据恢复  TODO: 有问题
             api.column(2).search('');
             var un_print_num = api.column(1, {search:'applied'})
