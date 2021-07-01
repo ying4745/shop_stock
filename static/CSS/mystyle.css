@@ -161,7 +161,7 @@
 #input-edit-desc {
     position: absolute;
     right: -110px;
-    top: -130px;
+    top: -20px;
     width:250px;
     padding: 2px 10px 10px;
     background-color: #f1f1f1;
@@ -171,11 +171,12 @@
 #customer-remark {
     position: absolute;
     right: -90px;
-    top: -30px;
+    top: 5px;
     width:250px;
-    padding: 5px;
-    background-color: #667cab;
+    padding: 2px;
+    background-color: #ffffff;
     border-radius: 5px;
+    border: 3px solid #b3b3b3;
 }
 #customer-desc {
     background-color: #fff;
@@ -223,7 +224,7 @@
     .paging_simple_numbers {
         position: absolute;
         right: 20px;
-        top: 2px;
+        top: -30px;
     }
     /* 表格信息 不换行 */
     div.dataTables_wrapper div.dataTables_info {

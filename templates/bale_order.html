@@ -328,8 +328,8 @@
                 "scrollX": true,  <!-- 水平滚动 -->
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
-                "columnDefs": columnDefs,  <!-- 指定列 定义属性 <"pull-right"p> -->
-                "dom": '<"pull-left"f>irtp',
+                "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
+                "dom": '<"pull-left"f><"pull-right"p>irtp',
                 "createdRow": createdRow,
 
                 <!-- 指定列 添加下拉搜索框 -->
@@ -388,7 +388,7 @@
                     old_text = ''
                 }
                 var edit_html = '<div id="input-edit-desc">\n' +
-                    '       <h5>订单备注<button id="close-edit-desc" class="close" style="margin-top: -4px;">×</button></h5>\n' +
+                    '       <h6>订单备注<button id="close-edit-desc" class="close" style="margin-top: -4px;">×</button></h6>\n' +
                     '       <textarea type="text" rows="2" class="form-control" style="margin-bottom: 10px;width:230px;">' +
                     old_text + '</textarea>\n' +
                     '       <button id="desc-sub" type="button" class="btn btn-success btn-block btn-sm">确认</button>\n' +
