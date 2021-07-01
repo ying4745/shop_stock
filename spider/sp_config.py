@@ -40,8 +40,12 @@ PH_CHECK_INCOME_URL = 'https://seller.ph.shopee.cn/api/v3/finance/income_transac
 # PH_WAYBILL_URL = 'https://seller.ph.shopee.cn/api/v2/orders/waybill/'
 
 PH_MAKE_WAYBILL_URL = 'https://seller.ph.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
-PH_WAYBILL_URL = 'https://seller.ph.shopee.cn/api/v3/logistics/get_waybill_list/'
+# PH_WAYBILL_URL = 'https://seller.ph.shopee.cn/api/v3/logistics/get_waybill_list/'
+PH_WAYBILL_URL = 'https://seller.ph.shopee.cn/api/v3/logistics/download_sd_job'
+
 PH_FORDERID_URL = 'https://seller.ph.shopee.cn/api/v3/logistics/check_package_print_waybill_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2'
+# 获取下载运单号 需要的一个id
+PH_GET_JOBID_URL = 'https://seller.ph.shopee.cn/api/v3/logistics/create_sd_jobs_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2&async_sd_version=0.2'
 # PH_FORDERID_URL = 'https://seller.ph.shopee.cn/api/v3/order/batch_get_forder_from_oms'
 
 # cookies保存地址
@@ -78,8 +82,10 @@ MY_CHECK_INCOME_URL = 'https://seller.my.shopee.cn/api/v3/finance/income_transac
 
 # 生成、下载运单号URL
 MY_MAKE_WAYBILL_URL = 'https://seller.my.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
-MY_WAYBILL_URL = 'https://seller.my.shopee.cn/api/v3/logistics/get_waybill_list/'
+MY_WAYBILL_URL = 'https://seller.my.shopee.cn/api/v3/logistics/download_sd_job'
 MY_FORDERID_URL = 'https://seller.my.shopee.cn/api/v3/logistics/check_package_print_waybill_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2'
+
+MY_GET_JOBID_URL = 'https://seller.my.shopee.cn/api/v3/logistics/create_sd_jobs_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2&async_sd_version=0.2'
 
 # cookies保存地址
 MY_COOKIES_SAVE = 'spider/log/my_cookies.txt'
@@ -128,8 +134,10 @@ TH_CHECK_INCOME_URL = 'https://seller.th.shopee.cn/api/v3/finance/income_transac
 
 # 生成、下载运单号URL
 TH_MAKE_WAYBILL_URL = 'https://seller.th.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
-TH_WAYBILL_URL = 'https://seller.th.shopee.cn/api/v3/logistics/get_waybill_list/'
+TH_WAYBILL_URL = 'https://seller.th.shopee.cn/api/v3/logistics/download_sd_job'
 TH_FORDERID_URL = 'https://seller.th.shopee.cn/api/v3/logistics/check_package_print_waybill_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2'
+
+TH_GET_JOBID_URL = 'https://seller.th.shopee.cn/api/v3/logistics/create_sd_jobs_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2&async_sd_version=0.2'
 
 # cookies保存地址
 TH_COOKIES_SAVE = 'spider/log/th_cookies.txt'
@@ -162,8 +170,10 @@ ID_CHECK_INCOME_URL = 'https://seller.id.shopee.cn/api/v3/finance/income_transac
 
 # 生成、下载运单号URL
 ID_MAKE_WAYBILL_URL = 'https://seller.id.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
-ID_WAYBILL_URL = 'https://seller.id.shopee.cn/api/v3/logistics/get_waybill_list/'
+ID_WAYBILL_URL = 'https://seller.id.shopee.cn/api/v3/logistics/download_sd_job'
 ID_FORDERID_URL = 'https://seller.id.shopee.cn/api/v3/logistics/check_package_print_waybill_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2'
+
+ID_GET_JOBID_URL = 'https://seller.id.shopee.cn/api/v3/logistics/create_sd_jobs_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2&async_sd_version=0.2'
 
 # cookies保存地址
 ID_COOKIES_SAVE = 'spider/log/id_cookies.txt'
@@ -196,8 +206,10 @@ SG_CHECK_INCOME_URL = 'https://seller.sg.shopee.cn/api/v3/finance/income_transac
 
 # 生成、下载运单号URL
 SG_MAKE_WAYBILL_URL = 'https://seller.sg.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
-SG_WAYBILL_URL = 'https://seller.sg.shopee.cn/api/v3/logistics/get_waybill_list/'
+SG_WAYBILL_URL = 'https://seller.sg.shopee.cn/api/v3/logistics/download_sd_job'
 SG_FORDERID_URL = 'https://seller.sg.shopee.cn/api/v3/logistics/check_package_print_waybill_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2'
+
+SG_GET_JOBID_URL = 'https://seller.sg.shopee.cn/api/v3/logistics/create_sd_jobs_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2&async_sd_version=0.2'
 
 # cookies保存地址
 SG_COOKIES_SAVE = 'spider/log/sg_cookies.txt'
@@ -228,8 +240,10 @@ VN_CHECK_INCOME_URL = 'https://seller.vn.shopee.cn/api/v3/finance/income_transac
 
 # 生成、下载运单号URL
 VN_MAKE_WAYBILL_URL = 'https://seller.vn.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
-VN_WAYBILL_URL = 'https://seller.vn.shopee.cn/api/v3/logistics/get_waybill_list/'
+VN_WAYBILL_URL = 'https://seller.vn.shopee.cn/api/v3/logistics/download_sd_job'
 VN_FORDERID_URL = 'https://seller.vn.shopee.cn/api/v3/logistics/check_package_print_waybill_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2'
+
+VN_GET_JOBID_URL = 'https://seller.vn.shopee.cn/api/v3/logistics/create_sd_jobs_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2&async_sd_version=0.2'
 
 # cookies保存地址
 VN_COOKIES_SAVE = 'spider/log/vn_cookies.txt'
@@ -260,8 +274,10 @@ BR_CHECK_INCOME_URL = 'https://seller.br.shopee.cn/api/v3/finance/income_transac
 
 # 生成、下载运单号URL
 BR_MAKE_WAYBILL_URL = 'https://seller.br.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
-BR_WAYBILL_URL = 'https://seller.br.shopee.cn/api/v3/logistics/get_waybill_list/'
+BR_WAYBILL_URL = 'https://seller.br.shopee.cn/api/v3/logistics/download_sd_job'
 BR_FORDERID_URL = 'https://seller.br.shopee.cn/api/v3/logistics/check_package_print_waybill_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2'
+
+BR_GET_JOBID_URL = 'https://seller.br.shopee.cn/api/v3/logistics/create_sd_jobs_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2&async_sd_version=0.2'
 
 # cookies保存地址
 BR_COOKIES_SAVE = 'spider/log/br_cookies.txt'
@@ -295,8 +311,10 @@ TW_CHECK_INCOME_URL = 'https://seller.xiapi.shopee.cn/api/v3/finance/income_tran
 
 # 生成、下载运单号URL
 TW_MAKE_WAYBILL_URL = 'https://seller.xiapi.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
-TW_WAYBILL_URL = 'https://seller.xiapi.shopee.cn/api/v2/orders/waybill/'
+TW_WAYBILL_URL = 'https://seller.xiapi.shopee.cn/api/v3/logistics/download_sd_job'
 TW_FORDERID_URL = 'https://seller.xiapi.shopee.cn/api/v3/logistics/check_package_print_waybill_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2'
+
+TW_GET_JOBID_URL = 'https://seller.xiapi.shopee.cn/api/v3/logistics/create_sd_jobs_multi_shop?SPC_CDS={0}&SPC_CDS_VER=2&async_sd_version=0.2'
 
 # cookies保存地址
 TW_COOKIES_SAVE = 'spider/log/tw_cookies.txt'
