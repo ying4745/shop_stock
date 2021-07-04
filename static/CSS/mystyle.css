@@ -212,6 +212,22 @@
     font-size: 26px;
 }
 
+/* 打包页  出货确认按钮 */
+td.check-td {
+    position: relative;
+}
+td.check-td span {
+    position: absolute;
+    bottom: 1px;
+    right: 3px;
+    color: #25D829;
+    font-size: smaller;
+}
+td.check-td i.fa {
+    margin-top: 8px;
+    font-size: 18px;
+}
+
 /* 响应式布局 */
 @media screen and (max-device-width: 500px) {
     .content {

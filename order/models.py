@@ -43,11 +43,15 @@ class OrderInfo(BaseModel):
                                        default=0, verbose_name='订单收入')
     order_profit = models.DecimalField(max_digits=10, decimal_places=2,
                                        default=0, verbose_name='订单利润')
-    order_status = models.SmallIntegerField(choices=ORDER_STATUS_CHOICES,
-                                            default=1, verbose_name='订单状态')
     order_country = models.CharField(max_length=5, choices=ORDER_COUNTRY_CHOICES,
                                      default='MYR', verbose_name='订单国家')
     order_desc = models.CharField(max_length=128, null=True, blank=True, default='', verbose_name='订单备注')
+    order_status = models.SmallIntegerField(choices=ORDER_STATUS_CHOICES,
+                                            default=1, verbose_name='订单状态')
+
+    order_send_status = models.BooleanField(default=0, verbose_name='订单出货状态')
+    order_bind_status = models.BooleanField(default=0, verbose_name='订单绑定状态')
+
     order_pay_time = models.CharField(max_length=16, blank=True, default='-', verbose_name='拨款时间')
 
     @property

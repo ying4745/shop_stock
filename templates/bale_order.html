@@ -42,6 +42,10 @@
                     <i class="fa fa-check-square"></i> 已完成订单
                 </a>
             </div>
+            <div class="update_div">
+            <button class="btn btn-info order_sort" data-type="send">已打包订单</button>
+            <button class="btn btn-warning order_sort" data-type="not_send">未打包订单</button>
+            </div>
         </div>
         <div class="row">
             <div class="col-xs-12">
@@ -114,7 +118,15 @@
                                 {% for order_good in order.ordergoods_set.all %}
                                     <tr>
                                         {% if forloop.first %}
-                                            <td class="division-line">{{ forloop.parentloop.counter }}</td>
+                                            <!-- 列表序号这 添加出货状态标识 用于搜索 -->
+                                            <td class="division-line"
+                                                {% if order.order_send_status %}
+                                                    data-search="1">
+                                                {% else %}
+                                                    data-search="0">
+                                                {% endif %}
+                                                {{ forloop.parentloop.counter }}
+                                            </td>
 
 
                                             <td class="division-line"
@@ -148,8 +160,18 @@
                                             >{{ order.get_order_country_display }}
                                             </td>
 
-                                            <td class="division-line" data-search="{{ order.order_id }}"
-                                                data-order="{{ order.order_id }}">{{ order.order_id }}</td>
+                                            <td class="division-line check-td" data-search="{{ order.order_id }}"
+                                                data-order="{{ order.order_id }}">
+                                                {{ order.order_id }}<br>
+                                                {% if order.order_send_status %}
+                                                    <i class="fa fa-check-square cal-ship"></i>
+                                                {% else %}
+                                                    <i class="fa fa-check-square-o check-ship"></i>
+                                                {% endif %}
+                                                {% if order.order_bind_status %}
+                                                    <span> 发货预报</span>
+                                                {% endif %}
+                                            </td>
 
                                             <td class="division-line" data-order="{{ order.order_shopeeid }}"
                                                 data-search="{{ order.order_country }}">{{ order.customer }}</td>
@@ -195,7 +217,13 @@
                                             <td class="division-line">{{ order_good.sku_good.stock }}</td>
 
                                         {% else %}
-                                            <td></td>
+                                            <td
+                                                {% if order.order_send_status %}
+                                                    data-search="1">
+                                                {% else %}
+                                                    data-search="0">
+                                                {% endif %}
+                                            </td>
                                             <td {% if order.order_status == 2 %}
                                                     data-search="0">
                                                 {% else %}
@@ -270,7 +298,7 @@
     <script>
         var columnDefs = [
             {
-                "targets": [0, 5, 6, 7, 10, 11, 12],
+                "targets": [5, 6, 7, 10, 11, 12],
                 "searchable": false
             },
             {
@@ -296,7 +324,7 @@
         // 加载完页面 显示订单分类数量
         function orderTypeNum(api) {
             var all_orders_num = api.column(0).data().filter(function (val, index) {return val}).length;
-            api.column(0).search('');
+            // api.column(0).search('');
             var parent_ele = $('.order_type_btn').children('button');
             parent_ele.eq(0).children('span').text(all_orders_num);
             parent_ele.eq(1).children('span').text(search_order_count(api, '马来西亚'));
@@ -329,6 +357,7 @@
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
+                "stateSave": true,   <!-- 刷新时 保留当前所在位置 -->
                 "dom": '<"pull-left"f><"pull-right"p>irtp',
                 "createdRow": createdRow,
 
@@ -391,7 +420,7 @@
                     '       <h6>订单备注<button id="close-edit-desc" class="close" style="margin-top: -4px;">×</button></h6>\n' +
                     '       <textarea type="text" rows="2" class="form-control" style="margin-bottom: 10px;width:230px;">' +
                     old_text + '</textarea>\n' +
-                    '       <button id="desc-sub" type="button" class="btn btn-success btn-block btn-sm">确认</button>\n' +
+                    '       <button id="desc-sub" type="button" class="btn btn-success btn-block btn-xs">确认</button>\n' +
                     '       </div>';
                 $(this).append(edit_html);
                 $(this).find('textarea').focus();
@@ -519,15 +548,77 @@
                 var country = $(this).attr('data-type');
                 //console.log(country);
                 if (country === 'not_printed') {
+                    // 查找未打印的订单
                     // 先选择所有订单 再找未打印的
                     table.column(2).search('');
+                    table.column(0).search('');
                     table.column(1).search('0').draw();
+                } else if (country === 'send'){
+                    // 查找已打包发出的订单
+                    table.column(1).search('');
+                    table.column(2).search('');
+                    table.column(0).search('1').draw();
+                } else if (country === 'not_send') {
+                    // 查找未打包的订单
+                    table.column(1).search('');
+                    table.column(2).search('');
+                    table.column(0).search('0').draw();
                 } else {
+                    // 按国家查找订单
                     // 先选择所有打印和未打印的，再选择国家
                     table.column(1).search('');
+                    table.column(0).search('');
                     table.column(2).search(country).draw();
                 }
             });
+
+            // 打包发出订单，点击更新订单的物流状态
+            $('#order_table tbody').on('click', '.check-ship', function () {
+                var this_obj = $(this);
+                var data = {
+                    'order_id': this_obj.parent().attr('data-order'),
+                    'request_type': 'bale'
+                };
+                $.ajax({
+                    url: "{% url 'order_ship_status' %}",
+                    type: 'post',
+                    headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                    data: {
+                        'data_dict': JSON.stringify(data),
+                    },
+                    success: function (e) {
+                        if (e.status) {
+                            showMessage(e.msg);
+                        } else {
+                            this_obj.removeClass('check-ship fa-check-square-o').addClass('fa-check-square cal-ship')
+                        }
+                    }
+                })
+            });
+
+            $('#order_table tbody').on('dblclick', '.cal-ship', function () {
+                var this_obj = $(this);
+                var data = {
+                    'order_id': this_obj.parent().attr('data-order'),
+                    'request_type': 'cal'
+                };
+                $.ajax({
+                    url: "{% url 'order_ship_status' %}",
+                    type: 'post',
+                    headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                    data: {
+                        'data_dict': JSON.stringify(data),
+                    },
+                    success: function (e) {
+                        if (e.status) {
+                            showMessage(e.msg);
+                        } else {
+                            this_obj.removeClass('fa-check-square cal-ship').addClass('check-ship fa-check-square-o')
+                        }
+                    }
+                })
+            });
+
 
             orderTypeNum(table)
 

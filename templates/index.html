@@ -380,8 +380,13 @@
                                             >{{ order.get_order_country_display }}
                                             </td>
 
-                                            <td class="order-update division-line" data-id="{{ order.id }}" data-search="{{ order.order_id }}"
-                                                data-order="{{ order.order_id }}">{{ order.order_id }}</td>
+                                            <td class="order-update division-line check-td" data-id="{{ order.id }}" data-search="{{ order.order_id }}"
+                                                data-order="{{ order.order_id }}">
+                                                {{ order.order_id }}
+                                                {% if order.order_bind_status %}
+                                                    <span> 发货预报</span>
+                                                {% endif %}
+                                            </td>
 
                                             <td class="division-line">{{ order.customer }}</td>
 
@@ -630,6 +635,7 @@
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
                 "dom": '<"pull-left"f><"pull-right"p>irtp',
+                "stateSave": true,   <!-- 刷新时 保留当前所在位置 -->
 
                 "createdRow": createdRow,
                 <!-- 指定列 添加下拉搜索框 -->
@@ -764,10 +770,10 @@
                     old_text = ''
                 }
                 var edit_html = '<div id="input-edit-desc">\n' +
-                    '       <h5>订单备注<button id="close-edit-desc" class="close" style="margin-top: -4px;">×</button></h5>\n' +
+                    '       <h6>订单备注<button id="close-edit-desc" class="close" style="margin-top: -4px;">×</button></h6>\n' +
                     '       <textarea type="text" rows="2" class="form-control" style="margin-bottom: 10px;width:230px;">' +
                                 old_text + '</textarea>\n' +
-                    '       <button id="desc-sub" type="button" class="btn btn-success btn-block btn-sm">确认</button>\n' +
+                    '       <button id="desc-sub" type="button" class="btn btn-success btn-block btn-xs">确认</button>\n' +
                     '       </div>';
                 $(this).append(edit_html);
                 $(this).find('textarea').focus();

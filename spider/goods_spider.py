@@ -499,10 +499,13 @@ class PhGoodsSpider():
                     order_obj.save()
 
     def check_order_status(self):
-        orders = OrderInfo.objects.filter(order_country=self.country, order_status=5).values_list('order_shopeeid', flat=True)
+        """
+            订单状态必须为已打单、出货状态必须为已发出
+            然后检查这些订单是否在运输中，是则将订单状态转变为快递揽收运输中
+        """
+        orders = OrderInfo.objects.filter(order_country=self.country, order_status=5, order_send_status=1).values_list('order_shopeeid', flat=True)
         order_ids = list(orders)
         shipping_order_ids = []
-        print(order_ids)
         # 每次请求10个id  获取订单状态
         pages = (len(order_ids) + 9) // 10
         for i in range(pages):
@@ -765,6 +768,8 @@ class PhGoodsSpider():
                             'SPC_CDS_VER': 2,
                             'job_id': job_id
                         }
+                        # 等待一会  系统生成PDF
+                        time.sleep(2)
                         g_response = requests.get(self.waybill_url, params=g_data,
                                                 cookies=self.cookies, headers=self.headers)
                         if g_response.status_code == 200:
@@ -793,7 +798,7 @@ class PhGoodsSpider():
                         self.login()
 
                 if un_print:
-                    return '验证出错：超出请求次数 状态码{}'.format(str(response.status_code))
+                    return '验证出错：超出请求次数'
 
             except Exception as e:
                 save_log(self.error_path, str(e.args))

@@ -150,6 +150,31 @@ class BaleOrderView(View):
         return JsonResponse({'status': 0, 'msg': '打单完成'})
 
 
+class OrderShipStatusView(View):
+    """订单的出货状态"""
+
+    def post(self, request):
+        """订单出货 未出货状态转变"""
+        data = json.loads(request.POST.get('data_dict'))
+        # print(data)
+
+        if not data.get('order_id', '') or not data.get('request_type', ''):
+            return JsonResponse({'status': 1, 'msg': '参数不全'})
+
+        if data['request_type'] == 'bale':
+            order_ship_status = 1
+        elif data['request_type'] == 'cal':
+            order_ship_status = 0
+        else:
+            return JsonResponse({'status': 2, 'msg': '请求类型参数错误'})
+
+        update_result = OrderInfo.objects.filter(order_id=data['order_id']).update(order_send_status=order_ship_status)
+        if update_result:
+            return JsonResponse({'status': 0, 'msg': '更新成功'})
+
+        return JsonResponse({'status': 3, 'msg': '出货状态改变出错'})
+
+
 class ShippingOrderView(View):
     """已被快递揽收订单"""
 
