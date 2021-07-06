@@ -35,6 +35,7 @@ PH_ORDER_SEARCH_URL = 'https://seller.ph.shopee.cn/api/v3/order/get_order_hint/'
 PH_ORDER_INCOME_URL = 'https://seller.ph.shopee.cn/api/v3/finance/income_transaction_history_detail/'
 PH_CHECK_INCOME_URL = 'https://seller.ph.shopee.cn/api/v3/finance/income_transaction_histories/'
 
+PH_BIND_ORDER_URL = 'https://seller.ph.shopee.cn/api/v3/shipment/bind_first_mile_orders_directly?SPC_CDS={0}&SPC_CDS_VER=2'
 # 生成、下载运单号URL
 # PH_MAKE_WAYBILL_URL = 'https://seller.ph.shopee.cn/api/v2/orders/dropoffs/{0}/?SPC_CDS={1}&SPC_CDS_VER=2'
 # PH_WAYBILL_URL = 'https://seller.ph.shopee.cn/api/v2/orders/waybill/'
@@ -80,6 +81,8 @@ MY_ORDER_SEARCH_URL = 'https://seller.my.shopee.cn/api/v3/order/get_order_hint/'
 MY_ORDER_INCOME_URL = 'https://seller.my.shopee.cn/api/v3/finance/income_transaction_history_detail/'
 MY_CHECK_INCOME_URL = 'https://seller.my.shopee.cn/api/v3/finance/income_transaction_histories/'
 
+MY_BIND_ORDER_URL = 'https://seller.my.shopee.cn/api/v3/shipment/bind_first_mile_orders_directly?SPC_CDS={0}&SPC_CDS_VER=2'
+
 # 生成、下载运单号URL
 MY_MAKE_WAYBILL_URL = 'https://seller.my.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
 MY_WAYBILL_URL = 'https://seller.my.shopee.cn/api/v3/logistics/download_sd_job'
@@ -114,7 +117,6 @@ BR_ONE_ORDER_URL = 'https://seller.my.shopee.cn/api/v3/order/get_one_order'
 
 # 泰国配置
 
-
 # 登录URL
 TH_LOGIN_URL = 'https://seller.th.shopee.cn/account/signin'
 
@@ -131,6 +133,8 @@ TH_ORDER_SEARCH_URL = 'https://seller.th.shopee.cn/api/v3/order/get_order_hint/'
 
 TH_ORDER_INCOME_URL = 'https://seller.th.shopee.cn/api/v3/finance/income_transaction_history_detail/'
 TH_CHECK_INCOME_URL = 'https://seller.th.shopee.cn/api/v3/finance/income_transaction_histories/'
+
+TH_BIND_ORDER_URL = 'https://seller.th.shopee.cn/api/v3/shipment/bind_first_mile_orders_directly?SPC_CDS={0}&SPC_CDS_VER=2'
 
 # 生成、下载运单号URL
 TH_MAKE_WAYBILL_URL = 'https://seller.th.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
@@ -168,6 +172,8 @@ ID_ORDER_SEARCH_URL = 'https://seller.id.shopee.cn/api/v3/order/get_order_hint/'
 ID_ORDER_INCOME_URL = 'https://seller.id.shopee.cn/api/v3/finance/income_transaction_history_detail/'
 ID_CHECK_INCOME_URL = 'https://seller.id.shopee.cn/api/v3/finance/income_transaction_histories/'
 
+ID_BIND_ORDER_URL = 'https://seller.id.shopee.cn/api/v3/shipment/bind_first_mile_orders_directly?SPC_CDS={0}&SPC_CDS_VER=2'
+
 # 生成、下载运单号URL
 ID_MAKE_WAYBILL_URL = 'https://seller.id.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
 ID_WAYBILL_URL = 'https://seller.id.shopee.cn/api/v3/logistics/download_sd_job'
@@ -204,6 +210,8 @@ SG_ORDER_SEARCH_URL = 'https://seller.sg.shopee.cn/api/v3/order/get_order_hint/'
 SG_ORDER_INCOME_URL = 'https://seller.sg.shopee.cn/api/v3/finance/income_transaction_history_detail/'
 SG_CHECK_INCOME_URL = 'https://seller.sg.shopee.cn/api/v3/finance/income_transaction_histories/'
 
+SG_BIND_ORDER_URL = 'https://seller.sg.shopee.cn/api/v3/shipment/bind_first_mile_orders_directly?SPC_CDS={0}&SPC_CDS_VER=2'
+
 # 生成、下载运单号URL
 SG_MAKE_WAYBILL_URL = 'https://seller.sg.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
 SG_WAYBILL_URL = 'https://seller.sg.shopee.cn/api/v3/logistics/download_sd_job'
@@ -238,6 +246,8 @@ VN_ORDER_SEARCH_URL = 'https://seller.vn.shopee.cn/api/v3/order/get_order_hint/'
 VN_ORDER_INCOME_URL = 'https://seller.vn.shopee.cn/api/v3/finance/income_transaction_history_detail/'
 VN_CHECK_INCOME_URL = 'https://seller.vn.shopee.cn/api/v3/finance/income_transaction_histories/'
 
+VN_BIND_ORDER_URL = 'https://seller.vn.shopee.cn/api/v3/shipment/bind_first_mile_orders_directly?SPC_CDS={0}&SPC_CDS_VER=2'
+
 # 生成、下载运单号URL
 VN_MAKE_WAYBILL_URL = 'https://seller.vn.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
 VN_WAYBILL_URL = 'https://seller.vn.shopee.cn/api/v3/logistics/download_sd_job'
@@ -271,6 +281,8 @@ BR_ORDER_SEARCH_URL = 'https://seller.br.shopee.cn/api/v3/order/get_order_hint/'
 
 BR_ORDER_INCOME_URL = 'https://seller.br.shopee.cn/api/v3/finance/income_transaction_history_detail/'
 BR_CHECK_INCOME_URL = 'https://seller.br.shopee.cn/api/v3/finance/income_transaction_histories/'
+
+BR_BIND_ORDER_URL = 'https://seller.br.shopee.cn/api/v3/shipment/bind_first_mile_orders_directly?SPC_CDS={0}&SPC_CDS_VER=2'
 
 # 生成、下载运单号URL
 BR_MAKE_WAYBILL_URL = 'https://seller.br.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'
@@ -308,6 +320,8 @@ TW_ORDER_SEARCH_URL = 'https://seller.xiapi.shopee.cn/api/v3/order/get_order_hin
 
 TW_ORDER_INCOME_URL = 'https://seller.xiapi.shopee.cn/api/v3/finance/income_transaction_history_detail/'
 TW_CHECK_INCOME_URL = 'https://seller.xiapi.shopee.cn/api/v3/finance/income_transaction_histories/'
+
+TW_BIND_ORDER_URL = 'https://seller.xiapi.shopee.cn/api/v3/shipment/bind_first_mile_orders_directly?SPC_CDS={0}&SPC_CDS_VER=2'
 
 # 生成、下载运单号URL
 TW_MAKE_WAYBILL_URL = 'https://seller.xiapi.shopee.cn/api/v3/shipment/init_order/?SPC_CDS={0}&SPC_CDS_VER=2'

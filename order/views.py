@@ -151,8 +151,9 @@ class BaleOrderView(View):
 
 
 class OrderShipStatusView(View):
-    """订单的出货状态"""
-
+    """
+        订单的出货状态
+    """
     def post(self, request):
         """订单出货 未出货状态转变"""
         data = json.loads(request.POST.get('data_dict'))
@@ -175,6 +176,82 @@ class OrderShipStatusView(View):
         return JsonResponse({'status': 3, 'msg': '出货状态改变出错'})
 
 
+class BindOrderView(View):
+    """首公里  绑定订单"""
+
+    def get(self, request):
+        pass
+
+    def post(self, request):
+        """绑定订单"""
+        request_data = json.loads(request.POST.get('data_dict'))
+
+        if not request_data.get('waybill_num', ''):
+            return JsonResponse({'status': 1, 'msg': '快递运单号参数缺失'})
+
+        if not request_data.get('express', ''):
+            return JsonResponse({'status': 2, 'msg': '快递公司参数缺失'})
+
+        request_country_params = []
+        if request_data['bind_type'] == 'send_order':
+            all_country = OrderInfo.objects.filter(order_status=5, order_send_status=1).values_list('order_country',
+                                                                                                    flat=True).distinct()
+            for country_d in all_country:
+                all_order_params = OrderInfo.objects.filter(order_status=5, order_country=country_d,
+                                                            order_send_status=1) \
+                    .values(as_order_id=F('order_shopeeid'), package_number=F('order_package_num'),
+                            sls_tn=F('order_id'))
+                # order_id 存在与模型中  所以取别名后 再来修改回去
+                for x in all_order_params:
+                    x['order_id'] = x.pop('as_order_id')
+                request_country_params.append({
+                    'bind_country': country_d,
+                    'package_list': all_order_params
+                })
+        elif request_data['bind_type'] == 'all_order':
+            all_country = OrderInfo.objects.filter(order_status=5).values_list('order_country', flat=True).distinct()
+            for country_d in all_country:
+                all_order_params = OrderInfo.objects.filter(order_status=5, order_country=country_d) \
+                    .values(as_order_id=F('order_shopeeid'), package_number=F('order_package_num'),
+                            sls_tn=F('order_id'))
+                # order_id 存在与模型中  所以取别名后 再来修改回去
+                for x in all_order_params:
+                    x['order_id'] = x.pop('as_order_id')
+                request_country_params.append({
+                    'bind_country': country_d,
+                    'package_list': all_order_params
+                })
+        elif request_data['bind_type'] == 'check_order':
+            if not request_data['check_order']:
+                return JsonResponse({'status': 3, 'msg': '选中订单参数错误'})
+            for country_d in request_data['check_order'].keys():
+                all_order_params = OrderInfo.objects.filter(order_shopeeid__in=request_data['check_order'][country_d]) \
+                    .values(as_order_id=F('order_shopeeid'), package_number=F('order_package_num'),
+                            sls_tn=F('order_id'))
+                # order_id 存在与模型中  所以取别名后 再来修改回去
+                for x in all_order_params:
+                    x['order_id'] = x.pop('as_order_id')
+                request_country_params.append({
+                    'bind_country': country_d,
+                    'package_list': all_order_params
+                })
+        else:
+            return JsonResponse({'status': 2, 'msg': '绑定类型参数错误'})
+
+        result_msg = ''
+        for sing_country in request_country_params:
+            shopee = country_type_dict[sing_country['bind_country']]()
+            msg = shopee.bind_order(request_data['express'], request_data['waybill_num'], sing_country['package_list'])
+            if msg:
+                result_msg += sing_country['bind_country'] + ' >> ' + msg + '<br>'
+                continue
+
+        if result_msg:
+            return JsonResponse({'status': 0, 'msg': result_msg})
+
+        return JsonResponse({'status': 0, 'msg': '绑定成功'})
+
+
 class ShippingOrderView(View):
     """已被快递揽收订单"""
 
@@ -184,6 +261,7 @@ class ShippingOrderView(View):
         shipping_orders_count = shipping_orders.count()
         return render(request, 'shipping_order.html', {'orders': shipping_orders,
                                                    'shipping_orders_count': shipping_orders_count})
+
 
 class CheckOrderView(View):
     """每天送货订单 确认页"""

@@ -39,6 +39,8 @@ class PhGoodsSpider():
         self.one_order_url = sp_config.PH_ORDER_SEARCH_URL
         self.order_income_url = sp_config.PH_ORDER_INCOME_URL
 
+        self.bind_order_url = sp_config.PH_BIND_ORDER_URL
+
         self.forderid_url = sp_config.PH_FORDERID_URL
         self.job_id_url = sp_config.PH_GET_JOBID_URL
         self.check_income_url = sp_config.PH_CHECK_INCOME_URL
@@ -714,7 +716,7 @@ class PhGoodsSpider():
         }
 
         # 调用方做异常处理
-        response = requests.post(url, json=data,cookies=self.cookies, headers=self.headers)
+        response = requests.post(url, json=data, cookies=self.cookies, headers=self.headers)
         res_dict = json.loads(response.content.decode())
 
         package_list = []
@@ -769,7 +771,7 @@ class PhGoodsSpider():
                             'job_id': job_id
                         }
                         # 等待一会  系统生成PDF
-                        time.sleep(2)
+                        time.sleep(3)
                         g_response = requests.get(self.waybill_url, params=g_data,
                                                 cookies=self.cookies, headers=self.headers)
                         if g_response.status_code == 200:
@@ -805,6 +807,26 @@ class PhGoodsSpider():
                 return '下载PDF请求出错'
 
         return ''
+
+    # 绑定订单  首公里
+    def bind_order(self, express, waybill_num, package_list):
+        bind_url = self.bind_order_url.format(self.cookies['SPC_CDS'])
+        data = {
+            'carrier_id': express,
+            'fm_tn': waybill_num,
+            'package_list': package_list
+        }
+        response = requests.post(bind_url, json=data, cookies=self.cookies, headers=self.headers)
+
+        if response.status_code == 200:
+            res_dict = json.loads(response.content.decode())
+            msg = res_dict.get('message', '')
+            if not msg:
+                return '绑定失败'
+            if msg == 'success':
+                return ''
+        return '绑定请求返回出错'
+
 
     # 订单收入 核对（按打款日期周期 获取订单信息）
     def parse_check_income_url(self, page, start_date, end_date):
@@ -898,6 +920,8 @@ class MYGoodsSpider(PhGoodsSpider):
         self.one_order_url = sp_config.MY_ORDER_SEARCH_URL
         self.order_income_url = sp_config.MY_ORDER_INCOME_URL
 
+        self.bind_order_url = sp_config.MY_BIND_ORDER_URL
+
         self.forderid_url = sp_config.MY_FORDERID_URL
         self.job_id_url = sp_config.MY_GET_JOBID_URL
         self.check_income_url = sp_config.MY_CHECK_INCOME_URL
@@ -950,6 +974,8 @@ class ThGoodsSpider(PhGoodsSpider):
         self.one_order_url = sp_config.TH_ORDER_SEARCH_URL
         self.order_income_url = sp_config.TH_ORDER_INCOME_URL
 
+        self.bind_order_url = sp_config.TH_BIND_ORDER_URL
+
         self.check_income_url = sp_config.TH_CHECK_INCOME_URL
         self.job_id_url = sp_config.TH_GET_JOBID_URL
         self.forderid_url = sp_config.TH_FORDERID_URL
@@ -1001,6 +1027,8 @@ class IdGoodsSpider(PhGoodsSpider):
 
         self.one_order_url = sp_config.ID_ORDER_SEARCH_URL
         self.order_income_url = sp_config.ID_ORDER_INCOME_URL
+
+        self.bind_order_url = sp_config.ID_BIND_ORDER_URL
 
         self.check_income_url = sp_config.ID_CHECK_INCOME_URL
         self.job_id_url = sp_config.ID_GET_JOBID_URL
@@ -1095,6 +1123,8 @@ class SgGoodsSpider(PhGoodsSpider):
         self.one_order_url = sp_config.SG_ORDER_SEARCH_URL
         self.order_income_url = sp_config.SG_ORDER_INCOME_URL
 
+        self.bind_order_url = sp_config.SG_BIND_ORDER_URL
+
         self.check_income_url = sp_config.SG_CHECK_INCOME_URL
         self.job_id_url = sp_config.SG_GET_JOBID_URL
         self.forderid_url = sp_config.SG_FORDERID_URL
@@ -1178,6 +1208,8 @@ class TwGoodsSpider(PhGoodsSpider):
         self.one_order_url = sp_config.TW_ORDER_SEARCH_URL
         self.order_income_url = sp_config.TW_ORDER_INCOME_URL
 
+        self.bind_order_url = sp_config.TW_BIND_ORDER_URL
+
         self.check_income_url = sp_config.TW_CHECK_INCOME_URL
         self.job_id_url = sp_config.TW_GET_JOBID_URL
         self.forderid_url = sp_config.TW_FORDERID_URL
@@ -1227,6 +1259,8 @@ class VnGoodsSpider(PhGoodsSpider):
 
         self.one_order_url = sp_config.VN_ORDER_SEARCH_URL
         self.order_income_url = sp_config.VN_ORDER_INCOME_URL
+
+        self.bind_order_url = sp_config.VN_BIND_ORDER_URL
 
         self.check_income_url = sp_config.VN_CHECK_INCOME_URL
         self.job_id_url = sp_config.VN_GET_JOBID_URL
@@ -1279,6 +1313,8 @@ class BrGoodsSpider(PhGoodsSpider):
 
         self.one_order_url = sp_config.BR_ORDER_SEARCH_URL
         self.order_income_url = sp_config.BR_ORDER_INCOME_URL
+
+        self.bind_order_url = sp_config.BR_BIND_ORDER_URL
 
         self.check_income_url = sp_config.BR_CHECK_INCOME_URL
         self.job_id_url = sp_config.BR_GET_JOBID_URL

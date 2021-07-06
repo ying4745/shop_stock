@@ -43,9 +43,42 @@
                 </a>
             </div>
             <div class="update_div">
-            <button class="btn btn-info order_sort" data-type="send">已打包订单</button>
-            <button class="btn btn-warning order_sort" data-type="not_send">未打包订单</button>
+                <button class="btn btn-info order_sort" data-type="send">已打包订单</button>
+                <button class="btn btn-warning order_sort" data-type="not_send">未打包订单</button>
             </div>
+            <div class="update_div">
+                <div class="input-group" style="width: 420px; margin-bottom: 10px">
+                    <span class="input-group-btn" style="width: 110px;">
+                        <select class="form-control" id="input_express">
+                            <option value="371">中通快递</option>
+                            <option value="33">韵达快递</option>
+                            <option value="121">申通快递</option>
+                        </select>
+                    </span>
+                    <input type="text" class="form-control" id="input_waybill" placeholder="快递运单号">
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                            绑定 <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="javascript:;" class="bind_express" data-value="send_order">已发出订单绑定</a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" class="bind_express" data-value="all_order">全部打单订单绑定</a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" class="bind_express" data-value="check_order">选中订单绑定</a>
+                            </li>
+                        </ul>
+                    </span>
+                    <span class="input-group-btn">
+                        <button class="btn btn-danger bind_express" data-value="query_bind">查询绑定</button>
+                    </span>
+                </div>
+            </div>
+
         </div>
         <div class="row">
             <div class="col-xs-12">
@@ -357,7 +390,6 @@
                 "language": language,  <!-- 语言 -->
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
-                "stateSave": true,   <!-- 刷新时 保留当前所在位置 -->
                 "dom": '<"pull-left"f><"pull-right"p>irtp',
                 "createdRow": createdRow,
 
@@ -485,7 +517,7 @@
                 var print_type = $(this).attr('data-type');
 
                 if (print_type === 'part') {
-                    if (!$('tr.selected').length) {
+                    if (!table.rows('.selected').data().length) {
                         showMessage('先选中');
                         return
                     }
@@ -590,7 +622,8 @@
                         if (e.status) {
                             showMessage(e.msg);
                         } else {
-                            this_obj.removeClass('check-ship fa-check-square-o').addClass('fa-check-square cal-ship')
+                            this_obj.removeClass('check-ship fa-check-square-o').addClass('fa-check-square cal-ship');
+                            // this_obj.parents('tr').children('td:first').attr('data-search', 1)
                         }
                     }
                 })
@@ -613,12 +646,65 @@
                         if (e.status) {
                             showMessage(e.msg);
                         } else {
-                            this_obj.removeClass('fa-check-square cal-ship').addClass('check-ship fa-check-square-o')
+                            this_obj.removeClass('fa-check-square cal-ship').addClass('check-ship fa-check-square-o');
+                            // this_obj.parents('tr').children('td:first').attr('data-search', 0)
                         }
                     }
                 })
             });
 
+            // 绑定快递 操作
+            $('.bind_express').click(function () {
+                var express = $('#input_express').val();
+                var waybill_num = $('#input_waybill').val();
+                var bind_type = $(this).attr('data-value');
+                var zt_waybill_re = /^[0-9]{14}$/;
+                var data_dict = {};
+                var data_cty = {};
+
+                if (waybill_num) {
+                    if (zt_waybill_re.test(waybill_num)) {
+                        if (bind_type === 'check_order') {
+                            if (!table.rows('.selected').data().length) {
+                                showMessage('先选中');
+                                return
+                            }
+                            table.rows('.selected').data().each(function (i) {
+                                var order_country = i[4]['@data-search'];
+                                var order_shopeeid = i[4]['@data-order'];
+                                if (order_country && order_shopeeid) {
+                                    if (order_country in data_cty) {
+                                        data_cty[order_country].push(order_shopeeid)
+                                    } else {
+                                        data_cty[order_country] = [order_shopeeid]
+                                    }
+                                }
+                            });
+                            data_dict['check_order'] = data_cty
+                        }
+                        data_dict['bind_type'] = bind_type;
+                        data_dict['express'] = express;
+                        data_dict['waybill_num'] = waybill_num;
+                        console.log(data_dict);
+                        $.ajax({
+                            url: "{% url 'bind_order' %}",
+                            type: 'post',
+                            headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                            data: {
+                                'data_dict': JSON.stringify(data_dict),
+                            },
+                            success: function (e) {
+                                showMessage(e.msg, 'bg-success');
+                            }
+                        })
+                    } else {
+                        showMessage('请输入正确的快递运单号');
+                    }
+
+                } else {
+                    showMessage('请输入快递运单号');
+                }
+            });
 
             orderTypeNum(table)
 

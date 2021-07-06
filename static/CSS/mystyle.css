@@ -224,8 +224,8 @@ td.check-td span {
     font-size: smaller;
 }
 td.check-td i.fa {
-    margin-top: 8px;
-    font-size: 18px;
+    margin-top: 3px;
+    font-size: 28px;
 }
 
 /* 响应式布局 */
@@ -239,8 +239,9 @@ td.check-td i.fa {
     /* 表格分页导航栏 适应手机微调 */
     .paging_simple_numbers {
         position: absolute;
-        right: 20px;
-        top: -30px;
+        right: 0px;
+        top: -10px;
+        font-size: smaller;
     }
     /* 表格信息 不换行 */
     div.dataTables_wrapper div.dataTables_info {

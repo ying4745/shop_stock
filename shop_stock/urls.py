@@ -24,7 +24,7 @@ from goods.views import GoodsListView, GoodsSpiderView, ModifyGoodsView, SingleG
 from order.views import OrderListView, IndexView, OrderSpiderView, BuyGoodsView, ModifyPurchaseView
 from order.views import StockView, StockListView, OrderChartsView, OrderInfoView, OrderWaybillView
 from order.views import BaleOrderView, CheckIncomeView, CheckOrderView, ShippingOrderView
-from order.views import OrderShipStatusView
+from order.views import OrderShipStatusView, BindOrderView
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
@@ -53,6 +53,7 @@ urlpatterns = [
     path('check/order/', CheckOrderView.as_view(), name='check_order'),             # 每天送货订单确认
     path('shipping/order/', ShippingOrderView.as_view(), name='shipping_order'),    # 快递发往仓库中订单列表
     path('order/status/', OrderShipStatusView.as_view(), name='order_ship_status'), # 订单的出货状态转变
+    path('bind/order/', BindOrderView.as_view(), name='bind_order'),                # 首公里 绑定订单
 
     path('check/income/', CheckIncomeView.as_view(), name='check_income'),          # 核对收款
 
