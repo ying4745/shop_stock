@@ -750,22 +750,8 @@
                     showMessage('选中类没有订单ID信息');
                     return
                 }
-                $.ajax({
-                    url: "{% url 'pack_list' %}",
-                    type: 'post',
-                    headers: {"X-CSRFToken": $.cookie('csrftoken')},
-                    data: {
-                        'order_shopeeid_list': JSON.stringify(order_shopeeid_list),
-                    },
-                    success: function (e) {
-                        console.log(e);
-                        if (e.status) {
-                            showMessage(e.msg);
-                        } else {
-                            window.open(e.msg)
-                        }
-                    }
-                })
+                var url = "{% url 'pack_list' %}" +"?shopeeid_lists=" + JSON.stringify(order_shopeeid_list);
+                window.open(url)
             });
 
             orderTypeNum(table)

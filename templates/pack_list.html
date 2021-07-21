@@ -29,6 +29,24 @@
                             </thead>
 
                             <tbody>
+                                {% for good in goods_dict %}
+                                    <tr>
+                                        <td class="division-line">{{ forloop.counter }}</td>
+
+                                        <td class="division-line">{{ good.sku_id }}</td>
+                                        <td class="division-line">{{ good.desc }}</td>
+
+                                        <td class="division-line">
+                                            <img class="good_img" width="60" height="60"
+                                                 src="{{ MEDIA_URL }}{{ good.image }}">
+                                        </td>
+
+                                        <td class="division-line"
+                                            style="font-weight: bold;">{{ good.count }}</td>
+                                        <td class="division-line text-muted">{{ good.stock }}</td>
+
+                                    </tr>
+                                {% endfor %}
 
                             </tbody>
 
@@ -71,6 +89,14 @@
             },
         ];
 
+        // 数量大于1的商品
+        function createdRow(row, data, index) {
+            var api = this.api();
+            if (data[4] > 1) {
+                $(api.cell(index, 4).node()).css("background-color", "#ff9a5b");
+            }
+        }
+
         // 添加下拉式筛选框
         function col_search() {
             var api = this.api();
@@ -98,7 +124,7 @@
                 "lengthChange": false, <!-- 允许改变每页显示的行数 -->
                 "searching": true,    <!-- 允许内容搜索 -->
                 "ordering": true,     <!-- 允许排序 -->
-                "order": [[2, 'desc']],     <!-- 初始排序列表 -->
+                "order": [[1, 'desc']],     <!-- 初始排序列表 -->
                 "info": true,         <!-- 显示信息 -->
                 "pageLength": 50,    <!-- 每页显示 -->
                 "autoWidth": true,  <!-- 自动宽度 -->
@@ -107,6 +133,7 @@
                 <!--"columns": columns,   自定义每一列属性 -->
                 "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
                 "dom": '<"pull-left"f><"pull-right"p>irtp',
+                "createdRow": createdRow,
 
                 <!-- 指定列 添加下拉搜索框 -->
                 initComplete: col_search,

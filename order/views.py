@@ -156,16 +156,15 @@ class PackingListView(View):
     """ 打包清单 点货清单"""
 
     def get(self, request):
-        aaa= request.GET.get('order_shopeeid_list', '')
-        print(aaa)
-        pass
+        shopeeid_lists = json.loads(request.GET.get('shopeeid_lists', ''))
 
-    def post(self, request):
-        order_shopeeid_list = json.loads(request.POST.get('order_shopeeid_list', ''))
-        if not order_shopeeid_list:
-            return JsonResponse({'status': 1, 'msg': '参数错误'})
+        order_obj = OrderInfo.objects.filter(order_shopeeid__in=shopeeid_lists)
+        ordergood_dict = stats_ordergood_count(order_obj)
+        goods_obj = GoodsSKU.objects.filter(sku_id__in=ordergood_dict.keys()).values('sku_id', 'desc', 'image', 'stock')
+        for good in goods_obj:
+            good['count'] = ordergood_dict[good['sku_id']]
 
-        return JsonResponse({'status': 0, 'msg': reverse('pack_list', args=(order_shopeeid_list,))})
+        return render(request, 'pack_list.html', {'goods_dict': goods_obj})
 
 
 class OrderShipStatusView(View):
