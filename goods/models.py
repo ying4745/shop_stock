@@ -1,8 +1,14 @@
+import os
 import re
 
 from django.db import models
 
 from db.base_model import BaseModel
+
+
+def good_spu_path(instance, filename):
+    """默认上传文件路径"""
+    return os.path.join(instance.spu_id, filename)
 
 
 class Goods(BaseModel):
@@ -11,6 +17,8 @@ class Goods(BaseModel):
     spu_id = models.CharField(max_length=64, unique=True, verbose_name='主SPU号')
     g_url = models.CharField(max_length=400, default='', verbose_name='商品链接')
     max_weight = models.IntegerField(default=0, verbose_name='最大实重')
+    image = models.ImageField(upload_to=good_spu_path, null=True,
+                              blank=True, default='default.jpg', verbose_name='商品主图')
 
     class Meta:
         ordering = ['spu_id']
@@ -22,20 +30,22 @@ class Goods(BaseModel):
         return self.spu_id
 
 
-def good_spu_path(instance, filename):
+def good_sku_path(instance, filename):
     """默认上传文件路径"""
-    file_suffix = filename.split('.')[1]
-    # 处理文件名
-    good_sku = instance.sku_id.replace('+', '_')
-    if '#' in good_sku:
-        file_name = re.match(r'(.*#[^._]*)', good_sku).group(0).replace('#', '')
-    elif '_' in instance.sku_id:
-        file_name = re.match(r'(.*)_', good_sku).group(1)
-    else:
-        file_name = good_sku[:-1]
-    file_name = file_name + '.' + file_suffix
+    return os.path.join(instance.goods.spu_id, filename)
 
-    return '{0}/{1}'.format(instance.goods.spu_id, file_name)
+    # file_suffix = filename.split('.')[1]
+    # # 处理文件名
+    # good_sku = instance.sku_id.replace('+', '_')
+    # if '#' in good_sku:
+    #     file_name = re.match(r'(.*#[^._]*)', good_sku).group(0).replace('#', '')
+    # elif '_' in instance.sku_id:
+    #     file_name = re.match(r'(.*)_', good_sku).group(1)
+    # else:
+    #     file_name = good_sku[:-1]
+    # file_name = file_name + '.' + file_suffix
+    #
+    # return '{0}/{1}'.format(instance.goods.spu_id, file_name)
 
 
 class GoodsSKU(BaseModel):
@@ -54,8 +64,8 @@ class GoodsSKU(BaseModel):
     stock = models.IntegerField(default=0, verbose_name='库存')
     sales = models.IntegerField(default=0, verbose_name='销量')
     shelf = models.CharField(max_length=64, default='001', verbose_name='货架号')
-    image = models.ImageField(upload_to=good_spu_path, null=True,
-                              blank=True, verbose_name='商品图片')
+    image = models.ImageField(upload_to=good_sku_path, null=True,
+                              blank=True, default='default.jpg', verbose_name='商品图片')
     status = models.BooleanField(default=1, verbose_name='商品状态')
 
     class Meta:

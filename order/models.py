@@ -31,7 +31,8 @@ class OrderInfo(BaseModel):
     order_id = models.CharField(max_length=16, unique=True, verbose_name='订单编号')
     order_time = models.CharField(max_length=16, verbose_name='订单时间')
     order_shopeeid = models.CharField(max_length=16, default='', verbose_name='平台订单号')
-    order_package_num = models.CharField(max_length=32, default='', verbose_name='包裹号码')
+    order_package_num = models.CharField(max_length=32, blank=True, default='', verbose_name='包裹号码')
+    order_waybill_num = models.CharField(max_length=32, blank=True, default='', verbose_name='运单号码')
 
     customer = models.CharField(max_length=64, verbose_name='客户名字')
     receiver = models.CharField(max_length=64, default='默认', verbose_name='收件人')

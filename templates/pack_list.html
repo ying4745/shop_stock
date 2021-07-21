@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}订单管理{% endblock %}
+
+{% block content %}
+
+    <section class="content">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">打包清单
+                            <small>订单所需商品清单</small>
+                            {% csrf_token %}
+                        </h3>
+                    </div>
+                    <div class="box-body">
+                    <div class="table-responsive">
+                        <table id="order_table" class="table table-bordered table-striped good-img-parent">
+                            <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>商品SKU</th>
+                                <th>商品规格</th>
+                                <th>商品图片</th>
+                                <th>商品数量</th>
+                                <th>商品库存</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+
+                            </tbody>
+
+                            <tfoot>
+                            <tr>
+                                <th>序号</th>
+                                <th>商品SKU</th>
+                                <th>商品规格</th>
+                                <th>商品图片</th>
+                                <th>商品数量</th>
+                                <th>商品库存</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    </div> <!-- /.box-body -->
+                </div> <!-- /.box -->
+            </div> <!-- /.col -->
+        </div> <!-- /.row -->
+    </section>
+
+{% endblock %}
+
+{% block script %}
+
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'adminlet-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js' %}"></script>
+    <script src="{% static 'JS/jquery.cookie.js' %}"></script>
+    <script src="{% static 'JS/base.js' %}"></script>
+
+    <script>
+        var columnDefs = [
+            {
+                "targets": [0],
+                "searchable": false
+            },
+            {
+                "targets": [0],
+                "orderable": false
+            },
+        ];
+
+        // 添加下拉式筛选框
+        function col_search() {
+            var api = this.api();
+            api.columns([1]).indexes().flatten().each(function (i) {
+                var column = api.column(i);
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo($(column.footer()).empty())
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
+                });
+            });
+        }
+
+        $(function () {
+            var table = $('#order_table').DataTable({
+                "paging": true,       <!-- 允许分页 -->
+                "lengthChange": false, <!-- 允许改变每页显示的行数 -->
+                "searching": true,    <!-- 允许内容搜索 -->
+                "ordering": true,     <!-- 允许排序 -->
+                "order": [[2, 'desc']],     <!-- 初始排序列表 -->
+                "info": true,         <!-- 显示信息 -->
+                "pageLength": 50,    <!-- 每页显示 -->
+                "autoWidth": true,  <!-- 自动宽度 -->
+                "scrollX": false,  <!-- 水平滚动 -->
+                "language": language,  <!-- 语言 -->
+                <!--"columns": columns,   自定义每一列属性 -->
+                "columnDefs": columnDefs,  <!-- 指定列 定义属性 -->
+                "dom": '<"pull-left"f><"pull-right"p>irtp',
+
+                <!-- 指定列 添加下拉搜索框 -->
+                initComplete: col_search,
+            });
+
+        });
+
+    </script>
+
+{% endblock %}

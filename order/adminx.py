@@ -31,15 +31,15 @@ class OrderInfoXadmin(object):
     # 制定action
     actions = [MyAction, ]
 
-    list_display = ['order_id', 'customer', 'customer_info',
-                    'receiver', 'order_income', 'order_profit',
-                    'order_status', 'order_country', 'create_time']
+    list_display = ['order_id', 'order_income', 'order_profit','order_status',
+                    'order_bind_status', 'order_country', 'order_shopeeid',
+                    'order_package_num', 'order_waybill_num']
     search_fields = ['order_id', 'order_country']
-    list_filter = ['order_status', 'order_country','create_time']
+    list_filter = ['order_status', 'order_country','order_bind_status']
     # 点击排序
     date_hierarchy = ('create_time',)
     ordering = ('-order_id',)
-    list_editable = ['order_profit', 'order_status']
+    list_editable = ['order_profit', 'order_status', 'order_bind_status']
 
     inlines = [OrderGoodsInline]
 

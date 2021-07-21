@@ -697,7 +697,7 @@
                 var order_num = 0;
                 var ship_html = '<ul class="list-group text-center">';
                 table.rows('.selected').data().each(function (i) {
-                    console.log(i);
+                    //console.log(i);
                     if (i[1]['@data-order'] && i[1]['@data-search']) {
                         ship_html = ship_html + '<li class="list-group-item" data-country=' + i[1]['@data-search']
                             + '>' + i[1]['@data-order'] + '</li>';
@@ -724,8 +724,8 @@
                 var order_num = 0;
                 var ship_html = '<ul class="list-group text-center">';
                 table.rows('.selected').data().each(function (i) {
-                    if (i[3]['display']) {
-                        ship_html = ship_html + '<li class="list-group-item" >' + i[3]['display'] + '</li>';
+                    if (i[3]['@data-search']) {
+                        ship_html = ship_html + '<li class="list-group-item" >' + i[3]['@data-search'] + '</li>';
                         order_num += 1
                     }
                 });

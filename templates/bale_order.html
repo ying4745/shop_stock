@@ -45,6 +45,8 @@
             <div class="update_div">
                 <button class="btn btn-info order_sort" data-type="send">已打包订单</button>
                 <button class="btn btn-warning order_sort" data-type="not_send">未打包订单</button>
+                <button class="btn btn-primary order_sort" data-type="ready_print_waybill">已打单订单</button>
+                <button class="btn btn-microsoft" id="pack_list">选中类生成打包清单</button>
             </div>
             <div class="update_div">
                 <div class="input-group" style="width: 420px; margin-bottom: 10px">
@@ -74,7 +76,7 @@
                         </ul>
                     </span>
                     <span class="input-group-btn">
-                        <button class="btn btn-danger bind_express" data-value="query_bind">查询绑定</button>
+                        <button class="btn btn-danger" id="query_bind">查询绑定</button>
                     </span>
                 </div>
             </div>
@@ -533,7 +535,7 @@
                         }
                     });
                 } else {
-                    // search 筛选器 applied 表示应用当前搜索匹配的行
+                    // search 筛选器 applied 表示用 当前搜索匹配的行 来筛查
                     table.rows({search:'applied'}).data().each(function (i) {
                         if (i[4]['display']) {
                             var order_country = i[4]['@data-search'];
@@ -585,6 +587,10 @@
                     table.column(2).search('');
                     table.column(0).search('');
                     table.column(1).search('0').draw();
+                } else if (country === 'ready_print_waybill') {
+                    table.column(2).search('');
+                    table.column(0).search('');
+                    table.column(1).search('1').draw();
                 } else if (country === 'send'){
                     // 查找已打包发出的订单
                     table.column(1).search('');
@@ -704,6 +710,62 @@
                 } else {
                     showMessage('请输入快递运单号');
                 }
+            });
+
+            // 查询绑定成功的订单
+            $('#query_bind').click(function () {
+                var waybill_num = $('#input_waybill').val();
+                var zt_waybill_re = /^[0-9]{14}$/;
+                var data = {
+                    'waybill_num' : waybill_num
+                };
+                if (waybill_num) {
+                    if (zt_waybill_re.test(waybill_num)) {
+                        $.get("{% url 'bind_order' %}", params = data, function (e) {
+                            showMessage(e.msg, 'bg-success');
+                            window.setTimeout(function () {
+                                location.reload()
+                            }, 2100);
+                        })
+                    } else {
+                        showMessage('请输入正确的快递运单号');
+                    }
+                } else {
+                    showMessage('请输入快递运单号');
+                }
+            });
+
+            // 生成打包清单  拿货
+            $('#pack_list').click(function () {
+                var order_shopeeid_list = [];
+                table.rows({search:'applied'}).data().each(function (i) {
+                        if (i[4]['display']) {
+                            var order_shopeeid = i[4]['@data-order'];
+                            if (order_shopeeid) {
+                                order_shopeeid_list.push(order_shopeeid)
+                            }
+                        }
+                    });
+                if (order_shopeeid_list.length === 0) {
+                    showMessage('选中类没有订单ID信息');
+                    return
+                }
+                $.ajax({
+                    url: "{% url 'pack_list' %}",
+                    type: 'post',
+                    headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                    data: {
+                        'order_shopeeid_list': JSON.stringify(order_shopeeid_list),
+                    },
+                    success: function (e) {
+                        console.log(e);
+                        if (e.status) {
+                            showMessage(e.msg);
+                        } else {
+                            window.open(e.msg)
+                        }
+                    }
+                })
             });
 
             orderTypeNum(table)

@@ -14,6 +14,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from django.db import transaction
 
+from shop_stock.settings import MEDIA_ROOT
 from spider import sp_config, add_config
 from spider.print_waybill import print_PDF, OldCropPDF
 from goods.models import Goods, GoodsSKU
@@ -30,23 +31,24 @@ class PhGoodsSpider():
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.PH_COOKIES_SAVE)
 
-        self.login_url = sp_config.PH_LOGIN_URL
-        self.product_url = sp_config.PH_PRODUCT_URL
+        self.login_url = sp_config.LOGIN_URL.format(sp_config.PH_LOGO)
+        self.product_url = sp_config.PRODUCT_URL.format(sp_config.PH_LOGO)
 
-        self.get_order_ids_url = sp_config.PH_GET_ORDER_IDS_URL
-        self.order_list_by_order_ids_url = sp_config.PH_ORDER_LIST_BY_ORDER_IDS_URL
+        self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.PH_LOGO)
+        self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.PH_LOGO)
 
-        self.one_order_url = sp_config.PH_ORDER_SEARCH_URL
-        self.order_income_url = sp_config.PH_ORDER_INCOME_URL
+        self.one_order_url = sp_config.ORDER_SEARCH_URL.format(sp_config.PH_LOGO)
+        self.order_income_url = sp_config.ORDER_INCOME_URL.format(sp_config.PH_LOGO)
 
-        self.bind_order_url = sp_config.PH_BIND_ORDER_URL
+        self.bind_order_url = sp_config.BIND_ORDER_URL.format(sp_config.PH_LOGO)
+        self.query_bind_order_url = sp_config.QUERY_BIND_URL.format(sp_config.PH_LOGO)
 
-        self.forderid_url = sp_config.PH_FORDERID_URL
-        self.job_id_url = sp_config.PH_GET_JOBID_URL
-        self.check_income_url = sp_config.PH_CHECK_INCOME_URL
+        self.forderid_url = sp_config.FORDERID_URL.format(sp_config.PH_LOGO)
+        self.job_id_url = sp_config.GET_JOBID_URL.format(sp_config.PH_LOGO)
+        self.check_income_url = sp_config.CHECK_INCOME_URL.format(sp_config.PH_LOGO)
 
-        self.make_waybill_url = sp_config.PH_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.PH_WAYBILL_URL
+        self.make_waybill_url = sp_config.MAKE_WAYBILL_URL.format(sp_config.PH_LOGO)
+        self.waybill_url = sp_config.WAYBILL_URL.format(sp_config.PH_LOGO)
 
         self.cookies_path = sp_config.PH_COOKIES_SAVE
         self.error_path = sp_config.PH_ERROR_LOG
@@ -62,8 +64,6 @@ class PhGoodsSpider():
         # 国家标示
         self.country = 'PHP'
         self.shop_id = add_config.PH_SHOP_ID
-
-        self.get_shipID = sp_config.PH_SHIP_ID
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -172,10 +172,22 @@ class PhGoodsSpider():
 
     @transaction.atomic
     def parse_create_goodsku(self, parent_sku, product_data):
+        # 创建spu
         g_spu, is_c = Goods.objects.get_or_create(spu_id=parent_sku)
+
+        # 保存主图片 每次都更新当前的主图
+        main_image = product_data['images'][0]
+        g_spu.image = parent_sku + '/' + main_image + '.jpg'
+        g_spu.save()
+
+        # 变体的图片信息数据
+        image_data_dict = product_data['tier_variation'][0]
 
         # 事务保存点
         save_id = transaction.savepoint()
+
+        # 图片名 列表  用于下载图片
+        image_name_lists = [main_image]
 
         skugood_id_list = []
         is_success_c = True
@@ -200,12 +212,21 @@ class PhGoodsSpider():
             elif self.country == 'THB':
                 defaults['th_sale_price'] = good['price']
 
+            # 添加sku图片
+            option_name = good['name'].split(',')[0]
+            # 根据变体名字 找他在变体属性列表的位置 根据位置信息去找图片名  依据是变体名排列和图片名排列一一对应
+            image_index = image_data_dict['options'].index(option_name)
+            sku_image = image_data_dict['images'][image_index]
+            defaults['image'] = parent_sku + '/' + sku_image + '.jpg'
+
+            if sku_image not in image_name_lists:
+                image_name_lists.append(sku_image)
             # 抓取的商品sku 添加到列表
             skugood_id_list.append(good['sku'])
 
             # 子sku创建时 异常处理
             try:
-                goodsku_obj, is_create = GoodsSKU.objects.update_or_create(sku_id=good['sku'], defaults=defaults)
+                GoodsSKU.objects.update_or_create(sku_id=good['sku'], defaults=defaults)
             except Exception as e:
                 save_log(self.update_path, parent_sku, err_type='——同步未成功商品：')
                 save_log(self.error_path, str(e.args))
@@ -213,17 +234,27 @@ class PhGoodsSpider():
                 transaction.savepoint_rollback(save_id)
                 is_success_c = False
                 break
-            else:
-                # 创建sku 则设置默认图片地址
-                if is_create:
-                    file_path = format_file_path(good['sku'])
-                    goodsku_obj.image = parent_sku + '/' + file_path + '.jpg'
-                    goodsku_obj.save()
 
         # 商品不出错 则执行
         if is_success_c:
             # 提交事务
             transaction.savepoint_commit(save_id)
+
+            # 下载图片 先创建目录文件
+            dir_path = os.path.join(MEDIA_ROOT, parent_sku)
+            if not os.path.exists(dir_path):
+                os.mkdir(dir_path)
+            for image_name in image_name_lists:
+                url = sp_config.PRODUCT_IMAGE_URL.format(image_name)
+                i_request = requests.get(url)
+
+                if i_request.status_code == 200:
+                    # 文件路径
+                    file_name = image_name + '.jpg'
+                    file_path = os.path.join(dir_path, file_name)
+
+                    with open(file_path, 'wb') as f:
+                        f.write(i_request.content)
 
             # 创建 则为新增记录
             if is_c:
@@ -332,9 +363,9 @@ class PhGoodsSpider():
             return 1, order_ids_data
         try:
             order_ids = []
-            forders_list = order_ids_data['data']['forders']
-            for forder in forders_list:
-                order_ids.append(str(forder['order_id']))
+            order_lists = order_ids_data['data']['package_list']
+            for order in order_lists:
+                order_ids.append(str(order['order_id']))
         except:
             return 2, '返回 订单id列表 数据错误'
         if not order_ids:
@@ -380,15 +411,17 @@ class PhGoodsSpider():
         # 订单状态：待出货和已运送 为1，已取消为5，已完成为4
         order_obj = OrderInfo.objects.filter(order_id=order_info['order_sn'])
         if order_obj:
+            # 订单的状态为 5  则已被取消
             if order_info['status'] == 5:
                 order_obj[0].delete()
                 return 1, '订单已取消'
-            # 已有订单 状态不是已打单时 不更新订单
-            if order_obj[0].order_status != 5:
-                return 2, '订单已存在，且不是发出 已打单状态'
-            else:
-                # 已打单 发货订单 单独请求这个订单数据 更新收入
+            elif order_obj[0].order_status == 1:
+                return 2, '订单已同步，且待发货'
+            # 已打单 已打包发出订单 单独请求这个订单数据 更新收入
+            elif order_obj[0].order_status == 5 and order_obj[0].order_send_status == 1:
                 return self.parse_order_income(order_obj[0])
+            else:
+                return 3, '订单已存在，且没取消，没出货，没在待发货列表'
 
         # 订单用户收货率
         delivery_order = order_info['buyer_user']['delivery_order_count']
@@ -623,7 +656,7 @@ class PhGoodsSpider():
             # 进价低于6元的商品  不附加国内运杂费
             if good_buy_price < 6:
                 order_cost += good_buy_price * good_obj.count
-            # 商品的成本  每件商品进价上加一元 国内运杂费
+            # 商品的成本  每件商品进价上 国内运杂费
             else:
                 order_cost += (good_buy_price + Decimal(self.product_add_fee)) * good_obj.count
 
@@ -712,7 +745,7 @@ class PhGoodsSpider():
             order_info_list.append({'order_id': int(orderid), 'shop_id': self.shop_id, 'region_id': self.country[:2]})
 
         data = {
-            'order_info_list': order_info_list
+            'orders': order_info_list
         }
 
         # 调用方做异常处理
@@ -721,11 +754,13 @@ class PhGoodsSpider():
 
         package_list = []
         for ordermodel in res_dict['data']['list']:
-            # 把package_number 更新到数据库中保存
-            OrderInfo.objects.filter(order_shopeeid=str(ordermodel['order_id'])).update(order_package_num=ordermodel['package_number'])
+            order_package_data = ordermodel['package_list'][0]
+            # 把package_number, 运单号 更新到数据库中保存
+            OrderInfo.objects.filter(order_shopeeid=str(ordermodel['order_id'])).update(
+                order_package_num=order_package_data['package_number'], order_waybill_num=order_package_data['consignment_no'])
             # 组成需要的数据列表
             package_list.append({'order_id': ordermodel['order_id'], 'shop_id': self.shop_id,
-                                 'region_id': self.country[:2], 'package_number': ordermodel['package_number']})
+                                 'region_id': self.country[:2], 'package_number': order_package_data['package_number']})
         return package_list
 
     # 2021/7/1 更新下载运单号URL
@@ -812,10 +847,11 @@ class PhGoodsSpider():
     def bind_order(self, express, waybill_num, package_list):
         bind_url = self.bind_order_url.format(self.cookies['SPC_CDS'])
         data = {
-            'carrier_id': express,
+            'carrier_id': int(express),
             'fm_tn': waybill_num,
-            'package_list': package_list
+            'package_list': list(package_list)
         }
+
         response = requests.post(bind_url, json=data, cookies=self.cookies, headers=self.headers)
 
         if response.status_code == 200:
@@ -827,6 +863,50 @@ class PhGoodsSpider():
                 return ''
         return '绑定请求返回出错'
 
+
+    def query_bind_order(self, waybill, page=1, is_all=True):
+        """按快递运单号 查询绑定成功的订单
+            action_status 2 为绑定成功
+        """
+        # 当前时间戳 和过去十天的时间戳
+        end_time = int(time.time())
+        create_time = end_time - 864000
+        data = {
+            'SPC_CDS': self.cookies['SPC_CDS'],
+            'SPC_CDS_VER': 2,
+            'create_time': create_time,
+            'end_time': end_time,
+            'fm_tn': waybill,
+            'action_status': 2,
+            'is_only_contain_alarm': 'false',
+            'page_number': page,
+            'page_size': 100
+            }
+        msg_num, request_data = self.parse_url(self.query_bind_order_url, data)
+
+        if msg_num:
+            return request_data
+
+        order_sn_list = []
+        try:
+            for sing_data in request_data['data']['list']:
+                order_sn_list.append(sing_data['order_sn'])
+        except:
+            return '返回数据错误'
+
+        if order_sn_list:
+            OrderInfo.objects.filter(order_id__in=order_sn_list).update(order_bind_status=1)
+
+        # 是否翻页
+        if is_all:
+            # 计算共有多少页
+            total = request_data['data']['page_info']['total']
+            pages = (total + 99) // 100
+
+            for i in range(page + 1, pages + 1):
+                self.query_bind_order(waybill, i, is_all=False)
+
+        return ''
 
     # 订单收入 核对（按打款日期周期 获取订单信息）
     def parse_check_income_url(self, page, start_date, end_date):
@@ -881,26 +961,6 @@ class PhGoodsSpider():
             for i in range(page + 1, pages + 1):
                 self.get_income_order(i, start_date, end_date, is_all=False)
 
-    # 获取运单号
-    # def get_order_shipID(self, order_id):
-    #     # 获取运单号
-    #     self.is_cookies()
-    #     data = {
-    #         'SPC_CDS': self.cookies['SPC_CDS'],
-    #         'SPC_CDS_VER': 2,
-    #         'order_id': order_id
-    #         }
-    #
-    #
-    #     msg_num, order_data = self.parse_url(self.get_shipID, data)
-    #     if msg_num:
-    #         return order_data
-    #     try:
-    #         ship_id = order_data['data']['list'][0]['tracking_number']
-    #     except:
-    #         ship_id = '数据错误'
-    #     return ship_id
-
 
 class MYGoodsSpider(PhGoodsSpider):
 
@@ -911,23 +971,24 @@ class MYGoodsSpider(PhGoodsSpider):
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.MY_COOKIES_SAVE)
 
-        self.login_url = sp_config.MY_LOGIN_URL
-        self.product_url = sp_config.MY_PRODUCT_URL
+        self.login_url = sp_config.LOGIN_URL.format(sp_config.MY_LOGO)
+        self.product_url = sp_config.PRODUCT_URL.format(sp_config.MY_LOGO)
 
-        self.get_order_ids_url = sp_config.MY_GET_ORDER_IDS_URL
-        self.order_list_by_order_ids_url = sp_config.MY_ORDER_LIST_BY_ORDER_IDS_URL
+        self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.MY_LOGO)
+        self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.MY_LOGO)
 
-        self.one_order_url = sp_config.MY_ORDER_SEARCH_URL
-        self.order_income_url = sp_config.MY_ORDER_INCOME_URL
+        self.one_order_url = sp_config.ORDER_SEARCH_URL.format(sp_config.MY_LOGO)
+        self.order_income_url = sp_config.ORDER_INCOME_URL.format(sp_config.MY_LOGO)
 
-        self.bind_order_url = sp_config.MY_BIND_ORDER_URL
+        self.bind_order_url = sp_config.BIND_ORDER_URL.format(sp_config.MY_LOGO)
+        self.query_bind_order_url = sp_config.QUERY_BIND_URL.format(sp_config.MY_LOGO)
 
-        self.forderid_url = sp_config.MY_FORDERID_URL
-        self.job_id_url = sp_config.MY_GET_JOBID_URL
-        self.check_income_url = sp_config.MY_CHECK_INCOME_URL
+        self.forderid_url = sp_config.FORDERID_URL.format(sp_config.MY_LOGO)
+        self.job_id_url = sp_config.GET_JOBID_URL.format(sp_config.MY_LOGO)
+        self.check_income_url = sp_config.CHECK_INCOME_URL.format(sp_config.MY_LOGO)
 
-        self.make_waybill_url = sp_config.MY_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.MY_WAYBILL_URL
+        self.make_waybill_url = sp_config.MAKE_WAYBILL_URL.format(sp_config.MY_LOGO)
+        self.waybill_url = sp_config.WAYBILL_URL.format(sp_config.MY_LOGO)
 
         self.cookies_path = sp_config.MY_COOKIES_SAVE
         self.error_path = sp_config.MY_ERROR_LOG
@@ -942,8 +1003,6 @@ class MYGoodsSpider(PhGoodsSpider):
 
         self.country = 'MYR'
         self.shop_id = add_config.MY_SHOP_ID
-
-        self.get_shipID = sp_config.MY_SHIP_ID
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -965,23 +1024,24 @@ class ThGoodsSpider(PhGoodsSpider):
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.TH_COOKIES_SAVE)
 
-        self.login_url = sp_config.TH_LOGIN_URL
-        self.product_url = sp_config.TH_PRODUCT_URL
+        self.login_url = sp_config.LOGIN_URL.format(sp_config.TH_LOGO)
+        self.product_url = sp_config.PRODUCT_URL.format(sp_config.TH_LOGO)
 
-        self.get_order_ids_url = sp_config.TH_GET_ORDER_IDS_URL
-        self.order_list_by_order_ids_url = sp_config.TH_ORDER_LIST_BY_ORDER_IDS_URL
+        self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.TH_LOGO)
+        self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.TH_LOGO)
 
-        self.one_order_url = sp_config.TH_ORDER_SEARCH_URL
-        self.order_income_url = sp_config.TH_ORDER_INCOME_URL
+        self.one_order_url = sp_config.ORDER_SEARCH_URL.format(sp_config.TH_LOGO)
+        self.order_income_url = sp_config.ORDER_INCOME_URL.format(sp_config.TH_LOGO)
 
-        self.bind_order_url = sp_config.TH_BIND_ORDER_URL
+        self.bind_order_url = sp_config.BIND_ORDER_URL.format(sp_config.TH_LOGO)
+        self.query_bind_order_url = sp_config.QUERY_BIND_URL.format(sp_config.TH_LOGO)
 
-        self.check_income_url = sp_config.TH_CHECK_INCOME_URL
-        self.job_id_url = sp_config.TH_GET_JOBID_URL
-        self.forderid_url = sp_config.TH_FORDERID_URL
+        self.forderid_url = sp_config.FORDERID_URL.format(sp_config.TH_LOGO)
+        self.job_id_url = sp_config.GET_JOBID_URL.format(sp_config.TH_LOGO)
+        self.check_income_url = sp_config.CHECK_INCOME_URL.format(sp_config.TH_LOGO)
 
-        self.make_waybill_url = sp_config.TH_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.TH_WAYBILL_URL
+        self.make_waybill_url = sp_config.MAKE_WAYBILL_URL.format(sp_config.TH_LOGO)
+        self.waybill_url = sp_config.WAYBILL_URL.format(sp_config.TH_LOGO)
 
         self.cookies_path = sp_config.TH_COOKIES_SAVE
         self.error_path = sp_config.TH_ERROR_LOG
@@ -996,8 +1056,6 @@ class ThGoodsSpider(PhGoodsSpider):
 
         self.country = 'THB'
         self.shop_id = add_config.TH_SHOP_ID
-
-        self.get_shipID = sp_config.TH_SHIP_ID
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -1019,23 +1077,24 @@ class IdGoodsSpider(PhGoodsSpider):
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.ID_COOKIES_SAVE)
 
-        self.login_url = sp_config.ID_LOGIN_URL
-        self.product_url = sp_config.ID_PRODUCT_URL
+        self.login_url = sp_config.LOGIN_URL.format(sp_config.ID_LOGO)
+        self.product_url = sp_config.PRODUCT_URL.format(sp_config.ID_LOGO)
 
-        self.get_order_ids_url = sp_config.ID_GET_ORDER_IDS_URL
-        self.order_list_by_order_ids_url = sp_config.ID_ORDER_LIST_BY_ORDER_IDS_URL
+        self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.ID_LOGO)
+        self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.ID_LOGO)
 
-        self.one_order_url = sp_config.ID_ORDER_SEARCH_URL
-        self.order_income_url = sp_config.ID_ORDER_INCOME_URL
+        self.one_order_url = sp_config.ORDER_SEARCH_URL.format(sp_config.ID_LOGO)
+        self.order_income_url = sp_config.ORDER_INCOME_URL.format(sp_config.ID_LOGO)
 
-        self.bind_order_url = sp_config.ID_BIND_ORDER_URL
+        self.bind_order_url = sp_config.BIND_ORDER_URL.format(sp_config.ID_LOGO)
+        self.query_bind_order_url = sp_config.QUERY_BIND_URL.format(sp_config.ID_LOGO)
 
-        self.check_income_url = sp_config.ID_CHECK_INCOME_URL
-        self.job_id_url = sp_config.ID_GET_JOBID_URL
-        self.forderid_url = sp_config.ID_FORDERID_URL
+        self.forderid_url = sp_config.FORDERID_URL.format(sp_config.ID_LOGO)
+        self.job_id_url = sp_config.GET_JOBID_URL.format(sp_config.ID_LOGO)
+        self.check_income_url = sp_config.CHECK_INCOME_URL.format(sp_config.ID_LOGO)
 
-        self.make_waybill_url = sp_config.ID_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.ID_WAYBILL_URL
+        self.make_waybill_url = sp_config.MAKE_WAYBILL_URL.format(sp_config.ID_LOGO)
+        self.waybill_url = sp_config.WAYBILL_URL.format(sp_config.ID_LOGO)
 
         self.cookies_path = sp_config.ID_COOKIES_SAVE
         self.error_path = sp_config.ID_ERROR_LOG
@@ -1114,23 +1173,24 @@ class SgGoodsSpider(PhGoodsSpider):
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.SG_COOKIES_SAVE)
 
-        self.login_url = sp_config.SG_LOGIN_URL
-        self.product_url = sp_config.SG_PRODUCT_URL
+        self.login_url = sp_config.LOGIN_URL.format(sp_config.SG_LOGO)
+        self.product_url = sp_config.PRODUCT_URL.format(sp_config.SG_LOGO)
 
-        self.get_order_ids_url = sp_config.SG_GET_ORDER_IDS_URL
-        self.order_list_by_order_ids_url = sp_config.SG_ORDER_LIST_BY_ORDER_IDS_URL
+        self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.SG_LOGO)
+        self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.SG_LOGO)
 
-        self.one_order_url = sp_config.SG_ORDER_SEARCH_URL
-        self.order_income_url = sp_config.SG_ORDER_INCOME_URL
+        self.one_order_url = sp_config.ORDER_SEARCH_URL.format(sp_config.SG_LOGO)
+        self.order_income_url = sp_config.ORDER_INCOME_URL.format(sp_config.SG_LOGO)
 
-        self.bind_order_url = sp_config.SG_BIND_ORDER_URL
+        self.bind_order_url = sp_config.BIND_ORDER_URL.format(sp_config.SG_LOGO)
+        self.query_bind_order_url = sp_config.QUERY_BIND_URL.format(sp_config.SG_LOGO)
 
-        self.check_income_url = sp_config.SG_CHECK_INCOME_URL
-        self.job_id_url = sp_config.SG_GET_JOBID_URL
-        self.forderid_url = sp_config.SG_FORDERID_URL
+        self.forderid_url = sp_config.FORDERID_URL.format(sp_config.SG_LOGO)
+        self.job_id_url = sp_config.GET_JOBID_URL.format(sp_config.SG_LOGO)
+        self.check_income_url = sp_config.CHECK_INCOME_URL.format(sp_config.SG_LOGO)
 
-        self.make_waybill_url = sp_config.SG_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.SG_WAYBILL_URL
+        self.make_waybill_url = sp_config.MAKE_WAYBILL_URL.format(sp_config.SG_LOGO)
+        self.waybill_url = sp_config.WAYBILL_URL.format(sp_config.SG_LOGO)
 
         self.cookies_path = sp_config.SG_COOKIES_SAVE
         self.error_path = sp_config.SG_ERROR_LOG
@@ -1145,8 +1205,6 @@ class SgGoodsSpider(PhGoodsSpider):
 
         self.country = 'SGD'
         self.shop_id = add_config.SG_SHOP_ID
-
-        self.get_shipID = sp_config.SG_SHIP_ID
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -1199,23 +1257,24 @@ class TwGoodsSpider(PhGoodsSpider):
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.TW_COOKIES_SAVE)
 
-        self.login_url = sp_config.TW_LOGIN_URL
-        self.product_url = sp_config.TW_PRODUCT_URL
+        self.login_url = sp_config.LOGIN_URL.format(sp_config.TW_LOGO)
+        self.product_url = sp_config.PRODUCT_URL.format(sp_config.TW_LOGO)
 
-        self.get_order_ids_url = sp_config.TW_GET_ORDER_IDS_URL
-        self.order_list_by_order_ids_url = sp_config.TW_ORDER_LIST_BY_ORDER_IDS_URL
+        self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.TW_LOGO)
+        self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.TW_LOGO)
 
-        self.one_order_url = sp_config.TW_ORDER_SEARCH_URL
-        self.order_income_url = sp_config.TW_ORDER_INCOME_URL
+        self.one_order_url = sp_config.ORDER_SEARCH_URL.format(sp_config.TW_LOGO)
+        self.order_income_url = sp_config.ORDER_INCOME_URL.format(sp_config.TW_LOGO)
 
-        self.bind_order_url = sp_config.TW_BIND_ORDER_URL
+        self.bind_order_url = sp_config.BIND_ORDER_URL.format(sp_config.TW_LOGO)
+        self.query_bind_order_url = sp_config.QUERY_BIND_URL.format(sp_config.TW_LOGO)
 
-        self.check_income_url = sp_config.TW_CHECK_INCOME_URL
-        self.job_id_url = sp_config.TW_GET_JOBID_URL
-        self.forderid_url = sp_config.TW_FORDERID_URL
+        self.forderid_url = sp_config.FORDERID_URL.format(sp_config.TW_LOGO)
+        self.job_id_url = sp_config.GET_JOBID_URL.format(sp_config.TW_LOGO)
+        self.check_income_url = sp_config.CHECK_INCOME_URL.format(sp_config.TW_LOGO)
 
-        self.make_waybill_url = sp_config.TW_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.TW_WAYBILL_URL
+        self.make_waybill_url = sp_config.MAKE_WAYBILL_URL.format(sp_config.TW_LOGO)
+        self.waybill_url = sp_config.WAYBILL_URL.format(sp_config.TW_LOGO)
 
         self.cookies_path = sp_config.TW_COOKIES_SAVE
         self.error_path = sp_config.TW_ERROR_LOG
@@ -1251,23 +1310,24 @@ class VnGoodsSpider(PhGoodsSpider):
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.VN_COOKIES_SAVE)
 
-        self.login_url = sp_config.VN_LOGIN_URL
-        self.product_url = sp_config.VN_PRODUCT_URL
+        self.login_url = sp_config.LOGIN_URL.format(sp_config.VN_LOGO)
+        self.product_url = sp_config.PRODUCT_URL.format(sp_config.VN_LOGO)
 
-        self.get_order_ids_url = sp_config.VN_GET_ORDER_IDS_URL
-        self.order_list_by_order_ids_url = sp_config.VN_ORDER_LIST_BY_ORDER_IDS_URL
+        self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.VN_LOGO)
+        self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.VN_LOGO)
 
-        self.one_order_url = sp_config.VN_ORDER_SEARCH_URL
-        self.order_income_url = sp_config.VN_ORDER_INCOME_URL
+        self.one_order_url = sp_config.ORDER_SEARCH_URL.format(sp_config.VN_LOGO)
+        self.order_income_url = sp_config.ORDER_INCOME_URL.format(sp_config.VN_LOGO)
 
-        self.bind_order_url = sp_config.VN_BIND_ORDER_URL
+        self.bind_order_url = sp_config.BIND_ORDER_URL.format(sp_config.VN_LOGO)
+        self.query_bind_order_url = sp_config.QUERY_BIND_URL.format(sp_config.VN_LOGO)
 
-        self.check_income_url = sp_config.VN_CHECK_INCOME_URL
-        self.job_id_url = sp_config.VN_GET_JOBID_URL
-        self.forderid_url = sp_config.VN_FORDERID_URL
+        self.forderid_url = sp_config.FORDERID_URL.format(sp_config.VN_LOGO)
+        self.job_id_url = sp_config.GET_JOBID_URL.format(sp_config.VN_LOGO)
+        self.check_income_url = sp_config.CHECK_INCOME_URL.format(sp_config.VN_LOGO)
 
-        self.make_waybill_url = sp_config.VN_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.VN_WAYBILL_URL
+        self.make_waybill_url = sp_config.MAKE_WAYBILL_URL.format(sp_config.VN_LOGO)
+        self.waybill_url = sp_config.WAYBILL_URL.format(sp_config.VN_LOGO)
 
         self.cookies_path = sp_config.VN_COOKIES_SAVE
         self.error_path = sp_config.VN_ERROR_LOG
@@ -1282,8 +1342,6 @@ class VnGoodsSpider(PhGoodsSpider):
 
         self.country = 'VND'
         self.shop_id = add_config.VN_SHOP_ID
-
-        self.get_shipID = sp_config.VN_SHIP_ID
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -1305,23 +1363,24 @@ class BrGoodsSpider(PhGoodsSpider):
         self.headers = {'user-agent': sp_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.BR_COOKIES_SAVE)
 
-        self.login_url = sp_config.BR_LOGIN_URL
-        self.product_url = sp_config.BR_PRODUCT_URL
+        self.login_url = sp_config.LOGIN_URL.format(sp_config.BR_LOGO)
+        self.product_url = sp_config.PRODUCT_URL.format(sp_config.BR_LOGO)
 
-        self.get_order_ids_url = sp_config.BR_GET_ORDER_IDS_URL
-        self.order_list_by_order_ids_url = sp_config.BR_ORDER_LIST_BY_ORDER_IDS_URL
+        self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.BR_LOGO)
+        self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.BR_LOGO)
 
-        self.one_order_url = sp_config.BR_ORDER_SEARCH_URL
-        self.order_income_url = sp_config.BR_ORDER_INCOME_URL
+        self.one_order_url = sp_config.ORDER_SEARCH_URL.format(sp_config.BR_LOGO)
+        self.order_income_url = sp_config.ORDER_INCOME_URL.format(sp_config.BR_LOGO)
 
-        self.bind_order_url = sp_config.BR_BIND_ORDER_URL
+        self.bind_order_url = sp_config.BIND_ORDER_URL.format(sp_config.BR_LOGO)
+        self.query_bind_order_url = sp_config.QUERY_BIND_URL.format(sp_config.BR_LOGO)
 
-        self.check_income_url = sp_config.BR_CHECK_INCOME_URL
-        self.job_id_url = sp_config.BR_GET_JOBID_URL
-        self.forderid_url = sp_config.BR_FORDERID_URL
+        self.forderid_url = sp_config.FORDERID_URL.format(sp_config.BR_LOGO)
+        self.job_id_url = sp_config.GET_JOBID_URL.format(sp_config.BR_LOGO)
+        self.check_income_url = sp_config.CHECK_INCOME_URL.format(sp_config.BR_LOGO)
 
-        self.make_waybill_url = sp_config.BR_MAKE_WAYBILL_URL
-        self.waybill_url = sp_config.BR_WAYBILL_URL
+        self.make_waybill_url = sp_config.MAKE_WAYBILL_URL.format(sp_config.BR_LOGO)
+        self.waybill_url = sp_config.WAYBILL_URL.format(sp_config.BR_LOGO)
 
         self.cookies_path = sp_config.BR_COOKIES_SAVE
         self.error_path = sp_config.BR_ERROR_LOG
@@ -1336,8 +1395,6 @@ class BrGoodsSpider(PhGoodsSpider):
 
         self.country = 'BRL'
         self.shop_id = add_config.BR_SHOP_ID
-
-        self.get_shipID = sp_config.BR_SHIP_ID
 
         self.num = 0
         self.check_msg = {'shopee_order': 0,
@@ -1373,22 +1430,22 @@ def get_cookies_from_file(filename):
     return cookies_dict
 
 
-def format_file_path(goodsku):
-    """根据商品sku，设置默认图片名"""
-
-    # 替换sku中的+号
-    good_sku = goodsku.replace('+', '_')
-    # 根据sku_id中的'#','_'，设置默认图片路径
-    if '#' in good_sku:
-        # 提取编号 '主spu号_#03' 去除'#' 保存默认图片路径为'主spu号_03.jpg
-        file_path = re.match(r'(.*#[^._]*)', good_sku).group(0).replace('#', '')
-    elif '_' in good_sku:
-        # 除去最后一个'_'和它之后的字符
-        file_path = re.match(r'(.*)_', good_sku).group(1)
-    else:
-        file_path = good_sku[:-1]
-
-    return file_path
+# def format_file_path(goodsku):
+#     """根据商品sku，设置默认图片名"""
+#
+#     # 替换sku中的+号
+#     good_sku = goodsku.replace('+', '_')
+#     # 根据sku_id中的'#','_'，设置默认图片路径
+#     if '#' in good_sku:
+#         # 提取编号 '主spu号_#03' 去除'#' 保存默认图片路径为'主spu号_03.jpg
+#         file_path = re.match(r'(.*#[^._]*)', good_sku).group(0).replace('#', '')
+#     elif '_' in good_sku:
+#         # 除去最后一个'_'和它之后的字符
+#         file_path = re.match(r'(.*)_', good_sku).group(1)
+#     else:
+#         file_path = good_sku[:-1]
+#
+#     return file_path
 
 
 country_type_dict = {

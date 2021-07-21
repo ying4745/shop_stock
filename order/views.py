@@ -3,11 +3,12 @@ import string
 import random
 import datetime
 
+from django.urls import reverse
 from django.db import transaction
-from django.shortcuts import render
 from django.http import JsonResponse
 from django.db.models import F, Q, Count
 from django.views.generic.base import View
+from django.shortcuts import render, redirect
 
 from goods.models import GoodsSKU
 from spider.goods_spider import country_type_dict
@@ -53,7 +54,7 @@ class IndexView(View):
         vn_order = orders.filter(order_country='VND')
         vn_orders, dw_vn_orders = orders_num_or_dealwith(vn_order)
 
-        out_of_stock, orders_goods = out_of_stock_good_list(orders)
+        out_of_stock = out_of_stock_good_list(stats_ordergood_count(orders))
 
         return render(request, 'index.html', locals())
 
@@ -68,12 +69,13 @@ class IndexView(View):
 
         orders_obj = OrderInfo.objects.filter(order_id__in=orders_list)
 
-        # 判断要发货订单  是否已发货   检测订单状态是否为待打包
+        # 判断要发货订单  是否已发货   检测订单状态是否为待打包 防止页面没刷新 重复提交
         if orders_obj.filter(order_status=2).exists():
             return JsonResponse({'status': 4, 'msg': '有订单已发货，请稍后查看'})
 
         # 根据订单 计算是否有缺货商品
-        out_of_stock, orders_goods = out_of_stock_good_list(orders_obj)
+        orders_goods = stats_ordergood_count(orders_obj)
+        out_of_stock = out_of_stock_good_list(orders_goods)
         out_of_num = len(out_of_stock)
         if out_of_num > 0:
             return JsonResponse({'status': 1, 'msg': str(out_of_num) + ' 件商品缺货'})
@@ -83,7 +85,7 @@ class IndexView(View):
         # 未处理的订单 提交到平台生成运单号
         msg = make_waybill(orders_dict)
         if msg:
-            return msg
+            return JsonResponse({'status': 5, 'msg': msg})
 
         # 事务保存点
         save_id = transaction.savepoint()
@@ -150,6 +152,22 @@ class BaleOrderView(View):
         return JsonResponse({'status': 0, 'msg': '打单完成'})
 
 
+class PackingListView(View):
+    """ 打包清单 点货清单"""
+
+    def get(self, request):
+        aaa= request.GET.get('order_shopeeid_list', '')
+        print(aaa)
+        pass
+
+    def post(self, request):
+        order_shopeeid_list = json.loads(request.POST.get('order_shopeeid_list', ''))
+        if not order_shopeeid_list:
+            return JsonResponse({'status': 1, 'msg': '参数错误'})
+
+        return JsonResponse({'status': 0, 'msg': reverse('pack_list', args=(order_shopeeid_list,))})
+
+
 class OrderShipStatusView(View):
     """
         订单的出货状态
@@ -180,7 +198,25 @@ class BindOrderView(View):
     """首公里  绑定订单"""
 
     def get(self, request):
-        pass
+        waybill_num = request.GET.get('waybill_num', '')
+        if not waybill_num:
+            return JsonResponse({'status': 1, 'msg': '无查询快递运单号'})
+        # 查找已打单 未绑定的订单 是哪几个国家的
+        all_country = OrderInfo.objects.filter(order_status=5, order_bind_status=0) \
+            .values_list('order_country', flat=True).distinct()
+        # 循环 每个国家去查询一下
+        result_msg = ''
+        for country_d in all_country:
+            shopee = country_type_dict[country_d]()
+            msg = shopee.query_bind_order(waybill_num)
+            if msg:
+                result_msg += country_d + ' >> ' + msg + '<br>'
+                continue
+
+        if result_msg:
+            return JsonResponse({'status': 0, 'msg': result_msg})
+
+        return JsonResponse({'status': 0, 'msg': '查询完成'})
 
     def post(self, request):
         """绑定订单"""
@@ -194,29 +230,30 @@ class BindOrderView(View):
 
         request_country_params = []
         if request_data['bind_type'] == 'send_order':
-            all_country = OrderInfo.objects.filter(order_status=5, order_send_status=1).values_list('order_country',
-                                                                                                    flat=True).distinct()
+            all_country = OrderInfo.objects.filter(order_status=5, order_bind_status=0, order_send_status=1)\
+                .values_list('order_country', flat=True).distinct()
             for country_d in all_country:
                 all_order_params = OrderInfo.objects.filter(order_status=5, order_country=country_d,
-                                                            order_send_status=1) \
+                                                            order_bind_status=0, order_send_status=1) \
                     .values(as_order_id=F('order_shopeeid'), package_number=F('order_package_num'),
-                            sls_tn=F('order_id'))
+                            sls_tn=F('order_waybill_num'))
                 # order_id 存在与模型中  所以取别名后 再来修改回去
                 for x in all_order_params:
-                    x['order_id'] = x.pop('as_order_id')
+                    x['order_id'] = int(x.pop('as_order_id'))
                 request_country_params.append({
                     'bind_country': country_d,
                     'package_list': all_order_params
                 })
         elif request_data['bind_type'] == 'all_order':
-            all_country = OrderInfo.objects.filter(order_status=5).values_list('order_country', flat=True).distinct()
+            all_country = OrderInfo.objects.filter(order_status=5, order_bind_status=0).values_list(
+                'order_country', flat=True).distinct()
             for country_d in all_country:
-                all_order_params = OrderInfo.objects.filter(order_status=5, order_country=country_d) \
+                all_order_params = OrderInfo.objects.filter(order_status=5, order_country=country_d, order_bind_status=0) \
                     .values(as_order_id=F('order_shopeeid'), package_number=F('order_package_num'),
-                            sls_tn=F('order_id'))
+                            sls_tn=F('order_waybill_num'))
                 # order_id 存在与模型中  所以取别名后 再来修改回去
                 for x in all_order_params:
-                    x['order_id'] = x.pop('as_order_id')
+                    x['order_id'] = int(x.pop('as_order_id'))
                 request_country_params.append({
                     'bind_country': country_d,
                     'package_list': all_order_params
@@ -225,12 +262,13 @@ class BindOrderView(View):
             if not request_data['check_order']:
                 return JsonResponse({'status': 3, 'msg': '选中订单参数错误'})
             for country_d in request_data['check_order'].keys():
-                all_order_params = OrderInfo.objects.filter(order_shopeeid__in=request_data['check_order'][country_d]) \
-                    .values(as_order_id=F('order_shopeeid'), package_number=F('order_package_num'),
-                            sls_tn=F('order_id'))
+                all_order_params = OrderInfo.objects.filter(
+                    order_shopeeid__in=request_data['check_order'][country_d], order_bind_status=0).values(
+                    as_order_id=F('order_shopeeid'), package_number=F('order_package_num'),
+                            sls_tn=F('order_waybill_num'))
                 # order_id 存在与模型中  所以取别名后 再来修改回去
                 for x in all_order_params:
-                    x['order_id'] = x.pop('as_order_id')
+                    x['order_id'] = int(x.pop('as_order_id'))
                 request_country_params.append({
                     'bind_country': country_d,
                     'package_list': all_order_params
@@ -472,7 +510,8 @@ class BuyGoodsView(View):
         pur_goods_list = purchase_orders.values_list('purchasegoods__sku_good__sku_id', flat=True)
 
         orders = OrderInfo.objects.filter(Q(order_status=1) | Q(order_status=4))
-        out_of_stock, orders_goods = out_of_stock_good_list(orders)
+        orders_goods = stats_ordergood_count(orders)
+        out_of_stock = out_of_stock_good_list(orders_goods)
 
         # 还未采购的缺货商品
         un_pur_goods_list = list(set(out_of_stock).difference(set(pur_goods_list)))
@@ -526,7 +565,7 @@ class ModifyPurchaseView(View):
             pur_obj = pur_obj[0]
 
         orders = OrderInfo.objects.filter(Q(order_status=1) | Q(order_status=4))
-        out_of_stock, orders_goods = out_of_stock_good_list(orders)
+        orders_goods = stats_ordergood_count(orders)
 
         return render(request, 'purchase_form.html', {'pur_obj': pur_obj,
                                                       'pur_goods_dict': orders_goods})
@@ -806,27 +845,33 @@ class CheckIncomeView(View):
         return JsonResponse({'status': 0, 'msg': shopee.check_msg})
 
 
-def out_of_stock_good_list(orders_obj):
+def stats_ordergood_count(orders_obj):
     """ 计算订单中每一种商品的总件数
-        返回： 商品数量大于库存的商品sku_id列表
-              商品sku_id、数量 组成的字典
+        返回： 商品sku_id、数量 组成的字典
     """
-    # 统计订单商品数量  粗糙待优化代码
+    # 统计订单商品数量
+    orders_goods_list = orders_obj.values_list('ordergoods__sku_good__sku_id', 'ordergoods__count')
     orders_goods = {}
-    for order in orders_obj:
-        for order_good in order.ordergoods_set.all():
-            if order_good.sku_good.sku_id not in orders_goods.keys():
-                orders_goods[order_good.sku_good.sku_id] = order_good.count
+    for g in orders_goods_list:
+        if g[0]:
+            if g[0] not in orders_goods.keys():
+                orders_goods[g[0]] = g[1]
             else:
-                orders_goods[order_good.sku_good.sku_id] += order_good.count
-    # 缺货商品sku列表
-    out_of_stock = []
-    for orders_good in orders_goods.keys():
-        good_stock = GoodsSKU.objects.get(sku_id=orders_good).stock
-        if orders_goods[orders_good] > good_stock:
-            out_of_stock.append(orders_good)
+                orders_goods[g[0]] += g[1]
 
-    return out_of_stock, orders_goods
+    return orders_goods
+
+
+def out_of_stock_good_list(goods_dict):
+    """ 根据统计的各订单商品数量  检查缺货商品
+        返回： 商品的skuID 列表
+    """
+    out_of_stock = []
+    for skuid in goods_dict.keys():
+        if GoodsSKU.objects.filter(sku_id=skuid,stock__lt=goods_dict[skuid]).exists():
+            out_of_stock.append(skuid)
+
+    return out_of_stock
 
 
 def order_date_list(start_date_str, end_date_str):
@@ -880,16 +925,24 @@ def waybill_order_dict(orders):
 
 
 def make_waybill(orders_dict):
+    # 申请运单号
+    res_msg = ''
     for k in orders_dict.keys():
+        success_order_list = []
         shopee = country_type_dict[k]()
         for v in orders_dict[k]:
             msg = shopee.make_order_waybill(v)
             if msg:
-                return JsonResponse({'status': 2, 'msg': msg})
+                res_msg += v + ' >> ' + msg + '<br>'
+                # return JsonResponse({'status': 2, 'msg': msg})
+            else:
+                success_order_list.append(v)
 
         OrderInfo.objects.filter(order_country=k,
-                                 order_shopeeid__in=orders_dict[k],
+                                 order_shopeeid__in=success_order_list,
                                  order_status=1).update(order_status=4)
+    if res_msg:
+        return  res_msg
     return ''
 
 
