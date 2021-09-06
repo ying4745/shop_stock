@@ -202,8 +202,6 @@ class GoodsSpiderView(View):
 
     def get(self, request):
         # data_type: True 为取全部数据，False 为取第一页数据
-
-
         data_type = request.GET.get('data_type', '')
         good_type = request.GET.get('good_type', '')
         country_type = request.GET.get('country_type', '')
