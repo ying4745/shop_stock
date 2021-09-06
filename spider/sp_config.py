@@ -27,7 +27,8 @@ PRODUCT_URL = 'https://seller.{}.shopee.cn/api/v3/product/search_product_list/'
 # 2021/7/15 修改
 GET_ORDER_IDS_URL = 'https://seller.{}.shopee.cn/api/v3/order/get_package_list'
 # 根据订单ID列表  获取订单信息
-ORDER_LIST_BY_ORDER_IDS_URL = 'https://seller.{}.shopee.cn/api/v3/order/get_shipment_order_list_by_order_ids/'
+# ORDER_LIST_BY_ORDER_IDS_URL = 'https://seller.{}.shopee.cn/api/v3/order/get_shipment_order_list_by_order_ids/'
+ORDER_LIST_BY_ORDER_IDS_URL = 'https://seller.{}.shopee.cn/api/v3/order/get_shipment_order_list_by_order_ids_multi_shop?SPC_CDS={{}}&SPC_CDS_VER=2'
 # 订单查询
 ORDER_SEARCH_URL = 'https://seller.{}.shopee.cn/api/v3/order/get_order_hint/'
 

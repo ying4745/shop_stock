@@ -206,19 +206,24 @@ class PhGoodsSpider():
 
             # 判断国家  添加到不同价格
             if self.country == 'PHP':
-                defaults['ph_sale_price'] = good['price']
+                defaults['ph_sale_price'] = good['price_info']['promotion_price']
             elif self.country == 'MYR':
-                defaults['my_sale_price'] = good['price']
+                defaults['my_sale_price'] = good['price_info']['promotion_price']
             elif self.country == 'THB':
-                defaults['th_sale_price'] = good['price']
+                defaults['th_sale_price'] = good['price_info']['promotion_price']
 
-            # 添加sku图片
-            option_name = good['name'].split(',')[0]
-            # 根据变体名字 找他在变体属性列表的位置 根据位置信息去找图片名  依据是变体名排列和图片名排列一一对应
-            image_index = image_data_dict['options'].index(option_name)
-            sku_image = image_data_dict['images'][image_index]
+            # 如果有变体  则添加变体图片
+            if image_data_dict['images']:
+                # 添加sku图片
+                option_name = good['name'].split(',')[0]
+                # 根据变体名字 找他在变体属性列表的位置 根据位置信息去找图片名  依据是变体名排列和图片名排列一一对应
+                image_index = image_data_dict['options'].index(option_name)
+                sku_image = image_data_dict['images'][image_index]
+            # 如果没变体 则为主图
+            else:
+                sku_image = main_image
+
             defaults['image'] = parent_sku + '/' + sku_image + '.jpg'
-
             if sku_image not in image_name_lists:
                 image_name_lists.append(sku_image)
             # 抓取的商品sku 添加到列表
@@ -333,16 +338,28 @@ class PhGoodsSpider():
 
     def parse_order_list_url(self, order_ids):
         """根据id列表 请求订单数据
-            order_ids为list 转出字符串
+            2021/7/23 更新请求订单信息url  POST请求
         """
-        order_ids_str = ','.join(order_ids)
+        url = self.order_list_by_order_ids_url.format(self.cookies['SPC_CDS'])
+        order_info_list = []
+        for orderid in order_ids:
+            order_info_list.append({'order_id': int(orderid), 'shop_id': self.shop_id, 'region_id': self.country[:2]})
+
         data = {
-            'SPC_CDS': self.cookies['SPC_CDS'],
-            'SPC_CDS_VER': 2,
-            'from_seller_data': 'true',
-            'order_ids': order_ids_str
-        }
-        return self.parse_url(self.order_list_by_order_ids_url, data)
+            'orders': order_info_list
+            }
+
+        try:
+            response = requests.post(url, json=data, cookies=self.cookies, headers=self.headers)
+            if response.status_code == 200:
+                return 0, json.loads(response.content.decode())
+            try:
+                msg = json.loads(response.content.decode())['message']
+            except:
+                msg = '请求出错 返回代码403'
+            return 2, msg
+        except:
+            return 1, "根据ids 请求订单信息报错"
 
     def save_order_data(self, order_data):
         """解析订单信息 保存到数据库"""
@@ -419,7 +436,11 @@ class PhGoodsSpider():
                 return 2, '订单已同步，且待发货'
             # 已打单 已打包发出订单 单独请求这个订单数据 更新收入
             elif order_obj[0].order_status == 5 and order_obj[0].order_send_status == 1:
-                return self.parse_order_income(order_obj[0])
+                msg_num, order_obj_or_err_msg = self.parse_order_income(order_obj[0])
+                if msg_num:
+                    return 4, order_obj_or_err_msg
+                self.compute_order_profit(order_obj_or_err_msg)
+                return 5, '订单已完成，统计订单利润完成'
             else:
                 return 3, '订单已存在，且没取消，没出货，没在待发货列表'
 
@@ -690,9 +711,9 @@ class PhGoodsSpider():
                 return order_obj
 
             # 订单为已发货，且有订单收入 计算利润
-            if order_obj.order_status == 10 and str(order_obj.order_income) != '0.00':
-                self.compute_order_profit(order_obj)
-                return '订单收入，利润计算完成'
+            # if order_obj.order_status == 10 and str(order_obj.order_income) != '0.00':
+            #     self.compute_order_profit(order_obj)
+            #     return '订单收入，利润计算完成'
 
             return '订单同步完成'
         else:
@@ -722,7 +743,7 @@ class PhGoodsSpider():
                     res_msg = json.loads(response.text)
                     if res_msg['code'] == 0:
                         return ''
-                    else:
+                    if i != 0:
                         save_log(self.error_path, res_msg['user_message'])
                         return res_msg['user_message']
                 # print(response.status_code)

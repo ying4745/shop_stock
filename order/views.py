@@ -940,9 +940,8 @@ def make_waybill(orders_dict):
         OrderInfo.objects.filter(order_country=k,
                                  order_shopeeid__in=success_order_list,
                                  order_status=1).update(order_status=4)
-    if res_msg:
-        return  res_msg
-    return ''
+
+    return res_msg
 
 
 def orders_num_or_dealwith(order_obj):
