@@ -33,6 +33,7 @@ class PhGoodsSpider():
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.PH_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.PH_LOGO)
+        self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.PH_LOGO)
 
         self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.PH_LOGO)
         self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.PH_LOGO)
@@ -206,11 +207,11 @@ class PhGoodsSpider():
 
             # 判断国家  添加到不同价格
             if self.country == 'PHP':
-                defaults['ph_sale_price'] = good['price_info']['promotion_price']
+                defaults['ph_sale_price'] = good['price']
             elif self.country == 'MYR':
-                defaults['my_sale_price'] = good['price_info']['promotion_price']
+                defaults['my_sale_price'] = good['price']
             elif self.country == 'THB':
-                defaults['th_sale_price'] = good['price_info']['promotion_price']
+                defaults['th_sale_price'] = good['price']
 
             # 如果有变体  则添加变体图片
             if image_data_dict['images']:
@@ -304,16 +305,28 @@ class PhGoodsSpider():
         return self.parse_url(self.product_url, data)
 
     def save_single_good(self, good_data):
-        if good_data['data']['page_info']['total'] == 1:
-            product_data = good_data['data']['list'][0]
-            parent_sku = product_data['parent_sku']
-            # print('spu信息：', parent_sku)
+        try:
+            if good_data['data']['page_info']['total'] == 1:
 
-            self.parse_create_goodsku(parent_sku, product_data)
+                product_id = good_data['data']['list'][0]['id']
 
-            return '商品同步成功'
-        else:
-            return '没找到商品'
+                data = {
+                    'SPC_CDS': self.cookies['SPC_CDS'],
+                    'SPC_CDS_VER': 2,
+                    'product_id': product_id,
+                }
+                msg_num, good_detail_data = self.parse_url(self.product_detail_url, data)
+
+                product_data = good_detail_data['data']
+                parent_sku = product_data['parent_sku']
+
+                self.parse_create_goodsku(parent_sku, product_data)
+
+                return '商品同步成功'
+            else:
+                return '没找到商品'
+        except:
+            return '请求返回商品ID错误'
 
     def get_single_good(self, goodsku):
         self.is_cookies()
@@ -994,6 +1007,7 @@ class MYGoodsSpider(PhGoodsSpider):
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.MY_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.MY_LOGO)
+        self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.MY_LOGO)
 
         self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.MY_LOGO)
         self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.MY_LOGO)
@@ -1047,6 +1061,7 @@ class ThGoodsSpider(PhGoodsSpider):
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.TH_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.TH_LOGO)
+        self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.TH_LOGO)
 
         self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.TH_LOGO)
         self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.TH_LOGO)
@@ -1100,6 +1115,7 @@ class IdGoodsSpider(PhGoodsSpider):
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.ID_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.ID_LOGO)
+        self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.ID_LOGO)
 
         self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.ID_LOGO)
         self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.ID_LOGO)
@@ -1196,6 +1212,7 @@ class SgGoodsSpider(PhGoodsSpider):
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.SG_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.SG_LOGO)
+        self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.SG_LOGO)
 
         self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.SG_LOGO)
         self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.SG_LOGO)
@@ -1280,6 +1297,7 @@ class TwGoodsSpider(PhGoodsSpider):
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.TW_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.TW_LOGO)
+        self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.TW_LOGO)
 
         self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.TW_LOGO)
         self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.TW_LOGO)
@@ -1333,6 +1351,7 @@ class VnGoodsSpider(PhGoodsSpider):
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.VN_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.VN_LOGO)
+        self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.VN_LOGO)
 
         self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.VN_LOGO)
         self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.VN_LOGO)
@@ -1386,6 +1405,7 @@ class BrGoodsSpider(PhGoodsSpider):
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.BR_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.BR_LOGO)
+        self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.BR_LOGO)
 
         self.get_order_ids_url = sp_config.GET_ORDER_IDS_URL.format(sp_config.BR_LOGO)
         self.order_list_by_order_ids_url = sp_config.ORDER_LIST_BY_ORDER_IDS_URL.format(sp_config.BR_LOGO)

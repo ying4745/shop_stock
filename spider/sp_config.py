@@ -21,6 +21,8 @@ LOGIN_URL = 'https://seller.{}.shopee.cn/account/signin'
 
 # 商品信息URL
 PRODUCT_URL = 'https://seller.{}.shopee.cn/api/v3/product/search_product_list/'
+# 2021/9/7 商品列表api 返回数据简化  需要到详情简介里找商品具体数据
+PRODUCT_DETAIL_URL = 'https://seller.{}.shopee.cn/api/v3/product/get_product_detail/'
 
 # 获取订单ID列表
 # GET_ORDER_IDS_URL = 'https://seller.{}.shopee.cn/api/v3/order/get_forder_list/'
