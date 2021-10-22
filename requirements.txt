@@ -27,7 +27,7 @@ PyPDF2==1.26.0
 pypiwin32==223
 pytz==2019.1
 pywin32==224
-PyYAML==5.1
+PyYAML==5.4
 requests==2.21.0
 reversion==0.2
 selenium==3.141.0
