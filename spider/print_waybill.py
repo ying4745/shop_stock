@@ -11,7 +11,7 @@ def print_PDF(file_path):
 
     if os.path.isfile(file_path):
         # 调用打印机，打印合并在一起的pdf
-        GHOSTSCRIPT_PATH = "C:\\Program Files\\gs\\gs9.27\\bin\\gswin64.exe"
+        GHOSTSCRIPT_PATH = "C:\\Program Files\\gs\\gs9.55.0\\bin\\gswin64.exe"
         GSPRINT_PATH = "C:\\Program Files\\Ghostgum\\gsview\\gsprint.exe"
 
         # 打印设置，默认使用默认打印机

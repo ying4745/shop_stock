@@ -1,6 +1,3 @@
-USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'
-
-
 # 网站域名 不影响获取数据
 # ph 请求 seller.my.shopee.cn 一样可以获得数据 2021/7/9
 
@@ -19,8 +16,11 @@ TW_LOGO = 'xiapi'
 # 登录URL
 LOGIN_URL = 'https://seller.{}.shopee.cn/account/signin'
 
-# 商品信息URL
+# 商品分页查找商品URL
+PRODUCT_LIST_URL = 'https://seller.{}.shopee.cn/api/v3/mpsku/get_mpsku_list'
+# 单个商品搜索URL
 PRODUCT_URL = 'https://seller.{}.shopee.cn/api/v3/product/search_product_list/'
+# 商品详情URL  这里才有变体的图片信息
 # 2021/9/7 商品列表api 返回数据简化  需要到详情简介里找商品具体数据
 PRODUCT_DETAIL_URL = 'https://seller.{}.shopee.cn/api/v3/product/get_product_detail/'
 

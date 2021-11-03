@@ -86,6 +86,6 @@ function showMessage(message, msg_type = 'bg-danger') {
     messageJQ.hide().appendTo("body").fadeIn(250);
     /**2秒之后自动删除生成的元素*/
     window.setTimeout(function () {
-        messageJQ.fadeOut(500);
-    }, 1800);
+        messageJQ.fadeOut(600);
+    }, 2500);
 }

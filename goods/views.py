@@ -201,7 +201,7 @@ class GoodsSpiderView(View):
     """爬取商品信息"""
 
     def get(self, request):
-        # data_type: True 为取全部数据，False 为取第一页数据
+        # data_type: True 为取全部数据，False 为取第一页数据  2021/11/1 改为页码
         data_type = request.GET.get('data_type', '')
         good_type = request.GET.get('good_type', '')
         country_type = request.GET.get('country_type', '')
@@ -218,7 +218,8 @@ class GoodsSpiderView(View):
 
         # 判断单个还是多个商品
         if good_type == 'many':
-            shopee.get_goods(is_all=bool(data_type))
+            # shopee.get_goods(is_all=bool(data_type))
+            shopee.get_goods(page=int(data_type))
             return JsonResponse({'status': 0, 'msg': str(shopee.num) + ' 条商品更新'})
         elif good_type == 'single' and goodsku:
             msg = shopee.get_single_good(goodsku)

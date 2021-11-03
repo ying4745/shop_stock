@@ -27,6 +27,41 @@
 
     <section class="content">
         <div class="row">
+            <div class="order_type_btn">
+                <button class="btn btn-primary order_sort" data-type="">全部订单
+                    <span class="badge bg-aqua"></span>
+                </button>
+                <button class="btn btn-primary order_sort hidden-btn" data-type="马来西亚">马来西亚
+                    <span class="badge bg-aqua"></span>
+                </button>
+                <button class="btn btn-primary order_sort hidden-btn" data-type="菲律宾">菲律宾
+                    <span class="badge bg-aqua"></span>
+                </button>
+                <button class="btn btn-primary order_sort hidden-btn" data-type="新加坡">新加坡
+                    <span class="badge bg-aqua"></span>
+                </button>
+                <button class="btn btn-primary order_sort hidden-btn" data-type="泰国">泰国
+                    <span class="badge bg-aqua"></span>
+                </button>
+                <button class="btn btn-primary order_sort hidden-btn" data-type="越南">越南
+                    <span class="badge bg-aqua"></span>
+                </button>
+                <button class="btn btn-primary order_sort hidden-btn" data-type="巴西">巴西
+                    <span class="badge bg-aqua"></span>
+                </button>
+{#                <button class="btn btn-primary order_sort hidden-btn" data-type="台湾">台湾#}
+{#                    <span class="badge bg-aqua"></span>#}
+{#                </button>#}
+{#                <button class="btn btn-primary order_sort hidden-btn" data-type="印尼">印尼#}
+{#                    <span class="badge bg-aqua"></span>#}
+{#                </button>#}
+                <button class="btn btn-facebook order_sort" data-type="not_printed" style="margin-left: 30px">未打印订单
+                    <span class="badge bg-aqua"></span>
+                </button>
+
+                <button class="btn btn-info part_waybill" data-type="all">打印选中分类</button>
+                <button class="btn btn-info part_waybill" data-type="part">选中打单</button>
+            </div>
             <div class="update_div" style="margin-top: 10px;">
                 <a class="btn bg-blue" href="/"><i class="fa fa-clone"></i> 待出货订单</a>
                 <a class="btn bg-blue-active"><i class="fa fa-truck"></i> 待打包订单
@@ -46,6 +81,7 @@
                 <button class="btn btn-info order_sort" data-type="send">已打包订单</button>
                 <button class="btn btn-warning order_sort" data-type="not_send">未打包订单</button>
                 <button class="btn btn-primary order_sort" data-type="ready_print_waybill">已打单订单</button>
+                <button class="btn btn-facebook order_sort" data-type="not_bind">未绑定订单</button>
                 <button class="btn btn-microsoft" id="pack_list">选中类生成打包清单</button>
             </div>
             <div class="update_div">
@@ -53,8 +89,11 @@
                     <span class="input-group-btn" style="width: 110px;">
                         <select class="form-control" id="input_express">
                             <option value="371">中通快递</option>
-                            <option value="33">韵达快递</option>
-                            <option value="121">申通快递</option>
+                            <option value="285">圆通速递</option>
+                            <option value="453">优速物流</option>
+                            <option value="4">信丰物流</option>
+                            <option value="222">韵达快递</option>
+                            <option value="435">申通快递</option>
                         </select>
                     </span>
                     <input type="text" class="form-control" id="input_waybill" placeholder="快递运单号">
@@ -89,42 +128,6 @@
                         <h3 class="box-title">待打包订单
                             <small>待打包</small>
                         </h3>
-                        <div class="ship_btn hidden-btn">
-                            <button class="btn btn-primary part_waybill" data-type="all">打印选中分类</button>
-                            <button class="btn btn-primary part_waybill" data-type="part">选中打单</button>
-                        </div>
-                        <div class="order_type_btn">
-                            <button class="btn btn-primary order_sort" data-type="">全部订单
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="马来西亚">马来西亚
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="菲律宾">菲律宾
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="新加坡">新加坡
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="泰国">泰国
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="越南">越南
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="巴西">巴西
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="台湾">台湾
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort hidden-btn" data-type="印尼">印尼
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                            <button class="btn btn-primary order_sort" data-type="not_printed" style="margin-left: 80px">未打印订单
-                                <span class="badge bg-aqua"></span>
-                            </button>
-                        </div>
                     </div>
                     <div class="box-body">
                         <table id="order_table" class="table table-bordered table-striped good-img-parent">
@@ -249,7 +252,15 @@
                                             <td class="division-line"
                                                 style="font-weight: bold;">{{ order_good.count }}</td>
                                             <td class="division-line">{{ order_good.price }}</td>
-                                            <td class="division-line">{{ order_good.sku_good.stock }}</td>
+                                            <!-- 库存这 添加绑定快递状态标识 用于搜索 -->
+                                            <td class="division-line"
+                                                {% if order.order_bind_status %}
+                                                    data-search="1">
+                                                {% else %}
+                                                    data-search="0">
+                                                {% endif %}
+                                                {{ order_good.sku_good.stock }}
+                                            </td>
 
                                         {% else %}
                                             <td
@@ -283,7 +294,14 @@
 
                                             <td style="font-weight: bold;">{{ order_good.count }}</td>
                                             <td>{{ order_good.price }}</td>
-                                            <td>{{ order_good.sku_good.stock }}</td>
+                                            <td
+                                                {% if order.order_bind_status %}
+                                                    data-search="1">
+                                                {% else %}
+                                                    data-search="0">
+                                                {% endif %}
+                                                {{ order_good.sku_good.stock }}
+                                            </td>
                                         {% endif %}
 
                                     </tr>
@@ -586,26 +604,34 @@
                     // 先选择所有订单 再找未打印的
                     table.column(2).search('');
                     table.column(0).search('');
+                    table.column(13).search('');
                     table.column(1).search('0').draw();
                 } else if (country === 'ready_print_waybill') {
                     table.column(2).search('');
                     table.column(0).search('');
+                    table.column(13).search('');
                     table.column(1).search('1').draw();
                 } else if (country === 'send'){
                     // 查找已打包发出的订单
                     table.column(1).search('');
                     table.column(2).search('');
+                    table.column(13).search('');
                     table.column(0).search('1').draw();
                 } else if (country === 'not_send') {
                     // 查找未打包的订单
                     table.column(1).search('');
                     table.column(2).search('');
+                    table.column(13).search('');
                     table.column(0).search('0').draw();
+                } else if (country === 'not_bind') {
+                    // 查找未绑定快递的订单
+                    table.column(13).search('0').draw();
                 } else {
                     // 按国家查找订单
                     // 先选择所有打印和未打印的，再选择国家
                     table.column(1).search('');
                     table.column(0).search('');
+                    table.column(13).search('');
                     table.column(2).search(country).draw();
                 }
             });

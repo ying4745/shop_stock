@@ -16,49 +16,67 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:;" class="good_btn" data-country="MYR">
+                            <a href="javascript:;" class="good_btn" data-value="1" data-country="MYR">
                                 <i class="fa fa-circle-o"></i> 第一页商品</a>
                         </li>
                         <li>
-                            <a href="javascript:;" class="good_btn" data-value="all" data-country="MYR">
-                                <i class="fa fa-circle"></i> 全部商品</a>
+                            <a href="javascript:;" class="good_btn" data-value="2" data-country="MYR">
+                                <i class="fa fa-circle-o"></i> 第二页商品</a>
                         </li>
+                        <li>
+                            <a href="javascript:;" class="good_btn" data-value="3" data-country="MYR">
+                                <i class="fa fa-circle-o"></i> 第三页商品</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="good_btn" data-value="4" data-country="MYR">
+                                <i class="fa fa-circle-o"></i> 第四页商品</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" class="good_btn" data-value="5" data-country="MYR">
+                                <i class="fa fa-circle-o"></i> 第五页商品</a>
+                        </li>
+{#                        <li>#}
+{#                            <a href="javascript:;" class="good_btn" data-value="all" data-country="MYR">#}
+{#                                <i class="fa fa-circle"></i> 全部商品</a>#}
+{#                        </li>#}
                     </ul>
                 </div>
-
                 <div class="btn-group">
-                    <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        菲律宾 <span class="badge bg-yellow">{{ ph_goods }}</span> <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:;" class="good_btn" data-country="PHP">
-                                <i class="fa fa-circle-o"></i> 第一页商品</a>
-                        </li>
-                        <li>
-                            <a href="javascript:;" class="good_btn" data-value="all" data-country="PHP">
-                                <i class="fa fa-circle"></i> 全部商品</a>
-                        </li>
-                    </ul>
+                    <p style="margin: 0; font-size: small">一页48 按页数来抓取（暂时用到五页）</p>
                 </div>
-
-                <div class="btn-group">
-                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        泰国 <span class="badge bg-yellow">{{ th_goods }}</span> <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:;" class="good_btn" data-country="THB">
-                                <i class="fa fa-circle-o"></i> 第一页商品</a>
-                        </li>
-                        <li>
-                            <a href="javascript:;" class="good_btn" data-value="all" data-country="THB">
-                                <i class="fa fa-circle"></i> 全部商品</a>
-                        </li>
-                    </ul>
-                </div>
+{#                <div class="btn-group">#}
+{#                    <button type="button" class="btn btn-vk dropdown-toggle" data-toggle="dropdown"#}
+{#                            aria-haspopup="true" aria-expanded="false">#}
+{#                        菲律宾 <span class="badge bg-yellow">{{ ph_goods }}</span> <span class="caret"></span>#}
+{#                    </button>#}
+{#                    <ul class="dropdown-menu">#}
+{#                        <li>#}
+{#                            <a href="javascript:;" class="good_btn" data-country="PHP">#}
+{#                                <i class="fa fa-circle-o"></i> 第一页商品</a>#}
+{#                        </li>#}
+{#                        <li>#}
+{#                            <a href="javascript:;" class="good_btn" data-value="all" data-country="PHP">#}
+{#                                <i class="fa fa-circle"></i> 全部商品</a>#}
+{#                        </li>#}
+{#                    </ul>#}
+{#                </div>#}
+{##}
+{#                <div class="btn-group">#}
+{#                    <button type="button" class="btn btn-facebook dropdown-toggle" data-toggle="dropdown"#}
+{#                            aria-haspopup="true" aria-expanded="false">#}
+{#                        泰国 <span class="badge bg-yellow">{{ th_goods }}</span> <span class="caret"></span>#}
+{#                    </button>#}
+{#                    <ul class="dropdown-menu">#}
+{#                        <li>#}
+{#                            <a href="javascript:;" class="good_btn" data-country="THB">#}
+{#                                <i class="fa fa-circle-o"></i> 第一页商品</a>#}
+{#                        </li>#}
+{#                        <li>#}
+{#                            <a href="javascript:;" class="good_btn" data-value="all" data-country="THB">#}
+{#                                <i class="fa fa-circle"></i> 全部商品</a>#}
+{#                        </li>#}
+{#                    </ul>#}
+{#                </div>#}
                 <div style="width: 310px; margin-bottom: 10px;">
                     <div class="input-group">
                         <input type="text" id="single_goodsku" class="form-control" placeholder="商品SPU号">

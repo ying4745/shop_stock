@@ -6,11 +6,11 @@ from order.models import OrderGoods, OrderInfo, PurchaseOrder, PurchaseGoods
 
 
 class GoodsXadmin(object):
-    list_display = ['spu_id', 'name', 'max_weight', 'g_url']
-    search_fields = ['goodssku__sku_id']
-    list_filter = ['name']
+    list_display = ['spu_id', 'get_image', 'get_link', 'get_sku_url', 'max_weight']
+    search_fields = ['goodssku__sku_id', 'spu_id']
+    list_filter = ['spu_id']
 
-    list_editable = ['max_weight', 'g_url']
+    list_editable = ['max_weight']
     # def get_goodssku(self, obj):
     #     sku_query = obj.goodssku_set.all()
     #     return str(['%s:%s:%s'%(i.sku_id, i.buy_price, i.stock) for i in sku_query])

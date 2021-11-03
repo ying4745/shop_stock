@@ -2,6 +2,7 @@ import os
 import re
 
 from django.db import models
+from django.utils.safestring import mark_safe
 
 from db.base_model import BaseModel
 
@@ -29,6 +30,24 @@ class Goods(BaseModel):
     def __str__(self):
         return self.spu_id
 
+    def get_image(self):
+        # mark_safe后就不会转义
+        return mark_safe("<img src='/media/%s' width=80 height=80>" % self.image)
+    get_image.short_description = "图片"
+
+    def get_link(self):
+        link_list = self.g_url.split(';;')
+        if link_list[0]:
+            link_str = ''
+            for idx, l in enumerate(link_list):
+                link_str += '<a target="_blank" href="{0}">链接{1}</a></br>'.format(l,str(idx + 1))
+            return mark_safe(link_str)
+        return mark_safe("<p>无</p>")
+    get_link.short_description = "商品链接"
+
+    def get_sku_url(self):
+        return mark_safe("<a href='/xadmin/goods/goodssku/?_q_={}'>子SKU</a>".format(self.spu_id))
+    get_sku_url.short_description = "跳转"
 
 def good_sku_path(instance, filename):
     """默认上传文件路径"""
@@ -83,8 +102,6 @@ class GoodsSKU(BaseModel):
         return ''
 
     def get_image(self):
-        from django.utils.safestring import mark_safe
-        # mark_safe后就不会转义
         return mark_safe("<img src='/media/%s' width=60 height=60>" % self.image)
     get_image.short_description = "图片"
 

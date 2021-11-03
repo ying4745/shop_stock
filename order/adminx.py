@@ -53,7 +53,7 @@ class OrderGoodsXadmin(object):
     date_hierarchy = ('create_time', 'order__order_id')
     ordering = ('order__order_id',)
 
-    relfield_style = 'fk_ajax'  # fk-外键 显示样式
+    raw_id_fields = ('sku_good','order',)  # 改变外键显示个下拉框  无效没解决问题
 
     def get_good_stock(self, obj):
         return obj.sku_good.stock

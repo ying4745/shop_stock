@@ -28,10 +28,11 @@ class PhGoodsSpider():
         self.name = add_config.PH_USERNAME
         self.password = add_config.PH_PASSWORD
 
-        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.headers = {'user-agent': add_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.PH_COOKIES_SAVE)
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.PH_LOGO)
+        self.product_list_url = sp_config.PRODUCT_LIST_URL.format(sp_config.PH_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.PH_LOGO)
         self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.PH_LOGO)
 
@@ -136,23 +137,39 @@ class PhGoodsSpider():
 
     # 商品抓取
     def parse_goods_url(self, page):
-        """发送请求，获取商品数据字典"""
+        """发送请求，获取商品数据字典
+        获取商品id信息 按一页48显示 销量升序排列"""
         data = {
             'SPC_CDS': self.cookies['SPC_CDS'],
             'SPC_CDS_VER': 2,
             'page_number': page,
-            'page_size': 24,
-            'list_order_type': 'list_time_dsc'
+            'page_size': 48,
+            'source': 'seller_center',
+            'list_type': 'live',
+            'list_order_type': 'sales_asc',
         }
-        return self.parse_url(self.product_url, data)
+        return self.parse_url(self.product_list_url, data)
 
     def save_goods_data(self, goods_data):
         """解析商品数据，保存到数据库
         马来西亚 则保存马来价格，菲律宾 则保存菲律宾价格"""
+        j = 1 # 记录spu数量
         for goods in goods_data['data']['list']:
-            parent_sku = goods['parent_sku']
-            # print('spu信息：', parent_sku)
-            self.parse_create_goodsku(parent_sku, goods)
+            # 获取商品的id信息  再去请求商品的详情
+            product_id = goods['id']
+
+            data = {
+                'SPC_CDS': self.cookies['SPC_CDS'],
+                'SPC_CDS_VER': 2,
+                'product_id': product_id,
+            }
+            msg_num, good_detail_data = self.parse_url(self.product_detail_url, data)
+
+            product_data = good_detail_data['data']
+            parent_sku = product_data['parent_sku']
+            print(parent_sku, j)
+            self.parse_create_goodsku(parent_sku, product_data)
+            j += 1
 
     def get_goods(self, page=1, is_all=False):
         """获取商品信息 保存到数据库"""
@@ -173,11 +190,19 @@ class PhGoodsSpider():
 
     @transaction.atomic
     def parse_create_goodsku(self, parent_sku, product_data):
+        # 下载图片 所需header
+        m_headers = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36',
+            'accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+            'accept-encoding': 'gzip, deflate, br',
+            'referer': 'https://seller.my.shopee.cn/'
+        }
+
         # 创建spu
         g_spu, is_c = Goods.objects.get_or_create(spu_id=parent_sku)
 
         # 保存主图片 每次都更新当前的主图
-        main_image = product_data['images'][0]
+        main_image = product_data['images'][0] + '_tn'
         g_spu.image = parent_sku + '/' + main_image + '.jpg'
         g_spu.save()
 
@@ -219,7 +244,8 @@ class PhGoodsSpider():
                 option_name = good['name'].split(',')[0]
                 # 根据变体名字 找他在变体属性列表的位置 根据位置信息去找图片名  依据是变体名排列和图片名排列一一对应
                 image_index = image_data_dict['options'].index(option_name)
-                sku_image = image_data_dict['images'][image_index]
+                # 图片名 后面加_tn 为压缩图片
+                sku_image = image_data_dict['images'][image_index] + '_tn'
             # 如果没变体 则为主图
             else:
                 sku_image = main_image
@@ -250,17 +276,20 @@ class PhGoodsSpider():
             dir_path = os.path.join(MEDIA_ROOT, parent_sku)
             if not os.path.exists(dir_path):
                 os.mkdir(dir_path)
+
+            b_count = 1 # 记录变体的数量
             for image_name in image_name_lists:
                 url = sp_config.PRODUCT_IMAGE_URL.format(image_name)
-                i_request = requests.get(url)
+                # 文件路径
+                file_name = image_name + '.jpg'
+                file_path = os.path.join(dir_path, file_name)
 
-                if i_request.status_code == 200:
-                    # 文件路径
-                    file_name = image_name + '.jpg'
-                    file_path = os.path.join(dir_path, file_name)
+                t_num = 0  # 一个图片的下载循环次数
+                down_img(url, file_path, m_headers, t_num)
+                print(file_name,b_count) # 打印当前下载的图片名
 
-                    with open(file_path, 'wb') as f:
-                        f.write(i_request.content)
+                time.sleep(1.5)
+                b_count += 1
 
             # 创建 则为新增记录
             if is_c:
@@ -293,7 +322,7 @@ class PhGoodsSpider():
 
     # 单个商品抓取
     def parse_single_good_url(self, goodspu):
-        """发送请求，获取单个商品信息"""
+        """发送请求，获取商品的简化信息 需要里面的商品id信息 没有变体的图片信息"""
         data = {
             'SPC_CDS': self.cookies['SPC_CDS'],
             'SPC_CDS_VER': 2,
@@ -307,7 +336,7 @@ class PhGoodsSpider():
     def save_single_good(self, good_data):
         try:
             if good_data['data']['page_info']['total'] == 1:
-
+                # 获取商品的id信息  再去请求商品的详情
                 product_id = good_data['data']['list'][0]['id']
 
                 data = {
@@ -325,8 +354,10 @@ class PhGoodsSpider():
                 return '商品同步成功'
             else:
                 return '没找到商品'
-        except:
-            return '请求返回商品ID错误'
+        except Exception as e:
+            save_log(self.error_path, str(e.args))
+            return '获取商品ID 请求商品详情出错'
+
 
     def get_single_good(self, goodsku):
         self.is_cookies()
@@ -857,9 +888,9 @@ class PhGoodsSpider():
                             if os.path.isfile(file_path):
                                 # 调用打印类  打印运单号
                                 print_PDF(file_path)
+                                # print('打单成功')
 
                                 # os.remove(file_path)
-                                # print('打单成功')
                                 un_print = False
                                 break
 
@@ -1002,10 +1033,11 @@ class MYGoodsSpider(PhGoodsSpider):
         self.name = add_config.MY_USERNAME
         self.password = add_config.MY_PASSWORD
 
-        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.headers = {'user-agent': add_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.MY_COOKIES_SAVE)
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.MY_LOGO)
+        self.product_list_url = sp_config.PRODUCT_LIST_URL.format(sp_config.MY_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.MY_LOGO)
         self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.MY_LOGO)
 
@@ -1056,10 +1088,11 @@ class ThGoodsSpider(PhGoodsSpider):
         self.name = add_config.TH_USERNAME
         self.password = add_config.TH_PASSWORD
 
-        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.headers = {'user-agent': add_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.TH_COOKIES_SAVE)
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.TH_LOGO)
+        self.product_list_url = sp_config.PRODUCT_LIST_URL.format(sp_config.TH_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.TH_LOGO)
         self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.TH_LOGO)
 
@@ -1110,10 +1143,11 @@ class IdGoodsSpider(PhGoodsSpider):
         self.name = add_config.ID_USERNAME
         self.password = add_config.ID_PASSWORD
 
-        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.headers = {'user-agent': add_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.ID_COOKIES_SAVE)
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.ID_LOGO)
+        self.product_list_url = sp_config.PRODUCT_LIST_URL.format(sp_config.ID_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.ID_LOGO)
         self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.ID_LOGO)
 
@@ -1207,10 +1241,11 @@ class SgGoodsSpider(PhGoodsSpider):
         self.name = add_config.SG_USERNAME
         self.password = add_config.SG_PASSWORD
 
-        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.headers = {'user-agent': add_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.SG_COOKIES_SAVE)
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.SG_LOGO)
+        self.product_list_url = sp_config.PRODUCT_LIST_URL.format(sp_config.SG_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.SG_LOGO)
         self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.SG_LOGO)
 
@@ -1292,10 +1327,11 @@ class TwGoodsSpider(PhGoodsSpider):
         self.name = add_config.TW_USERNAME
         self.password = add_config.TW_PASSWORD
 
-        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.headers = {'user-agent': add_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.TW_COOKIES_SAVE)
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.TW_LOGO)
+        self.product_list_url = sp_config.PRODUCT_LIST_URL.format(sp_config.TW_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.TW_LOGO)
         self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.TW_LOGO)
 
@@ -1346,10 +1382,11 @@ class VnGoodsSpider(PhGoodsSpider):
         self.name = add_config.VN_USERNAME
         self.password = add_config.VN_PASSWORD
 
-        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.headers = {'user-agent': add_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.VN_COOKIES_SAVE)
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.VN_LOGO)
+        self.product_list_url = sp_config.PRODUCT_LIST_URL.format(sp_config.VN_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.VN_LOGO)
         self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.VN_LOGO)
 
@@ -1400,10 +1437,11 @@ class BrGoodsSpider(PhGoodsSpider):
         self.name = add_config.BR_USERNAME
         self.password = add_config.BR_PASSWORD
 
-        self.headers = {'user-agent': sp_config.USER_AGENT}
+        self.headers = {'user-agent': add_config.USER_AGENT}
         self.cookies = get_cookies_from_file(sp_config.BR_COOKIES_SAVE)
 
         self.login_url = sp_config.LOGIN_URL.format(sp_config.BR_LOGO)
+        self.product_list_url = sp_config.PRODUCT_LIST_URL.format(sp_config.BR_LOGO)
         self.product_url = sp_config.PRODUCT_URL.format(sp_config.BR_LOGO)
         self.product_detail_url = sp_config.PRODUCT_DETAIL_URL.format(sp_config.BR_LOGO)
 
@@ -1470,6 +1508,23 @@ def get_cookies_from_file(filename):
         return {}
     return cookies_dict
 
+def down_img(url, filepath, headers, t_num):
+    """下载图片函数 如报错 回回调两次 还是出错则保存 有图片名的空白文件"""
+    try:
+        t_num += 1
+        print('第 {} 次下载中...'.format(str(t_num)))
+        i_request = requests.get(url, headers=headers)
+        with open(filepath, 'wb') as f:
+            f.write(i_request.content)
+    except:
+        if t_num < 4:
+            time.sleep(2.5)
+            down_img(url, filepath, headers, t_num)
+        else:
+            # raise Exception
+            with open(filepath, 'wb') as f:
+                f.write(b'')
+            print(filepath+' 4 次下载后 还是出错')
 
 # def format_file_path(goodsku):
 #     """根据商品sku，设置默认图片名"""
