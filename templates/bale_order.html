@@ -386,13 +386,13 @@
             parent_ele.eq(4).children('span').text(search_order_count(api, '泰国'));
             parent_ele.eq(5).children('span').text(search_order_count(api, '越南'));
             parent_ele.eq(6).children('span').text(search_order_count(api, '巴西'));
-            parent_ele.eq(7).children('span').text(search_order_count(api, '台湾'));
-            parent_ele.eq(8).children('span').text(search_order_count(api, '印尼'));
+            // parent_ele.eq(7).children('span').text(search_order_count(api, '台湾'));
+            // parent_ele.eq(8).children('span').text(search_order_count(api, '印尼'));
             // 查询完  数据恢复  TODO: 有问题
             api.column(2).search('');
             var un_print_num = api.column(1, {search:'applied'})
                 .search('0').data().filter(function (val, index) {return val}).length;
-            parent_ele.eq(9).children('span').text(un_print_num);
+            parent_ele.eq(7).children('span').text(un_print_num);
             api.column(1).search('');
         }
 
