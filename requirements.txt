@@ -23,7 +23,7 @@ openpyxl==2.6.2
 Pillow==6.0.0
 pycparser==2.19
 PyMySQL==0.9.3
-PyPDF2==1.26.0
+PyPDF2==1.27.5
 pypiwin32==223
 pytz==2019.1
 pywin32==224
